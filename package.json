@@ -1,0 +1,14 @@
+{
+  "name": "initbot",
+  "version": "1.0.0",
+  "description": "Discord bot that manages RPG character initiatives",
+  "main": "initbot.js",
+  "author": "Stefan Götz <github.nooneelse@spamgourmet.com>",
+  "dependencies": {
+    "discord.js": "^11.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.31.0"
+  },
+  "license": "AGPLv3"
+}
