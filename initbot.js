@@ -5,31 +5,37 @@
 // This file is part of Initbot.
 
 // Initbot is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of
+// the License, or (at your option) any later version.
 
 // Initbot is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
-// You should have received a copy of the GNU General Public License
-// along with Initbot.  If not, see <https://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU Affero General Public
+// License along with Initbot. If not, see <https://www.gnu.org/licenses/>.
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
 const cfg = require('./initbot.json');
 
-var chrs = {};
+let chrs = {};
 
 class Chr {
   constructor(user, name, init_mod = undefined) {
+    if (typeof (user) !== "string" || user.length < 2) {
+      throw `The user ${user} is unsupported`
+    }
     this.user = user;
+    if (typeof (name) !== "string" || name.length < 2) {
+      throw `The name ${name} is unsupported`
+    }
     this.name = name;
     this.init_mod = init_mod;
-    this.init = null;
+    this.init = -99;
     chrs[name.toLowerCase()] = this;
   }
   static all() {
@@ -44,14 +50,14 @@ class Chr {
     });
   }
   static fromUserOne(user) {
-    let userChrs = Chr.fromUserAll(user);
+    const userChrs = Chr.fromUserAll(user);
     if (userChrs.length == 1) {
       return userChrs[0];
     }
     return undefined;
   }
   static fromUserOrName(user, name = undefined) {
-    var chr;
+    let chr;
     if (typeof (name) != "undefined") {
       chr = Chr.fromName(name);
     }
@@ -72,33 +78,45 @@ class Chr {
   static remove(name) {
     delete chrs[name.toLowerCase()];
   }
+  static getNameOrUser(user) {
+    const chr = Chr.fromUserOne(user);
+    if (typeof (chr) === "undefined") {
+      return user;
+    } else {
+      chr.name;
+    }
+  }
 }
 
-var handlers = {}
+let handlers = {}
 
 handlers["add"] = (msg, args) => {
-  var chr
-  if (args.length == 2) {
-    chr = new Chr(msg.author.username, args[0], parseInt(args[1]));
-  } else if (args.length == 1) {
-    chr = new Chr(msg.author.username, args[0]);
-  } else {
-    sendTmpMsg(`Usage: _${cfg.prefix}add <character name> [init bonus]_`, msg.channel);
-    return;
+  let init_mod;
+  if (!isNaN(args.slice(-1)[0])) {
+    init_mod = parseInt(args.pop());
   }
-  Chr.log();
-  sendTmpMsg("Added " + JSON.stringify(chr), msg.channel);
+  if (args.length > 0) {
+    const name = args.join(" ");
+    if (name.length > 0) {
+      const chr = new Chr(msg.author.username, name, init_mod);
+      Chr.log();
+      sendTmpMsg("Added " + chr.name, msg.channel);
+      return;
+    }
+  }
+  sendTmpMsg(`Usage: _${cfg.prefix}add <character name> [init bonus]_`, msg.channel);
 }
 
 handlers["init"] = (msg, args) => {
   Chr.log();
   console.log("Args: " + JSON.stringify(args));
 
+  let name;
   if (args.length == 2) {
-    var name = args[0];
+    name = args[0];
     args.shift();
   }
-  var chr = Chr.fromUserOrName(msg.author.username, name);
+  let chr = Chr.fromUserOrName(msg.author.username, name);
 
   if (typeof (chr) != "undefined") {
     if (args.length == 1 && !isNaN(args[0])) {
@@ -119,17 +137,17 @@ handlers["order"] = (msg) => {
     return;
   }
 
-  var sortedChrs = Chr.all();
+  let sortedChrs = Chr.all();
   sortedChrs.sort((a, b) => {
-    var init_a = a.init;
+    let init_a = a.init;
     if (init_a === null) {
       init_a = -100;
     }
-    var init_b = b.init;
+    let init_b = b.init;
     if (init_b === null) {
       init_b = -100;
     }
-    var diff = init_b - init_a;
+    let diff = init_b - init_a;
     if (diff == 0) {
       return Math.random() < 0.5 ? -1 : 1;
     }
@@ -137,17 +155,17 @@ handlers["order"] = (msg) => {
   });
   console.log("Sorted: " + JSON.stringify(sortedChrs))
 
-  var text = sortedChrs.map((value) => {
+  let text = sortedChrs.map((value) => {
     return value.init + ': **' + value.name + '** (' + value.user + ')';
   }).join('\n');
 
-  var embed = new Discord.RichEmbed();
+  let embed = new Discord.RichEmbed();
   embed.addField('Initiative Order', text);
   msg.channel.send(embed);
 }
 
 handlers["remove"] = (msg, args) => {
-  let chr = getChr(msg, args);
+  const chr = getChr(msg, args);
   if (typeof (chr) != "undefined") {
     Chr.remove(chr.name);
     sendTmpMsg("Removed character " + chr.name, msg.channel);
@@ -155,10 +173,10 @@ handlers["remove"] = (msg, args) => {
 }
 
 handlers["roll"] = (msg, args) => {
-  let chr = getChr(msg, args);
+  const chr = getChr(msg, args);
   if (typeof (chr) != "undefined") {
     if (typeof (chr.init_mod) != "undefined") {
-      chr.init = 1 + Math.floor(Math.random() * 20.0) + chr.init_mod;
+      chr.init = roll(20) + chr.init_mod;
       sendTmpMsg(`${chr.name}'s new initiative is ${chr.init}`, msg.channel);
     } else {
       sendTmpMsg(`What is ${chr.name}'s initiative modifier? (Try the ${cfg.prefix}add command.)`, msg.channel)
@@ -166,12 +184,41 @@ handlers["roll"] = (msg, args) => {
   }
 }
 
-function getChr(msg, args) {
-  var name
-  if (args.length > 0) {
-    name = args.join(" ");
+handlers["show"] = (msg, args) => {
+  const chr = getChr(msg, args);
+  if (typeof (chr) != "undefined") {
+    msg.channel.send(JSON.stringify(chr, null, 2));
   }
-  let chr = Chr.fromUserOrName(msg.author.username, name);
+}
+
+handlers["set"] = (msg, args) => {
+  const chr = getChr(msg, args);
+  if (typeof (chr) != "undefined") {
+    console.log("args: " + args);
+    for (const arg of args) {
+      if (/^\w+=\w+$/.test(arg)) {
+        const parts = arg.split("=");
+        const key = parts[0];
+        const val = tryParseInt(parts[1]);
+        chr[key] = val;
+      }
+    }
+    msg.channel.send(JSON.stringify(chr, null, 2));
+  }
+}
+
+function getChr(msg, args) {
+  for (let i = Math.min(4, args.length); i != 0; i -= 1) {
+    const candidate = args.slice(0, i).join(" ");
+    const chr = Chr.fromName(candidate);
+    if (typeof (chr) != "undefined") {
+      for (let j = 0; j < i; j += 1) {
+        args.shift();
+      }
+      return chr;
+    }
+  }
+  const chr = Chr.fromUserOne(msg.author.username);
   if (typeof (chr) != "undefined") {
     return chr;
   } else {
@@ -182,6 +229,14 @@ function getChr(msg, args) {
     }
   }
   return undefined;
+}
+
+function tryParseInt(str) {
+  if (isNaN(str)) {
+    return str;
+  } else {
+    return parseInt(str);
+  }
 }
 
 function deleteMsg(msg) {
@@ -226,30 +281,53 @@ client.on("message", (msg) => {
 function handleUnstructeredMsg(msg) {
   if (msg.content.length > 30) return;
 
-  if (msg.content === "roll") {
+  if (msg.content.toLowerCase() === "roll") {
     msg.content = cfg.prefix + "roll";
     handleStructuredMsg(msg);
     return;
   }
-  if (msg.content.startsWith("remove")) {
+  if (msg.content.toLowerCase().startsWith("remove")) {
     msg.content = cfg.prefix + msg.content;
     handleStructuredMsg(msg);
     return;
   }
-  if (msg.content === "inis") {
-    msg.content = cfg.prefix + "inis";
+  if (msg.content.toLowerCase() === "inis") {
+    msg.content = cfg.prefix + "order";
     handleStructuredMsg(msg);
     return;
   }
 
-  var txt = msg.content.replace(/:/g, "");
-  var tokens = txt.split(/ +/);
+  if (/^d[0-9]{1,3}(\s*[+-]\s*[0-9]{1,2}|)$/i.test(msg.content)) {
+    console.log("Looks like a dice roll: " + msg.content);
+    const parts = msg.content.slice(1).split(/\s*[+-]\s*/);
+    const die = parts[0];
+    let mod = parts[1];
+    if (msg.content.includes("-") && !isNaN(mod)) {
+      mod = mod * -1;
+    }
+    const result = roll(die, mod);
+    msg.channel.send(Chr.getNameOrUser(msg.author.username) + " rolled " + result, msg.channel);
+    return;
+  }
+
+  let chr;
+  if ((msg.content.includes("'s") || msg.content.toLowerCase().startsWith("my ")) && msg.content.includes(" is ")) {
+    if (msg.content.toLowerCase().startsWith("my ")) {
+      chr = Chr.fromUserOne(msg.author.username);
+      return;
+    } else {
+      return;
+    }
+  }
+
+  let txt = msg.content.replace(/:/g, "");
+  let tokens = txt.split(/ +/);
   console.log("Msg tokens: " + JSON.stringify(tokens));
 
-  var has_init_keyword = false;
-  let init_key_words = ["ini", "init", "initiative"];
+  let has_init_keyword = false;
+  const init_key_words = ["ini", "init", "initiative"];
   tokens = tokens.filter(token => {
-    var is_init_keyword = init_key_words.includes(token.toLowerCase());
+    let is_init_keyword = init_key_words.includes(token.toLowerCase());
     has_init_keyword = has_init_keyword || is_init_keyword;
     return !is_init_keyword;
   });
@@ -259,12 +337,12 @@ function handleUnstructeredMsg(msg) {
   if (isNaN(tokens[tokens.length - 1])) return;
   if (tokens.length > 4) return;
 
-  let init = parseInt(tokens.pop());
-  let name = tokens.join(" ");
+  const init = parseInt(tokens.pop());
+  const name = tokens.join(" ");
   console.log(`Name: ${name}, init: ${init}`);
 
-  if (typeof (name) !== "undefined" && !Chr.nameExists(name) && has_init_keyword) {
-    var chr = new Chr(msg.author.username, name)
+  if (typeof (name) !== "undefined" && name.length > 1 && !Chr.nameExists(name) && has_init_keyword) {
+    chr = new Chr(msg.author.username, name)
   }
   if (typeof (chr) === "undefined") {
     chr = Chr.fromUserOrName(msg.author.username, name)
@@ -276,12 +354,12 @@ function handleUnstructeredMsg(msg) {
 }
 
 function handleStructuredMsg(msg) {
-  var tokens = msg.content.split(/ +/);
+  let tokens = msg.content.split(/ +/);
   console.log("Msg tokens: " + JSON.stringify(tokens));
   if (tokens.length == 0) return;
-  var cmd = tokens[0].substring(1, tokens[0].length);
+  let cmd = tokens[0].substring(1, tokens[0].length).toLowerCase();
   console.log("Msg cmd: " + cmd);
-  var args = tokens.slice(1)
+  let args = tokens.slice(1)
   if (cmd in handlers) {
     try {
       handlers[cmd](msg, args);
@@ -290,6 +368,14 @@ function handleStructuredMsg(msg) {
       msg.author.send(e);
     }
   }
+}
+
+function roll(die, mod) {
+  console.log(`rolling d${die} mod ${mod}`);
+  if (typeof (mod) == "undefined") {
+    mod = 0;
+  }
+  return 1 + Math.floor(Math.random() * `${die}.0`) + mod;
 }
 
 client.login(cfg.token);
