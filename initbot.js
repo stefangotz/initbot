@@ -311,11 +311,19 @@ function handleUnstructeredMsg(msg) {
   }
 
   let chr;
-  if ((msg.content.includes("'s") || msg.content.toLowerCase().startsWith("my ")) && msg.content.includes(" is ")) {
+  if (/^(my|[a-z]+'s) [a-z]+ is ([0-9-]+|[a-z]+)$/i.test(msg.content)) {
     if (msg.content.toLowerCase().startsWith("my ")) {
       chr = Chr.fromUserOne(msg.author.username);
-      return;
     } else {
+      const name = msg.content.match(/^[a-z]+/i);
+      chr = Chr.fromName(name);
+    }
+    if (typeof (chr) != "undefined") {
+      const tokens = msg.content.slpit(" ");
+      const prop = tokens[1];
+      const value = tokens[3];
+      msg.content = cfg.prefix + "set " + chr.name + " " + prop + "=" + value;
+      handleStructuredMsg(msg);
       return;
     }
   }
@@ -334,12 +342,15 @@ function handleUnstructeredMsg(msg) {
   console.log("Filtered msg tokens: " + JSON.stringify(tokens));
   console.log("Has init keyword: " + has_init_keyword);
 
+  if (tokens.length == 0) return;
   if (isNaN(tokens[tokens.length - 1])) return;
   if (tokens.length > 4) return;
+  if (!has_init_keyword) return;
 
   const init = parseInt(tokens.pop());
   const name = tokens.join(" ");
   console.log(`Name: ${name}, init: ${init}`);
+  if (isNaN(init)) return;
 
   if (typeof (name) !== "undefined" && name.length > 1 && !Chr.nameExists(name) && has_init_keyword) {
     chr = new Chr(msg.author.username, name)
