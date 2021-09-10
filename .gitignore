@@ -4,3 +4,5 @@ npm-debug.log
 initbot.json
 package-lock.json
 .vscode
+.coverage
+__pycache__
