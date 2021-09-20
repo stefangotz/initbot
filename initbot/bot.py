@@ -1,4 +1,4 @@
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot  # type: ignore
 
 from .config import CFG
 from .commands.roll import roll

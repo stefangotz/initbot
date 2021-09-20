@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import random
 import re
 
-from discord.ext import commands
+from discord.ext import commands  # type: ignore
 
 _DIE_PATTERN = re.compile(r"^([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE)
 
