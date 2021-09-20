@@ -1,7 +1,7 @@
 from discord.ext.commands import Bot  # type: ignore
 
 from .config import CFG
-from .commands.roll import roll
+from .commands import commands
 
 bot = Bot(command_prefix="$")
 
@@ -12,5 +12,6 @@ async def on_ready():
 
 
 def run():
-    bot.add_command(roll)
+    for cmd in commands:
+        bot.add_command(cmd)
     bot.run(CFG.token)
