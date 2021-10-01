@@ -2,11 +2,16 @@ from dataclasses import dataclass
 from typing import List, Dict
 from discord.ext import commands  # type: ignore
 
+from .roll import DieRoll
+
 
 @dataclass
 class Ability:
     name: str
     description: str
+
+    def roll(self) -> "AbilityScore":
+        return AbilityScore(self, DieRoll(6, 3).roll())
 
 
 ABILITIES: List[Ability] = [

@@ -8,5 +8,5 @@ from .occupation import occupations
 from .abilities import abls, abl, asms, asm
 
 commands: FrozenSet[Any] = frozenset(
-    (init, roll, cha, cha_new, equipment, occupations, abls, abl, asms, asm)
+    (init, roll, cha, equipment, occupations, abls, abl, asms, asm)
 )
