@@ -31,6 +31,8 @@ These can be sent in any channel the bot user is a member of or as DMs.
   Remove a character from the bot.
   The optional name identifies the character to remove.
   If no name is given and the sender of the message has added only a single character so far, that character is removed.
+- `$tarot`:
+  Draw and display a random tarot card.
 
 ### Unstructured Messages
 

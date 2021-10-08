@@ -207,6 +207,40 @@ handlers["set"] = (msg, args) => {
   }
 }
 
+function randomTarot() {
+  var myCards = [
+    "https://randomtarotcard.com/TheFool.jpg",
+    "https://randomtarotcard.com/TheMagician.jpg",
+    "https://randomtarotcard.com/TheHighPriestess.jpg",
+    "https://randomtarotcard.com/TheEmpress.jpg",
+    "https://randomtarotcard.com/TheEmperor.jpg",
+    "https://randomtarotcard.com/TheHierophant.jpg",
+    "https://randomtarotcard.com/TheLovers.jpg",
+    "https://randomtarotcard.com/TheChariot.jpg",
+    "https://randomtarotcard.com/Strength.jpg",
+    "https://randomtarotcard.com/TheHermit.jpg",
+    "https://randomtarotcard.com/WheelofFortune.jpg",
+    "https://randomtarotcard.com/Justice.jpg",
+    "https://randomtarotcard.com/TheHangedMan.jpg",
+    "https://randomtarotcard.com/Death.jpg",
+    "https://randomtarotcard.com/Temperance.jpg",
+    "https://randomtarotcard.com/TheDevil.jpg",
+    "https://randomtarotcard.com/TheTower.jpg",
+    "https://randomtarotcard.com/TheStar.jpg",
+    "https://randomtarotcard.com/TheMoon.jpg",
+    "https://randomtarotcard.com/TheSun.jpg",
+    "https://randomtarotcard.com/Judgement.jpg",
+    "https://randomtarotcard.com/TheWorld.jpg",
+  ];
+  return myCards[Math.floor(Math.random() * myCards.length)];
+}
+
+handlers["tarot"] = (msg, args) => {
+  const cardURL = randomTarot();
+  msg.channel.send(cardURL);
+}
+
+
 function getChr(msg, args) {
   for (let i = Math.min(4, args.length); i != 0; i -= 1) {
     const candidate = args.slice(0, i).join(" ");
