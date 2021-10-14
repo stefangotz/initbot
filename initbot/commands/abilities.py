@@ -48,6 +48,7 @@ ABILITIES: List[Ability] = [
 ]
 
 ABILITIES_DICT: Dict[str, Ability] = {abl.name: abl for abl in ABILITIES}
+ABILITIES_DICT.update({abl.name.lower(): abl for abl in ABILITIES})
 
 
 @dataclass

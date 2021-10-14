@@ -13,7 +13,7 @@ class DieRoll:
     dice: int = 1
     modifier: int = 0
 
-    def roll(self):
+    def roll(self) -> int:
         return self.dice * random.randint(1, self.sides) + self.modifier
 
     @staticmethod

@@ -1,9 +1,10 @@
 from typing import List
 
+from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
 from ..utils import is_int
-from .character import from_tokens, CharacterDI
+from .character import from_tokens, CharacterDI, Character, characters
 
 
 @commands.command()
@@ -15,11 +16,24 @@ async def init(ctx, *, name_and_initiative: str):
         raise Exception("Too long")
     if not is_int(tokens[-1]):
         raise Exception("Provide initiative value")
-    char_data: CharacterDI = from_tokens(
-        tokens[0:-1], ctx.author.display_name, create=True
-    )
+    cdi: CharacterDI = from_tokens(tokens[0:-1], ctx.author.display_name, create=True)
+    cdi.initiative = int(tokens[-1])
 
-    await ctx.send(name_and_initiative + " " + str(len(tokens)) + " " + char_data.name)
+    await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}")
+
+
+@commands.command()
+async def inis(ctx):
+    def ini_comparator(char: Character):
+        return char.initiative_comparison_value()
+
+    sorted_characters = sorted(characters(), key=ini_comparator, reverse=True)
+    desc: str = "\n".join(
+        f"{char.initiative}: **{char.name}** (*{char.user}*)"
+        for char in sorted_characters
+    )
+    embed = Embed(title="Initiative Order", description=desc)
+    await ctx.send(embed=embed)
 
 
 @init.error

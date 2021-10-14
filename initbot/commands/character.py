@@ -1,32 +1,38 @@
 from dataclasses import dataclass
 from dataclasses import asdict
-from typing import List, Union
+from typing import List, Union, Iterable
 import json
 import random
 
 from discord.ext import commands  # type: ignore
 
-from .abilities import AbilityScore, ABILITIES
+from .abilities import ABILITIES, AbilityScore
+from .augur import Augur, AUGURS_DICT, AUGURS
 from .roll import DieRoll
 from .equipment import EQUIPMENT, Equipment
-from .occupation import Occupation, OCCUPATIONS
+from .occupation import OccupationDI, get_random_occupation
 
 
 @dataclass
 class CharacterDI:
     name: str
     user: str
-    # TO DO: make easy to set
-    abilities: Union[List[AbilityScore], None] = None
-    creation_luck: Union[AbilityScore, None] = None
+    strength: Union[int, None] = None
+    agility: Union[int, None] = None
+    stamina: Union[int, None] = None
+    personality: Union[int, None] = None
+    intelligence: Union[int, None] = None
+    luck: Union[int, None] = None
+    initial_luck: Union[int, None] = None
     hit_points: Union[int, None] = None
     equipment: Union[List[Equipment], None] = None
-    occupation: Union[Occupation, None] = None
+    occupation: Union[OccupationDI, None] = None
     exp: Union[int, None] = None
     alignment: Union[str, None] = None
     initiative: Union[int, None] = None
     initiative_modifier: Union[int, None] = None
     hit_die: Union[int, None] = None
+    augur: Union[int, None] = None
 
 
 class Character:
@@ -50,23 +56,22 @@ class Character:
         self.cdi.user = user
 
     @property
-    def abilities(self) -> Union[List[AbilityScore], None]:
-        return self.cdi.abilities
-
-    @abilities.setter
-    def abilities(self, abilities: List[AbilityScore]):
-        self.cdi.abilities = abilities
+    def abilities(self) -> List[AbilityScore]:
+        return [
+            AbilityScore(abl, vars(self.cdi)[abl.name.lower()])
+            for abl in ABILITIES
+            if vars(self.cdi).get(abl.name.lower())
+        ]
 
     def _base_ability(self, prefix: str) -> AbilityScore:
         prefix = prefix.lower()
-        if self.cdi.abilities:
-            candidates = [
-                ab_score
-                for ab_score in self.cdi.abilities
-                if ab_score.abl.name.lower().startswith(prefix)
-            ]
-            if len(candidates) == 1:
-                return candidates[0]
+        candidates = [
+            ab_score
+            for ab_score in self.abilities
+            if ab_score.abl.name.lower().startswith(prefix)
+        ]
+        if len(candidates) == 1:
+            return candidates[0]
         raise KeyError(prefix)
 
     @property
@@ -131,6 +136,10 @@ class Character:
         self.cdi.hit_points = hit_points
 
     @property
+    def initiative(self) -> Union[int, None]:
+        return self.cdi.initiative
+
+    @property
     def initiative_modifier(self) -> Union[int, None]:
         if self.cdi.initiative_modifier is None and self.agility is not None:
             # TO DO: modify by class (warrior gets +level)
@@ -150,19 +159,33 @@ class Character:
         # TO DO: derive from class
         return None
 
-    def initiative_tie_breakers(self) -> List[int]:
-        breakers: List[int] = []
+    def initiative_comparison_value(self) -> int:
+        if self.cdi.initiative is None:
+            return -1
+
+        ini = self.cdi.initiative * 10000
         if self.agility is not None:
-            breakers.append(self.agility.score)
-            if self.hit_die is not None:
-                breakers.append(self.hit_die.sides)
-        return breakers
+            ini += self.agility.score * 100
+        if self.hit_die is not None:
+            ini += self.hit_die.sides
+
+        return ini
+
+    @property
+    def augur(self) -> Union[Augur, None]:
+        if self.cdi.augur is not None:
+            return AUGURS_DICT[self.cdi.augur]
+        return None
 
 
 CHARACTER_DIS: List[CharacterDI] = []
 
 
-def from_tokens(tokens: List[str], user: str, create: bool = False) -> CharacterDI:
+def characters() -> List[Character]:
+    return [Character(cdi) for cdi in CHARACTER_DIS]
+
+
+def from_tokens(tokens: Iterable[str], user: str, create: bool = False) -> CharacterDI:
     name: str = " ".join(tokens)
     return from_str(name, user, create)
 
@@ -203,23 +226,29 @@ def normalize_name(name: str) -> str:
 
 
 @commands.command()
-async def char_new(ctx):
-    occupation: Occupation = random.choice(OCCUPATIONS)
-    abilities: List[AbilityScore] = [abl.roll() for abl in ABILITIES]
+async def new(ctx, name: str):
+    occupation: OccupationDI = get_random_occupation()
+    luck: int = DieRoll(6, 3).roll()
     cdi = CharacterDI(
-        name="Jimmy",
+        name=name,
         user=ctx.author.display_name,
-        abilities=abilities,
-        creation_luck=[abl for abl in abilities if abl.abl.name == "Luck"][0],
+        strength=DieRoll(6, 3).roll(),
+        agility=DieRoll(6, 3).roll(),
+        stamina=DieRoll(6, 3).roll(),
+        personality=DieRoll(6, 3).roll(),
+        intelligence=DieRoll(6, 3).roll(),
+        luck=luck,
+        initial_luck=luck,
         hit_points=DieRoll(4, 1).roll(),
         equipment=[
             Equipment("money", 1, DieRoll(12, 5).roll()),
             random.choice(EQUIPMENT),
-        ]
-        + occupation.goods,
+            occupation.goods,
+        ],
         occupation=occupation,
         exp=0,
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
+        augur=random.choice(AUGURS).roll,
     )
     CHARACTER_DIS.append(cdi)
     txt: str = json.dumps(asdict(cdi), indent=2, sort_keys=True)
@@ -228,7 +257,7 @@ async def char_new(ctx):
 
 
 @commands.command()
-async def char_set(ctx, name: str, prop: str, val):
+async def update(ctx, name: str, prop: str, val):
     cdi: CharacterDI = from_str(name, ctx.author.display_name)
     prop = prop.lower()
     candidates: List[str] = []
@@ -249,7 +278,14 @@ async def char_set(ctx, name: str, prop: str, val):
         )
 
 
-@char_new.error
-@char_set.error
+@commands.command()
+async def remove(ctx, *args):
+    cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
+    CHARACTER_DIS.remove(cdi)
+
+
+@new.error
+@update.error
+@remove.error
 async def char_error(ctx, error):
     await ctx.send(str(error))

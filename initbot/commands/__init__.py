@@ -1,12 +1,28 @@
 from typing import FrozenSet, Any
 
-from .init import init
+from .init import init, inis
 from .roll import roll
-from .character import char_new, char_set
+from .character import new, update, remove
 from .equipment import equipment
 from .occupation import occupations
 from .abilities import abls, abl, asms, asm
+from .augur import augurs, augur
 
 commands: FrozenSet[Any] = frozenset(
-    (init, roll, char_new, char_set, equipment, occupations, abls, abl, asms, asm)
+    (
+        init,
+        inis,
+        roll,
+        new,
+        update,
+        remove,
+        equipment,
+        occupations,
+        abls,
+        abl,
+        asms,
+        asm,
+        augurs,
+        augur,
+    )
 )
