@@ -159,7 +159,7 @@ OCCUPATIONS: List[OccupationDI] = [
 
 
 def get_random_occupation() -> OccupationDI:
-    roll: int = DieRoll(100).roll()
+    roll: int = DieRoll(100).roll_one()
     return get_occupation(roll)
 
 

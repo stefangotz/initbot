@@ -163,11 +163,12 @@ class Character:
         if self.cdi.initiative is None:
             return -1
 
-        ini = self.cdi.initiative * 10000
+        ini = self.cdi.initiative * 1000000
         if self.agility is not None:
-            ini += self.agility.score * 100
+            ini += self.agility.score * 10000
         if self.hit_die is not None:
-            ini += self.hit_die.sides
+            ini += self.hit_die.sides * 100
+        ini += random.randint(0, 99)
 
         return ini
 
@@ -228,20 +229,20 @@ def normalize_name(name: str) -> str:
 @commands.command()
 async def new(ctx, name: str):
     occupation: OccupationDI = get_random_occupation()
-    luck: int = DieRoll(6, 3).roll()
+    luck: int = DieRoll(6, 3).roll_one()
     cdi = CharacterDI(
         name=name,
         user=ctx.author.display_name,
-        strength=DieRoll(6, 3).roll(),
-        agility=DieRoll(6, 3).roll(),
-        stamina=DieRoll(6, 3).roll(),
-        personality=DieRoll(6, 3).roll(),
-        intelligence=DieRoll(6, 3).roll(),
+        strength=DieRoll(6, 3).roll_one(),
+        agility=DieRoll(6, 3).roll_one(),
+        stamina=DieRoll(6, 3).roll_one(),
+        personality=DieRoll(6, 3).roll_one(),
+        intelligence=DieRoll(6, 3).roll_one(),
         luck=luck,
         initial_luck=luck,
-        hit_points=DieRoll(4, 1).roll(),
+        hit_points=DieRoll(4, 1).roll_one(),
         equipment=[
-            Equipment("money", 1, DieRoll(12, 5).roll()),
+            Equipment("money", 1, DieRoll(12, 5).roll_one()),
             random.choice(EQUIPMENT),
             occupation.goods,
         ],
@@ -278,8 +279,16 @@ async def update(ctx, name: str, prop: str, val):
         )
 
 
-@commands.command()
+@commands.command(usage="[character name]")
 async def remove(ctx, *args):
+    """Remove a character from the bot.
+
+    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages more than one character, the character name is required.
+
+    The character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
+    That's as long as no other character name starts with "Med"."""
     cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
     CHARACTER_DIS.remove(cdi)
 

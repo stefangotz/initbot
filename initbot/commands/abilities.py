@@ -11,7 +11,7 @@ class Ability:
     description: str
 
     def roll(self) -> "AbilityScore":
-        return AbilityScore(self, DieRoll(6, 3).roll())
+        return AbilityScore(self, DieRoll(6, 3).roll_one())
 
 
 ABILITIES: List[Ability] = [
