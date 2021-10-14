@@ -7,6 +7,7 @@ from .equipment import equipment
 from .occupation import occupations
 from .abilities import abls, abl, asms, asm
 from .augur import augurs, augur
+from .tarot import tarot
 
 commands: FrozenSet[Any] = frozenset(
     (
@@ -24,5 +25,6 @@ commands: FrozenSet[Any] = frozenset(
         asm,
         augurs,
         augur,
+        tarot,
     )
 )
