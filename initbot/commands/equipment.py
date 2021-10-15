@@ -20,4 +20,4 @@ async def equipment(ctx):
 
 @equipment.error
 async def equipment_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

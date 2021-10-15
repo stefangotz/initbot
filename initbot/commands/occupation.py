@@ -174,4 +174,4 @@ async def occupations(ctx):
 
 @occupations.error
 async def occupations_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

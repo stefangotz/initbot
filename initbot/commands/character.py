@@ -268,14 +268,16 @@ async def update(ctx, name: str, prop: str, val):
         candidates = [key for key in vars(cdi) if key.lower().startswith(prop)]
     if len(candidates) == 1:
         setattr(cdi, candidates[0], val)
-        await ctx.send(f"Set {name}'s {prop} to {val}")
+        await ctx.send(f"{name}'s {prop} is now {val}", delete_after=3)
     elif not candidates:
         await ctx.send(
-            f"Character property {prop} isn't supported. Pick one of the following: {', '.join(vars(cdi).keys())}"
+            f"Character property {prop} isn't supported. Pick one of the following: {', '.join(vars(cdi).keys())}",
+            delete_after=5,
         )
     else:
         await ctx.send(
-            f"Character property {prop} is ambiguous. Pick one of the following: {', '.join(vars(cdi).keys())}"
+            f"Character property {prop} is ambiguous. Pick one of the following: {', '.join(vars(cdi).keys())}",
+            delete_after=5,
         )
 
 
@@ -297,4 +299,4 @@ async def remove(ctx, *args):
 @update.error
 @remove.error
 async def char_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

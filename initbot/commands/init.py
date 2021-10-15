@@ -32,7 +32,7 @@ async def init(ctx, *, name_and_initiative: str):
     cdi: CharacterDI = from_tokens(tokens[0:-1], ctx.author.display_name, create=True)
     cdi.initiative = int(tokens[-1])
 
-    await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}")
+    await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}", delete_after=3)
 
 
 @commands.command()
@@ -61,4 +61,4 @@ async def inis(ctx):
 
 @init.error
 async def init_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

@@ -68,4 +68,4 @@ async def augur(ctx):
 
 @augurs.error
 async def augur_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

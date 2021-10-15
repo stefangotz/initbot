@@ -514,4 +514,4 @@ async def crit(ctx, table: int, roll: int):
 
 @crit.error
 async def crit_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

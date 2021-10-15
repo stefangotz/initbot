@@ -76,4 +76,4 @@ async def roll(ctx, txt: str):
 
 @roll.error
 async def roll_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)
