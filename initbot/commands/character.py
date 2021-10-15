@@ -267,7 +267,10 @@ async def update(ctx, name: str, prop: str, val):
     else:
         candidates = [key for key in vars(cdi) if key.lower().startswith(prop)]
     if len(candidates) == 1:
-        setattr(cdi, candidates[0], val)
+        try:
+            setattr(cdi, candidates[0], int(val))
+        except ValueError:
+            setattr(cdi, candidates[0], val)
         await ctx.send(f"{name}'s {prop} is now {val}", delete_after=3)
     elif not candidates:
         await ctx.send(
