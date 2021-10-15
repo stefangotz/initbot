@@ -71,7 +71,7 @@ async def roll(ctx, txt: str):
             string = str(roll_result[0])
         else:
             string = str(roll_result).strip("[]")
-        await ctx.send(f"{ctx.author.display_name} rolled **{string}** on {dice})")
+        await ctx.send(f"{ctx.author.display_name} rolled **{string}** on {dice}")
 
 
 @roll.error
