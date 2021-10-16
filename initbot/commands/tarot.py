@@ -37,9 +37,9 @@ _URLS: Sequence[str] = tuple(
 @commands.command()
 async def tarot(ctx):
     """Displays a random tarot card."""
-    await ctx.send(random.choice(_URLS))
+    await ctx.send(random.choice(_URLS), delete_after=60)
 
 
 @tarot.error
 async def tarot_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)

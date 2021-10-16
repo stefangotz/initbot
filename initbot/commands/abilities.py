@@ -122,4 +122,4 @@ async def asm(ctx, score: int):
 @asms.error
 @asm.error
 async def handle_error(ctx, error):
-    await ctx.send(str(error))
+    await ctx.send(str(error), delete_after=5)
