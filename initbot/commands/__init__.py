@@ -1,5 +1,6 @@
 from typing import FrozenSet, Any
 
+from .crit import crit
 from .init import init, inis
 from .roll import roll
 from .character import new, update, remove
@@ -10,6 +11,7 @@ from .tarot import tarot
 
 commands: FrozenSet[Any] = frozenset(
     (
+        crit,
         init,
         inis,
         roll,

@@ -57,3 +57,24 @@ def get_first_set_match(value_to_match, candidates, get_matches_from_candidate):
         if value_to_match in get_matches_from_candidate(candidate):
             return candidate
     raise KeyError(f"Unable to find a match for {value_to_match}")
+
+
+def get_first_set_match_or_over_under_flow(
+    value_to_match, candidates, get_matches_from_candidate
+):
+    try:
+        return get_first_set_match(
+            value_to_match, candidates, get_matches_from_candidate
+        )
+    except KeyError:
+        min_candidate = min(
+            candidates, key=lambda c: min(get_matches_from_candidate(c))
+        )
+        if value_to_match <= min(get_matches_from_candidate(min_candidate)):
+            return min_candidate
+        max_candidate = max(
+            candidates, key=lambda c: max(get_matches_from_candidate(c))
+        )
+        if value_to_match >= max(get_matches_from_candidate(max_candidate)):
+            return max_candidate
+    raise KeyError(f"Unable to find a match for {value_to_match}")
