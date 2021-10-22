@@ -9,7 +9,6 @@ from discord.ext import commands  # type: ignore
 from .abilities import ABILITIES, AbilityScore
 from .augur import Augur, AUGURS_DICT, AUGURS
 from .roll import DieRoll
-from .equipment import EQUIPMENT, Equipment
 from .occupation import OccupationDI, get_random_occupation
 
 
@@ -25,7 +24,7 @@ class CharacterDI:
     luck: Union[int, None] = None
     initial_luck: Union[int, None] = None
     hit_points: Union[int, None] = None
-    equipment: Union[List[Equipment], None] = None
+    equipment: Union[List[str], None] = None
     occupation: Union[OccupationDI, None] = None
     exp: Union[int, None] = None
     alignment: Union[str, None] = None
@@ -242,8 +241,8 @@ async def new(ctx, name: str):
         initial_luck=luck,
         hit_points=DieRoll(4, 1).roll_one(),
         equipment=[
-            Equipment("money", 1, DieRoll(12, 5).roll_one()),
-            random.choice(EQUIPMENT),
+            f"{DieRoll(12, 5).roll_one()}cp",
+            # random.choice(EQUIPMENT),
             occupation.goods,
         ],
         occupation=occupation,
@@ -298,7 +297,7 @@ async def remove(ctx, *args):
     CHARACTER_DIS.remove(cdi)
 
 
-@new.error
+# @new.error
 @update.error
 @remove.error
 async def char_error(ctx, error):

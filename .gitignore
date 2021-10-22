@@ -4,3 +4,4 @@ package-lock.json
 .coverage
 __pycache__
 *.env
+initbot/commands/*.json
