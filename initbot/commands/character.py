@@ -57,7 +57,7 @@ class Character:
     @property
     def abilities(self) -> List[AbilityScore]:
         return [
-            AbilityScore(abl, vars(self.cdi)[abl.name.lower()])
+            AbilityScore(abl, vars(self.cdi)[abl.name.lower()])  # type: ignore
             for abl in ABILITIES
             if vars(self.cdi).get(abl.name.lower())
         ]
