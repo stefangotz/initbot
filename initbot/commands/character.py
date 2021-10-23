@@ -295,6 +295,7 @@ async def remove(ctx, *args):
     That's as long as no other character name starts with "Med"."""
     cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
     CHARACTER_DIS.remove(cdi)
+    await ctx.send(f"Removed character {cdi.name}", delete_after=3)
 
 
 # @new.error
