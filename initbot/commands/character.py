@@ -210,7 +210,7 @@ def from_name(
         matches = [cdi]
     if len(matches) == 1:
         return matches[0]
-    raise KeyError(name)
+    raise KeyError(f"Unable to find character with name '{name}'")
 
 
 def from_user(user: str) -> CharacterDI:
@@ -219,7 +219,7 @@ def from_user(user: str) -> CharacterDI:
     ]
     if len(matches) == 1:
         return matches[0]
-    raise KeyError(user)
+    raise KeyError(f"Unable to find character for user '{user}'")
 
 
 def normalize_name(name: str) -> str:
@@ -274,30 +274,53 @@ async def new(ctx, name: str):
         await ctx.send(txt[idx : idx + 1000])
 
 
-@commands.command()
-async def update(ctx, name: str, prop: str, val):
-    cdi: CharacterDI = from_str(name, ctx.author.display_name)
-    prop = prop.lower()
+@commands.command(name="set", usage="[character name] <attribute> <value>")
+async def set_(ctx, *, txt):
+    """Sets a character attribute.
+
+    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages more than one character, the character name is required.
+
+    The character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
+    That's as long as no other character name starts with "Med".
+
+    The same rule applies to the character attribute.
+    You can list all character attributes with the `char` command.
+    You do not need to spell out the full attribute name as the first few unique letters are good enough (e.g., "int" for "intelligence")"""
+    tokens: List[str] = txt.split()
+    if len(tokens) < 2:
+        raise Exception(
+            "You need to provide at least a character attribute and a value to set it to"
+        )
+    val = tokens[-1]
+    attr = tokens[-2]
+    name_tokens = tokens[0:-2]
+    cdi: CharacterDI = from_tokens(name_tokens, ctx.author.display_name)
+    attr = attr.lower()
     candidates: List[str] = []
-    if prop in vars(cdi):
-        candidates = [prop]
+    if attr in vars(cdi):
+        candidates = [attr]
     else:
-        candidates = [key for key in vars(cdi) if key.lower().startswith(prop)]
+        candidates = [key for key in vars(cdi) if key.lower().startswith(attr)]
     if len(candidates) == 1:
         try:
             setattr(cdi, candidates[0], int(val))
         except ValueError:
             setattr(cdi, candidates[0], val)
         store_characters()
-        await ctx.send(f"{name}'s {prop} is now {val}", delete_after=3)
+        await ctx.send(
+            f"{cdi.name}'s {candidates[0]} is now {getattr(cdi, candidates[0])}",
+            delete_after=3,
+        )
     elif not candidates:
         await ctx.send(
-            f"Character property {prop} isn't supported. Pick one of the following: {', '.join(vars(cdi).keys())}",
+            f"Character attribute {attr} isn't supported. Pick one of the following: {', '.join(vars(cdi).keys())}",
             delete_after=5,
         )
     else:
         await ctx.send(
-            f"Character property {prop} is ambiguous. Pick one of the following: {', '.join(vars(cdi).keys())}",
+            f"Character attribute {attr} is ambiguous. Pick one of the following: {', '.join(vars(cdi).keys())}",
             delete_after=5,
         )
 
@@ -341,7 +364,7 @@ async def char(ctx, *args):
 
 
 @new.error
-@update.error
+@set_.error
 @remove.error
 @chars.error
 @char.error

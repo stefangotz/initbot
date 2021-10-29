@@ -3,7 +3,7 @@ from typing import FrozenSet, Any
 from .crit import crit
 from .init import init, inis
 from .roll import roll
-from .character import new, update, remove, chars, char
+from .character import new, set_, remove, chars, char
 from .occupation import occupations
 from .abilities import abls, abl, asms, asm
 from .augur import augurs, augur
@@ -18,7 +18,7 @@ commands: FrozenSet[Any] = frozenset(
         new,
         char,
         chars,
-        update,
+        set_,
         remove,
         occupations,
         abls,
