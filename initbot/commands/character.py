@@ -326,10 +326,25 @@ async def chars(ctx):
     await ctx.send(txt)
 
 
+@commands.command()
+async def char(ctx, *args):
+    """Displays a character.
+
+    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages more than one character, the character name is required.
+
+    The character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
+    That's as long as no other character name starts with "Med"."""
+    cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
+    await ctx.send(json.dumps(json.loads(cdi.json()), indent=4, sort_keys=True))
+
+
 @new.error
 @update.error
 @remove.error
 @chars.error
+@char.error
 async def char_error(ctx, error):
     await ctx.send(str(error), delete_after=5)
 
