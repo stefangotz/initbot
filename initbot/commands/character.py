@@ -304,7 +304,7 @@ async def update(ctx, name: str, prop: str, val):
 
 @commands.command(usage="[character name]")
 async def remove(ctx, *args):
-    """Remove a character from the bot.
+    """Removes a character from the bot.
 
     If the Discord user manages only a single character, the character name is optional and can be ommitted.
     If the Discord user manages more than one character, the character name is required.
@@ -319,7 +319,7 @@ async def remove(ctx, *args):
 
 @commands.command()
 async def chars(ctx):
-    """Display all characters known to the bot."""
+    """Displays all characters known to the bot."""
     txt: str = ", ".join([f"**{cdi.name}** (_{cdi.user}_)" for cdi in CDIS])
     if not txt:
         txt = "No characters registered"
