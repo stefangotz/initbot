@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Dict
 import json
+from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 from pydantic.dataclasses import dataclass
 
@@ -73,7 +74,14 @@ class AbilityScore:
 
 @commands.command()
 async def abls(ctx):
-    await ctx.send(str(ABILITIES))
+    """Lists the six character abilities and their descriptions."""
+    embed = Embed(
+        title="Abilities", description="**Luck**\n" + ABILITIES_DICT["Luck"].description
+    )
+    for ability in ABILITIES:
+        if ability.name != "Luck":
+            embed.add_field(name=ability.name, value=ability.description)
+    await ctx.send(embed=embed)
 
 
 @commands.command()
