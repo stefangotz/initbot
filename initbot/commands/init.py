@@ -4,7 +4,7 @@ from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
 from ..utils import is_int
-from .character import from_tokens, CharacterDI, Character, characters
+from .character import from_tokens, CharacterDI, Character, characters, store_characters
 
 
 @commands.command(usage="[character name] initiative")
@@ -31,6 +31,8 @@ async def init(ctx, *, name_and_initiative: str):
         raise Exception("Provide initiative value")
     cdi: CharacterDI = from_tokens(tokens[0:-1], ctx.author.display_name, create=True)
     cdi.initiative = int(tokens[-1])
+
+    store_characters()
 
     await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}", delete_after=3)
 
@@ -59,6 +61,7 @@ async def inis(ctx):
     await ctx.send(embed=embed)
 
 
+@inis.error
 @init.error
 async def init_error(ctx, error):
     await ctx.send(str(error), delete_after=5)

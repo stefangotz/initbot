@@ -1,10 +1,11 @@
-from dataclasses import dataclass
-from dataclasses import asdict
+from pathlib import Path
 from typing import List, Union, Iterable
 import json
 import random
 
 from discord.ext import commands  # type: ignore
+from pydantic import BaseModel
+from pydantic.json import pydantic_encoder
 
 from .abilities import ABILITIES, AbilityScore
 from .augur import Augur, AUGURS_DICT, AUGURS
@@ -12,8 +13,7 @@ from .roll import DieRoll
 from .occupation import OccupationDI, get_random_occupation
 
 
-@dataclass
-class CharacterDI:
+class CharacterDI(BaseModel):
     name: str
     user: str
     strength: Union[int, None] = None
@@ -32,6 +32,10 @@ class CharacterDI:
     initiative_modifier: Union[int, None] = None
     hit_die: Union[int, None] = None
     augur: Union[int, None] = None
+
+
+class CharacterDIs(BaseModel):
+    cdis: List[CharacterDI]
 
 
 class Character:
@@ -178,11 +182,8 @@ class Character:
         return None
 
 
-CHARACTER_DIS: List[CharacterDI] = []
-
-
 def characters() -> List[Character]:
-    return [Character(cdi) for cdi in CHARACTER_DIS]
+    return [Character(cdi) for cdi in CDIS]
 
 
 def from_tokens(tokens: Iterable[str], user: str, create: bool = False) -> CharacterDI:
@@ -201,11 +202,11 @@ def from_name(
 ) -> CharacterDI:
     nrm: str = normalize_name(name)
     matches: List[CharacterDI] = [
-        cdi for cdi in CHARACTER_DIS if normalize_name(cdi.name).startswith(nrm)
+        cdi for cdi in CDIS if normalize_name(cdi.name).startswith(nrm)
     ]
     if not matches and create and user:
-        cdi: CharacterDI = CharacterDI(name, user)
-        CHARACTER_DIS.append(cdi)
+        cdi: CharacterDI = CharacterDI(name=name, user=user)  # type: ignore
+        CDIS.append(cdi)
         matches = [cdi]
     if len(matches) == 1:
         return matches[0]
@@ -214,7 +215,7 @@ def from_name(
 
 def from_user(user: str) -> CharacterDI:
     matches: List[CharacterDI] = [
-        cdi for cdi in CHARACTER_DIS if normalize_name(cdi.user).startswith(user)
+        cdi for cdi in CDIS if normalize_name(cdi.user).startswith(user)
     ]
     if len(matches) == 1:
         return matches[0]
@@ -223,6 +224,22 @@ def from_user(user: str) -> CharacterDI:
 
 def normalize_name(name: str) -> str:
     return name.lower().replace(" ", "_")
+
+
+def store_characters():
+    with open(
+        Path(__file__).parent / "characters.json", "w", encoding="UTF8"
+    ) as file_desc:
+        json.dump(CHARACTER_DIS, file_desc, default=pydantic_encoder)
+
+
+def load_characters():
+    path = Path(__file__).parent / "characters.json"
+    if path.exists():
+        global CHARACTER_DIS  # pylint: disable=global-statement
+        CHARACTER_DIS = CharacterDIs.parse_file(path)
+        global CDIS  # pylint: disable=global-statement
+        CDIS = CHARACTER_DIS.cdis
 
 
 @commands.command()
@@ -242,7 +259,7 @@ async def new(ctx, name: str):
         hit_points=DieRoll(4, 1).roll_one(),
         equipment=[
             f"{DieRoll(12, 5).roll_one()}cp",
-            # random.choice(EQUIPMENT),
+            # TO DO random.choice(EQUIPMENT),
             occupation.goods,
         ],
         occupation=occupation,
@@ -250,8 +267,9 @@ async def new(ctx, name: str):
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
         augur=random.choice(AUGURS).roll,
     )
-    CHARACTER_DIS.append(cdi)
-    txt: str = json.dumps(asdict(cdi), indent=2, sort_keys=True)
+    CDIS.append(cdi)
+    store_characters()
+    txt: str = cdi.json()
     for idx in range(0, len(txt), 1000):
         await ctx.send(txt[idx : idx + 1000])
 
@@ -270,6 +288,7 @@ async def update(ctx, name: str, prop: str, val):
             setattr(cdi, candidates[0], int(val))
         except ValueError:
             setattr(cdi, candidates[0], val)
+        store_characters()
         await ctx.send(f"{name}'s {prop} is now {val}", delete_after=3)
     elif not candidates:
         await ctx.send(
@@ -294,12 +313,27 @@ async def remove(ctx, *args):
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
     cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
-    CHARACTER_DIS.remove(cdi)
+    CDIS.remove(cdi)
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
 
 
-# @new.error
+@commands.command()
+async def chars(ctx):
+    """Display all characters known to the bot."""
+    txt: str = ", ".join([f"**{cdi.name}** (_{cdi.user}_)" for cdi in CDIS])
+    if not txt:
+        txt = "No characters registered"
+    await ctx.send(txt)
+
+
+@new.error
 @update.error
 @remove.error
+@chars.error
 async def char_error(ctx, error):
     await ctx.send(str(error), delete_after=5)
+
+
+CHARACTER_DIS: CharacterDIs = CharacterDIs(cdis=[])  # type: ignore
+CDIS: List[CharacterDI] = CHARACTER_DIS.cdis
+load_characters()
