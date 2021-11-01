@@ -23,8 +23,11 @@ with open(Path(__file__).parent / "occupations.json", encoding="utf8") as fd:
 
 
 def get_random_occupation() -> OccupationDI:
-    roll: int = DieRoll(100).roll_one()
-    return get_occupation(roll)
+    return get_occupation(get_roll())
+
+
+def get_roll() -> int:
+    return DieRoll(100).roll_one()
 
 
 def get_occupation(roll: int) -> OccupationDI:

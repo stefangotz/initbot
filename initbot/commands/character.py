@@ -10,7 +10,7 @@ from pydantic.json import pydantic_encoder
 from .abilities import ABILITIES, AbilityScore
 from .augur import Augur, AUGURS_DICT, AUGURS
 from .roll import DieRoll
-from .occupation import OccupationDI, get_random_occupation
+from .occupation import OccupationDI, get_occupation, get_roll
 
 
 class CharacterDI(BaseModel):
@@ -25,7 +25,7 @@ class CharacterDI(BaseModel):
     initial_luck: Union[int, None] = None
     hit_points: Union[int, None] = None
     equipment: Union[List[str], None] = None
-    occupation: Union[OccupationDI, None] = None
+    occupation: Union[int, None] = None
     exp: Union[int, None] = None
     alignment: Union[str, None] = None
     initiative: Union[int, None] = None
@@ -181,6 +181,12 @@ class Character:
             return AUGURS_DICT[self.cdi.augur]
         return None
 
+    @property
+    def occupation(self) -> Union[OccupationDI, None]:
+        if self.cdi.occupation is not None:
+            return get_occupation(self.cdi.occupation)
+        return None
+
 
 def characters() -> List[Character]:
     return [Character(cdi) for cdi in CDIS]
@@ -244,7 +250,8 @@ def load_characters():
 
 @commands.command()
 async def new(ctx, name: str):
-    occupation: OccupationDI = get_random_occupation()
+    occupation_roll: int = get_roll()
+    occupation: OccupationDI = get_occupation(occupation_roll)
     luck: int = DieRoll(6, 3).roll_one()
     cdi = CharacterDI(
         name=name,
@@ -262,7 +269,7 @@ async def new(ctx, name: str):
             # TO DO random.choice(EQUIPMENT),
             occupation.goods,
         ],
-        occupation=occupation,
+        occupation=occupation_roll,
         exp=0,
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
         augur=random.choice(AUGURS).roll,
