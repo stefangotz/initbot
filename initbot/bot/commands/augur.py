@@ -13,7 +13,7 @@ class Augur:
     roll: int
 
 
-with open(Path(__file__).parent / "augur.json", encoding="utf8") as fd:
+with open(Path(__file__).parent / "augurs.json", encoding="utf8") as fd:
     AUGURS: List[Augur] = [Augur(**a) for a in json.load(fd)["augurs"]]  # type: ignore
 
 AUGURS_DICT: Dict[int, Augur] = {aug.roll: aug for aug in AUGURS}

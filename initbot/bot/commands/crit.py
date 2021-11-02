@@ -25,7 +25,7 @@ class CritTable:
         ).effect
 
 
-with open(Path(__file__).parent / "crit.json", encoding="utf8") as fd:
+with open(Path(__file__).parent / "crits.json", encoding="utf8") as fd:
     TABLES: Dict[int, CritTable] = {
         t["number"]: CritTable(**t)  # type: ignore
         for t in json.load(fd)["crit_tables"]

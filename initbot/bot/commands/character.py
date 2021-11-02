@@ -7,7 +7,7 @@ from discord.ext import commands  # type: ignore
 from pydantic import BaseModel
 from pydantic.json import pydantic_encoder
 
-from .abilities import ABILITIES, AbilityScore
+from .ability import ABILITIES, AbilityScore
 from .augur import Augur, AUGURS_DICT, AUGURS
 from .roll import DieRoll
 from .occupation import OccupationDI, get_occupation, get_roll
