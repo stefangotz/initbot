@@ -4,7 +4,13 @@ from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
 from ..utils import is_int
-from .character import from_tokens, CharacterDI, Character, characters, store_characters
+from .character import (
+    from_tokens,
+    CharacterModel,
+    Character,
+    characters,
+    store_characters,
+)
 
 
 @commands.command(usage="[character name] initiative")
@@ -29,7 +35,9 @@ async def init(ctx, *, name_and_initiative: str):
         raise Exception("Too long")
     if not is_int(tokens[-1]):
         raise Exception("Provide initiative value")
-    cdi: CharacterDI = from_tokens(tokens[0:-1], ctx.author.display_name, create=True)
+    cdi: CharacterModel = from_tokens(
+        tokens[0:-1], ctx.author.display_name, create=True
+    )
     cdi.initiative = int(tokens[-1])
 
     store_characters()

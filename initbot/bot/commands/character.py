@@ -4,42 +4,18 @@ import json
 import random
 
 from discord.ext import commands  # type: ignore
-from pydantic import BaseModel
 from pydantic.json import pydantic_encoder
 
-from .ability import ABILITIES, AbilityScore
-from .augur import Augur, AUGURS_DICT, AUGURS
+from ...models.ability import AbilityScoreModel
+from ...models.character import CharacterModel, CharactersModel
+from .ability import ABILITIES, get_mod
+from .augur import AugurModel, AUGURS_DICT, AUGURS
 from .roll import DieRoll
 from .occupation import OccupationDI, get_occupation, get_roll
 
 
-class CharacterDI(BaseModel):
-    name: str
-    user: str
-    strength: Union[int, None] = None
-    agility: Union[int, None] = None
-    stamina: Union[int, None] = None
-    personality: Union[int, None] = None
-    intelligence: Union[int, None] = None
-    luck: Union[int, None] = None
-    initial_luck: Union[int, None] = None
-    hit_points: Union[int, None] = None
-    equipment: Union[List[str], None] = None
-    occupation: Union[int, None] = None
-    exp: Union[int, None] = None
-    alignment: Union[str, None] = None
-    initiative: Union[int, None] = None
-    initiative_modifier: Union[int, None] = None
-    hit_die: Union[int, None] = None
-    augur: Union[int, None] = None
-
-
-class CharacterDIs(BaseModel):
-    cdis: List[CharacterDI]
-
-
 class Character:
-    def __init__(self, cdi: CharacterDI):
+    def __init__(self, cdi: CharacterModel):
         self.cdi = cdi
 
     @property
@@ -59,14 +35,14 @@ class Character:
         self.cdi.user = user
 
     @property
-    def abilities(self) -> List[AbilityScore]:
+    def abilities(self) -> List[AbilityScoreModel]:
         return [
-            AbilityScore(abl, vars(self.cdi)[abl.name.lower()])  # type: ignore
+            AbilityScoreModel(abl=abl, score=vars(self.cdi)[abl.name.lower()])
             for abl in ABILITIES
             if vars(self.cdi).get(abl.name.lower())
         ]
 
-    def _base_ability(self, prefix: str) -> AbilityScore:
+    def _base_ability(self, prefix: str) -> AbilityScoreModel:
         prefix = prefix.lower()
         candidates = [
             ab_score
@@ -78,7 +54,7 @@ class Character:
         raise KeyError(prefix)
 
     @property
-    def strength(self) -> Union[AbilityScore, None]:
+    def strength(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
             return self._base_ability("strength")
@@ -87,7 +63,7 @@ class Character:
         return None
 
     @property
-    def agility(self) -> Union[AbilityScore, None]:
+    def agility(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
             return self._base_ability("agility")
@@ -96,7 +72,7 @@ class Character:
         return None
 
     @property
-    def stamina(self) -> Union[AbilityScore, None]:
+    def stamina(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
             return self._base_ability("stamina")
@@ -105,7 +81,7 @@ class Character:
         return None
 
     @property
-    def personality(self) -> Union[AbilityScore, None]:
+    def personality(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
             return self._base_ability("personality")
@@ -114,7 +90,7 @@ class Character:
         return None
 
     @property
-    def intelligence(self) -> Union[AbilityScore, None]:
+    def intelligence(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
             return self._base_ability("intelligence")
@@ -123,7 +99,7 @@ class Character:
         return None
 
     @property
-    def luck(self) -> Union[AbilityScore, None]:
+    def luck(self) -> Union[AbilityScoreModel, None]:
         try:
             return self._base_ability("luck")
         except KeyError:
@@ -148,7 +124,7 @@ class Character:
             # TO DO: modify by class (warrior gets +level)
             # TO DO: modify by birth augur
             # roll is also modified by two-handed weapon (d16)
-            return self.agility.mod
+            return get_mod(self.agility.score)
         return None
 
     @initiative_modifier.setter
@@ -176,7 +152,7 @@ class Character:
         return ini
 
     @property
-    def augur(self) -> Union[Augur, None]:
+    def augur(self) -> Union[AugurModel, None]:
         if self.cdi.augur is not None:
             return AUGURS_DICT[self.cdi.augur]
         return None
@@ -192,12 +168,14 @@ def characters() -> List[Character]:
     return [Character(cdi) for cdi in CDIS]
 
 
-def from_tokens(tokens: Iterable[str], user: str, create: bool = False) -> CharacterDI:
+def from_tokens(
+    tokens: Iterable[str], user: str, create: bool = False
+) -> CharacterModel:
     name: str = " ".join(tokens)
     return from_str(name, user, create)
 
 
-def from_str(name: str, user: str, create: bool = False) -> CharacterDI:
+def from_str(name: str, user: str, create: bool = False) -> CharacterModel:
     if name:
         return from_name(name, create, user)
     return from_user(user)
@@ -205,13 +183,13 @@ def from_str(name: str, user: str, create: bool = False) -> CharacterDI:
 
 def from_name(
     name: str, create: bool = False, user: Union[str, None] = None
-) -> CharacterDI:
+) -> CharacterModel:
     nrm: str = normalize_name(name)
-    matches: List[CharacterDI] = [
+    matches: List[CharacterModel] = [
         cdi for cdi in CDIS if normalize_name(cdi.name).startswith(nrm)
     ]
     if not matches and create and user:
-        cdi: CharacterDI = CharacterDI(name=name, user=user)  # type: ignore
+        cdi: CharacterModel = CharacterModel(name=name, user=user)  # type: ignore
         CDIS.append(cdi)
         matches = [cdi]
     if len(matches) == 1:
@@ -219,8 +197,8 @@ def from_name(
     raise KeyError(f"Unable to find character with name '{name}'")
 
 
-def from_user(user: str) -> CharacterDI:
-    matches: List[CharacterDI] = [
+def from_user(user: str) -> CharacterModel:
+    matches: List[CharacterModel] = [
         cdi for cdi in CDIS if normalize_name(cdi.user).startswith(user)
     ]
     if len(matches) == 1:
@@ -243,7 +221,7 @@ def load_characters():
     path = Path(__file__).parent / "characters.json"
     if path.exists():
         global CHARACTER_DIS  # pylint: disable=global-statement
-        CHARACTER_DIS = CharacterDIs.parse_file(path)
+        CHARACTER_DIS = CharactersModel.parse_file(path)
         global CDIS  # pylint: disable=global-statement
         CDIS = CHARACTER_DIS.cdis
 
@@ -253,7 +231,7 @@ async def new(ctx, name: str):
     occupation_roll: int = get_roll()
     occupation: OccupationDI = get_occupation(occupation_roll)
     luck: int = DieRoll(6, 3).roll_one()
-    cdi = CharacterDI(
+    cdi = CharacterModel(
         name=name,
         user=ctx.author.display_name,
         strength=DieRoll(6, 3).roll_one(),
@@ -303,7 +281,7 @@ async def set_(ctx, *, txt):
     val = tokens[-1]
     attr = tokens[-2]
     name_tokens = tokens[0:-2]
-    cdi: CharacterDI = from_tokens(name_tokens, ctx.author.display_name)
+    cdi: CharacterModel = from_tokens(name_tokens, ctx.author.display_name)
     attr = attr.lower()
     candidates: List[str] = []
     if attr in vars(cdi):
@@ -342,8 +320,9 @@ async def remove(ctx, *args):
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
-    cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
+    cdi: CharacterModel = from_tokens(args, ctx.author.display_name)
     CDIS.remove(cdi)
+    store_characters()
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
 
 
@@ -366,7 +345,7 @@ async def char(ctx, *args):
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
-    cdi: CharacterDI = from_tokens(args, ctx.author.display_name)
+    cdi: CharacterModel = from_tokens(args, ctx.author.display_name)
     await ctx.send(json.dumps(json.loads(cdi.json()), indent=4, sort_keys=True))
 
 
@@ -379,6 +358,6 @@ async def char_error(ctx, error):
     await ctx.send(str(error), delete_after=5)
 
 
-CHARACTER_DIS: CharacterDIs = CharacterDIs(cdis=[])  # type: ignore
-CDIS: List[CharacterDI] = CHARACTER_DIS.cdis
+CHARACTER_DIS: CharactersModel = CharactersModel(cdis=[])  # type: ignore
+CDIS: List[CharacterModel] = CHARACTER_DIS.cdis
 load_characters()

@@ -3,73 +3,76 @@ from typing import List, Dict
 import json
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
-from pydantic.dataclasses import dataclass
 
-from .roll import DieRoll
-
-
-@dataclass
-class Ability:
-    name: str
-    description: str
-
-    def roll(self) -> "AbilityScore":
-        return AbilityScore(self, DieRoll(6, 3).roll_one())  # type: ignore
-
+from ...models.ability import AbilityModel, AbilityScoreModifierModel
 
 with open(Path(__file__).parent / "abilities.json", encoding="utf8") as fd:
-    ABILITIES: List[Ability] = [
-        Ability(**a) for a in json.load(fd)["abilities"]  # type: ignore
+    ABILITIES: List[AbilityModel] = [
+        AbilityModel(**a) for a in json.load(fd)["abilities"]  # type: ignore
     ]
 
-ABILITIES_DICT: Dict[str, Ability] = {abl.name: abl for abl in ABILITIES}
+ABILITIES_DICT: Dict[str, AbilityModel] = {abl.name: abl for abl in ABILITIES}
 ABILITIES_DICT.update({abl.name.lower(): abl for abl in ABILITIES})
 
 
-@dataclass
-class AbilityScoreModifier:
-    score: int
-    mod: int
-    spells: int
-    max_spell_level: int
-
-
-ABILITY_SCORE_MODIFIERS: List[AbilityScoreModifier] = [
-    AbilityScoreModifier(3, -3, -99, -99),  # type: ignore
-    AbilityScoreModifier(4, -2, -2, 1),  # type: ignore
-    AbilityScoreModifier(5, -2, -2, 1),  # type: ignore
-    AbilityScoreModifier(6, -1, -1, 1),  # type: ignore
-    AbilityScoreModifier(7, -1, -1, 1),  # type: ignore
-    AbilityScoreModifier(8, -1, 0, 2),  # type: ignore
-    AbilityScoreModifier(9, 0, 0, 2),  # type: ignore
-    AbilityScoreModifier(10, 0, 0, 3),  # type: ignore
-    AbilityScoreModifier(11, 0, 0, 3),  # type: ignore
-    AbilityScoreModifier(12, 0, 0, 4),  # type: ignore
-    AbilityScoreModifier(13, 1, 0, 4),  # type: ignore
-    AbilityScoreModifier(14, 1, 1, 4),  # type: ignore
-    AbilityScoreModifier(15, 1, 1, 5),  # type: ignore
-    AbilityScoreModifier(16, 2, 1, 5),  # type: ignore
-    AbilityScoreModifier(17, 2, 2, 5),  # type: ignore
-    AbilityScoreModifier(18, 3, 2, 6),  # type: ignore
+ABILITY_SCORE_MODIFIERS: List[AbilityScoreModifierModel] = [
+    AbilityScoreModifierModel(
+        score=3, mod=-3, spells=-99, max_spell_level=-99
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=4, mod=-2, spells=-2, max_spell_level=1
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=5, mod=-2, spells=-2, max_spell_level=1
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=6, mod=-1, spells=-1, max_spell_level=1
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=7, mod=-1, spells=-1, max_spell_level=1
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=8, mod=-1, spells=0, max_spell_level=2
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=9, mod=0, spells=0, max_spell_level=2
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=10, mod=0, spells=0, max_spell_level=3
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=11, mod=0, spells=0, max_spell_level=3
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=12, mod=0, spells=0, max_spell_level=4
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=13, mod=1, spells=0, max_spell_level=4
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=14, mod=1, spells=1, max_spell_level=4
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=15, mod=1, spells=1, max_spell_level=5
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=16, mod=2, spells=1, max_spell_level=5
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=17, mod=2, spells=2, max_spell_level=5
+    ),  # type: ignore
+    AbilityScoreModifierModel(
+        score=18, mod=3, spells=2, max_spell_level=6
+    ),  # type: ignore
 ]
 
-ABILITY_SCORE_MODIFIERS_DICT: Dict[int, AbilityScoreModifier] = {
+ABILITY_SCORE_MODIFIERS_DICT: Dict[int, AbilityScoreModifierModel] = {
     asm.score: asm for asm in ABILITY_SCORE_MODIFIERS
 }
 
 
-@dataclass
-class AbilityScore:
-    abl: Ability
-    score: int = 0
-
-    @property
-    def mod(self) -> int:
-        return self.modifier.mod
-
-    @property
-    def modifier(self) -> AbilityScoreModifier:
-        return ABILITY_SCORE_MODIFIERS_DICT[self.score]
+def get_mod(score: int) -> int:
+    return ABILITY_SCORE_MODIFIERS_DICT[score].mod
 
 
 @commands.command()

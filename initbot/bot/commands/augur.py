@@ -2,21 +2,18 @@ from pathlib import Path
 from typing import List, Dict
 import json
 import random
-from pydantic.dataclasses import dataclass
 
 from discord.ext import commands  # type: ignore
 
-
-@dataclass
-class Augur:
-    description: str
-    roll: int
+from ...models.augur import AugurModel
 
 
 with open(Path(__file__).parent / "augurs.json", encoding="utf8") as fd:
-    AUGURS: List[Augur] = [Augur(**a) for a in json.load(fd)["augurs"]]  # type: ignore
+    AUGURS: List[AugurModel] = [
+        AugurModel(**a) for a in json.load(fd)["augurs"]
+    ]  # type: ignore
 
-AUGURS_DICT: Dict[int, Augur] = {aug.roll: aug for aug in AUGURS}
+AUGURS_DICT: Dict[int, AugurModel] = {aug.roll: aug for aug in AUGURS}
 
 
 @commands.command()
