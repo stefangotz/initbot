@@ -8,7 +8,7 @@ from .occupation import occupations
 from .ability import abls, abl, asms, asm
 from .augur import augurs, augur
 from .tarot import tarot
-from .soundboard import sound
+from .soundboard import sound, shush
 
 commands: FrozenSet[Any] = frozenset(
     (
@@ -30,5 +30,6 @@ commands: FrozenSet[Any] = frozenset(
         augur,
         tarot,
         sound,
+        shush,
     )
 )
