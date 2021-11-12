@@ -13,7 +13,7 @@ from .character import (
 )
 
 
-@commands.command(usage="[character name] initiative")
+@commands.command(usage="[character name] initiative *or* initiative [character name]")
 async def init(ctx, *, name_and_initiative: str):
     """Sets the initiative of a character.
 
@@ -33,12 +33,16 @@ async def init(ctx, *, name_and_initiative: str):
         raise Exception("Provide an optional name and an init value")
     if len(tokens) > 4:
         raise Exception("Too long")
-    if not is_int(tokens[-1]):
+    if is_int(tokens[-1]):
+        initiative = int(tokens[-1])
+        name = tokens[0:-1]
+    elif is_int(tokens[0]):
+        initiative = int(tokens[0])
+        name = tokens[1:]
+    else:
         raise Exception("Provide initiative value")
-    cdi: CharacterModel = from_tokens(
-        tokens[0:-1], ctx.author.display_name, create=True
-    )
-    cdi.initiative = int(tokens[-1])
+    cdi: CharacterModel = from_tokens(name, ctx.author.display_name, create=True)
+    cdi.initiative = initiative
 
     store_characters()
 
