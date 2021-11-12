@@ -10,7 +10,19 @@ from .roll import DieRoll
 OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel.parse_file(
     Path(__file__).parent / "occupations.json"
 )
-OCCUPATIONS: List[OccupationModel] = OCCUPATIONS_MODEL.occupations
+
+
+class Occupation:
+    def __init__(self, model: OccupationModel):
+        self.model: OccupationModel = model
+
+    def __str__(self):
+        return f"**{self.model.name}** fights with *{self.model.weapon}* and has *{self.model.goods}*"
+
+
+OCCUPATIONS: List[Occupation] = [
+    Occupation(model) for model in OCCUPATIONS_MODEL.occupations
+]
 
 
 def get_random_occupation() -> OccupationModel:
@@ -27,7 +39,18 @@ def get_occupation(roll: int) -> OccupationModel:
 
 @commands.command()
 async def occupations(ctx):
-    await ctx.send(str(OCCUPATIONS))
+    """Lists all character occupations, including the starting weapon and goods they confer to new characters."""
+    msg = ""
+    for occ in OCCUPATIONS:
+        occ_str: str = str(occ)
+        if len(msg) + 2 + len(occ_str) >= 2000:
+            await ctx.send(msg)
+            msg = ""
+        if msg:
+            msg += "\n"
+        msg += occ_str
+    if msg:
+        await ctx.send(msg)
 
 
 @occupations.error
