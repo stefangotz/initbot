@@ -1,28 +1,19 @@
 from pathlib import Path
 from typing import List
-import json
 from discord.ext import commands  # type: ignore
-from pydantic.dataclasses import dataclass
 
+from ...models.occupation import OccupationModel, OccupationsModel
 from ..utils import get_first_set_match
 from .roll import DieRoll
 
 
-@dataclass
-class OccupationDI:
-    rolls: List[int]
-    name: str
-    weapon: str
-    goods: str
+OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel.parse_file(
+    Path(__file__).parent / "occupations.json"
+)
+OCCUPATIONS: List[OccupationModel] = OCCUPATIONS_MODEL.occupations
 
 
-with open(Path(__file__).parent / "occupations.json", encoding="utf8") as fd:
-    OCCUPATIONS: List[OccupationDI] = [
-        OccupationDI(**o) for o in json.load(fd)["occupations"]  # type: ignore
-    ]
-
-
-def get_random_occupation() -> OccupationDI:
+def get_random_occupation() -> OccupationModel:
     return get_occupation(get_roll())
 
 
@@ -30,7 +21,7 @@ def get_roll() -> int:
     return DieRoll(100).roll_one()
 
 
-def get_occupation(roll: int) -> OccupationDI:
+def get_occupation(roll: int) -> OccupationModel:
     return get_first_set_match(roll, OCCUPATIONS, lambda o: o.rolls)
 
 
