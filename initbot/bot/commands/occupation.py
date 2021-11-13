@@ -1,28 +1,31 @@
 from pathlib import Path
 from typing import List
-import json
 from discord.ext import commands  # type: ignore
-from pydantic.dataclasses import dataclass
 
+from ...models.occupation import OccupationModel, OccupationsModel
 from ..utils import get_first_set_match
 from .roll import DieRoll
 
 
-@dataclass
-class OccupationDI:
-    rolls: List[int]
-    name: str
-    weapon: str
-    goods: str
+OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel.parse_file(
+    Path(__file__).parent / "occupations.json"
+)
 
 
-with open(Path(__file__).parent / "occupations.json", encoding="utf8") as fd:
-    OCCUPATIONS: List[OccupationDI] = [
-        OccupationDI(**o) for o in json.load(fd)["occupations"]  # type: ignore
-    ]
+class Occupation:
+    def __init__(self, model: OccupationModel):
+        self.model: OccupationModel = model
+
+    def __str__(self):
+        return f"**{self.model.name}** fights with *{self.model.weapon}* and has *{self.model.goods}*"
 
 
-def get_random_occupation() -> OccupationDI:
+OCCUPATIONS: List[Occupation] = [
+    Occupation(model) for model in OCCUPATIONS_MODEL.occupations
+]
+
+
+def get_random_occupation() -> OccupationModel:
     return get_occupation(get_roll())
 
 
@@ -30,13 +33,24 @@ def get_roll() -> int:
     return DieRoll(100).roll_one()
 
 
-def get_occupation(roll: int) -> OccupationDI:
+def get_occupation(roll: int) -> OccupationModel:
     return get_first_set_match(roll, OCCUPATIONS, lambda o: o.rolls)
 
 
 @commands.command()
 async def occupations(ctx):
-    await ctx.send(str(OCCUPATIONS))
+    """Lists all character occupations, including the starting weapon and goods they confer to new characters."""
+    msg = ""
+    for occ in OCCUPATIONS:
+        occ_str: str = str(occ)
+        if len(msg) + 2 + len(occ_str) >= 2000:
+            await ctx.send(msg)
+            msg = ""
+        if msg:
+            msg += "\n"
+        msg += occ_str
+    if msg:
+        await ctx.send(msg)
 
 
 @occupations.error

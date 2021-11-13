@@ -6,12 +6,14 @@ import random
 from discord.ext import commands  # type: ignore
 from pydantic.json import pydantic_encoder
 
+from initbot.models.occupation import OccupationModel
+
 from ...models.ability import AbilityScoreModel
 from ...models.character import CharacterModel, CharactersModel
 from .ability import ABILITIES, get_mod
 from .augur import AugurModel, AUGURS_DICT, AUGURS
 from .roll import DieRoll
-from .occupation import OccupationDI, get_occupation, get_roll
+from .occupation import get_occupation, get_roll
 
 
 class Character:
@@ -158,7 +160,7 @@ class Character:
         return None
 
     @property
-    def occupation(self) -> Union[OccupationDI, None]:
+    def occupation(self) -> Union[OccupationModel, None]:
         if self.cdi.occupation is not None:
             return get_occupation(self.cdi.occupation)
         return None
@@ -229,7 +231,7 @@ def load_characters():
 @commands.command()
 async def new(ctx, name: str):
     occupation_roll: int = get_roll()
-    occupation: OccupationDI = get_occupation(occupation_roll)
+    occupation: OccupationModel = get_occupation(occupation_roll)
     luck: int = DieRoll(6, 3).roll_one()
     cdi = CharacterModel(
         name=name,

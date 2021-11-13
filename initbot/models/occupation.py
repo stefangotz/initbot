@@ -7,3 +7,7 @@ class OccupationModel(BaseModel):
     name: str
     weapon: str
     goods: str
+
+
+class OccupationsModel(BaseModel):
+    occupations: List[OccupationModel]
