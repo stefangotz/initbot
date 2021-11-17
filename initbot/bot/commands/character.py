@@ -16,6 +16,10 @@ from .roll import DieRoll
 from .occupation import get_occupation, get_roll
 
 
+CHARACTER_DIS: CharactersModel = CharactersModel(cdis=[])  # type: ignore
+CDIS: List[CharacterModel] = CHARACTER_DIS.cdis
+
+
 class Character:
     def __init__(self, cdi: CharacterModel):
         self.cdi = cdi
@@ -360,6 +364,4 @@ async def char_error(ctx, error):
     await ctx.send(str(error), delete_after=5)
 
 
-CHARACTER_DIS: CharactersModel = CharactersModel(cdis=[])  # type: ignore
-CDIS: List[CharacterModel] = CHARACTER_DIS.cdis
 load_characters()
