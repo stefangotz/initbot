@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Dict
 import json
+import logging
 import random
 
 from discord.ext import commands  # type: ignore
@@ -8,10 +9,13 @@ from discord.ext import commands  # type: ignore
 from ...models.augur import AugurModel
 
 
-with open(Path(__file__).parent / "augurs.json", encoding="utf8") as fd:
-    AUGURS: List[AugurModel] = [
-        AugurModel(**a) for a in json.load(fd)["augurs"]
-    ]  # type: ignore
+AUGURS: List[AugurModel] = []
+PATH: Path = Path(__file__).parent / "augurs.json"
+if PATH.exists:
+    with open(PATH, encoding="utf8") as fd:
+        AUGURS = [AugurModel(**a) for a in json.load(fd)["augurs"]]  # type: ignore
+else:
+    logging.warning("Unable to find %s", PATH)
 
 AUGURS_DICT: Dict[int, AugurModel] = {aug.roll: aug for aug in AUGURS}
 

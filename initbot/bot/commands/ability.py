@@ -1,15 +1,21 @@
 from pathlib import Path
 from typing import List, Dict
 import json
+import logging
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
 from ...models.ability import AbilityModel, AbilityScoreModifierModel
 
-with open(Path(__file__).parent / "abilities.json", encoding="utf8") as fd:
-    ABILITIES: List[AbilityModel] = [
-        AbilityModel(**a) for a in json.load(fd)["abilities"]  # type: ignore
-    ]
+ABILITIES: List[AbilityModel] = []
+PATH: Path = Path(__file__).parent / "abilities.json"
+if PATH.exists:
+    with open(PATH, encoding="utf8") as fd:
+        ABILITIES = [
+            AbilityModel(**a) for a in json.load(fd)["abilities"]  # type: ignore
+        ]
+else:
+    logging.warning("Unable to find %s", PATH)
 
 ABILITIES_DICT: Dict[str, AbilityModel] = {abl.name: abl for abl in ABILITIES}
 ABILITIES_DICT.update({abl.name.lower(): abl for abl in ABILITIES})

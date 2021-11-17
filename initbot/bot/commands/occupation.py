@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import List
+import logging
+
 from discord.ext import commands  # type: ignore
 
 from ...models.occupation import OccupationModel, OccupationsModel
@@ -7,9 +9,12 @@ from ..utils import get_first_set_match
 from .roll import DieRoll
 
 
-OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel.parse_file(
-    Path(__file__).parent / "occupations.json"
-)
+OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel(occupations=[])
+PATH: Path = Path(__file__).parent / "occupations.json"
+if PATH.exists:
+    OCCUPATIONS_MODEL = OccupationsModel.parse_file(PATH)
+else:
+    logging.warning("Unable to find %s", PATH)
 
 
 class Occupation:

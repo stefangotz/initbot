@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Dict
 import json
+import logging
 from discord.ext import commands  # type: ignore
 from pydantic.dataclasses import dataclass
 
@@ -25,11 +26,16 @@ class CritTable:
         ).effect
 
 
-with open(Path(__file__).parent / "crits.json", encoding="utf8") as fd:
-    TABLES: Dict[int, CritTable] = {
-        t["number"]: CritTable(**t)  # type: ignore
-        for t in json.load(fd)["crit_tables"]
-    }
+TABLES: Dict[int, CritTable] = {}
+PATH: Path = Path(__file__).parent / "crits.json"
+if PATH.exists:
+    with open(PATH, encoding="utf8") as fd:
+        TABLES = {
+            t["number"]: CritTable(**t)  # type: ignore
+            for t in json.load(fd)["crit_tables"]
+        }
+else:
+    logging.warning("Unable to find %s", PATH)
 
 
 @dataclass
