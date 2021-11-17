@@ -11,7 +11,7 @@ from ...models.augur import AugurModel
 
 AUGURS: List[AugurModel] = []
 PATH: Path = Path(__file__).parent / "augurs.json"
-if PATH.exists:
+if PATH.exists():
     with open(PATH, encoding="utf8") as fd:
         AUGURS = [AugurModel(**a) for a in json.load(fd)["augurs"]]  # type: ignore
 else:

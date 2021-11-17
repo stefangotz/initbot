@@ -9,7 +9,7 @@ from ...models.ability import AbilityModel, AbilityScoreModifierModel
 
 ABILITIES: List[AbilityModel] = []
 PATH: Path = Path(__file__).parent / "abilities.json"
-if PATH.exists:
+if PATH.exists():
     with open(PATH, encoding="utf8") as fd:
         ABILITIES = [
             AbilityModel(**a) for a in json.load(fd)["abilities"]  # type: ignore

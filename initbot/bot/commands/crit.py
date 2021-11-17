@@ -28,7 +28,7 @@ class CritTable:
 
 TABLES: Dict[int, CritTable] = {}
 PATH: Path = Path(__file__).parent / "crits.json"
-if PATH.exists:
+if PATH.exists():
     with open(PATH, encoding="utf8") as fd:
         TABLES = {
             t["number"]: CritTable(**t)  # type: ignore

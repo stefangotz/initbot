@@ -11,7 +11,7 @@ from .roll import DieRoll
 
 OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel(occupations=[])
 PATH: Path = Path(__file__).parent / "occupations.json"
-if PATH.exists:
+if PATH.exists():
     OCCUPATIONS_MODEL = OccupationsModel.parse_file(PATH)
 else:
     logging.warning("Unable to find %s", PATH)
