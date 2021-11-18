@@ -1,52 +1,32 @@
 from pathlib import Path
-from typing import List, Dict
-import json
+from typing import Dict
 import logging
+
 from discord.ext import commands  # type: ignore
-from pydantic.dataclasses import dataclass
 
+from ...models.crit import CritTableModel, CritTablesModel
 from ..utils import get_first_set_match_or_over_under_flow
-from .roll import DieRoll
 
 
-@dataclass
-class Crit:
-    rolls: List[int]
-    effect: str
+def _match(table: CritTableModel, roll: int) -> str:
+    return get_first_set_match_or_over_under_flow(
+        roll, table.crits, lambda c: c.rolls
+    ).effect
 
 
-@dataclass
-class CritTable:
-    number: int
-    crits: List[Crit]
-
-    def match(self, roll: int) -> str:
-        return get_first_set_match_or_over_under_flow(
-            roll, self.crits, lambda c: c.rolls
-        ).effect
-
-
-TABLES: Dict[int, CritTable] = {}
+CRIT_TABLES: CritTablesModel = CritTablesModel(crit_tables=[])
 PATH: Path = Path(__file__).parent / "crits.json"
 if PATH.exists():
-    with open(PATH, encoding="utf8") as fd:
-        TABLES = {
-            t["number"]: CritTable(**t)  # type: ignore
-            for t in json.load(fd)["crit_tables"]
-        }
+    CRIT_TABLES = CritTablesModel.parse_file(PATH)
 else:
     logging.warning("Unable to find %s", PATH)
 
-
-@dataclass
-class Criticality:
-    die: DieRoll
-    table: CritTable
+TABLES: Dict[int, CritTableModel] = {tbl.number: tbl for tbl in CRIT_TABLES.crit_tables}
 
 
 @commands.command()
 async def crit(ctx, table: int, roll: int):
-    await ctx.send(TABLES[table].match(roll))
+    await ctx.send(_match(TABLES[table], roll))
 
 
 @crit.error
