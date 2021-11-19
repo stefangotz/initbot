@@ -5,3 +5,6 @@ package-lock.json
 __pycache__
 *.env
 initbot/**/*.json
+
+**.DS_STORE
+initbot/sounds
