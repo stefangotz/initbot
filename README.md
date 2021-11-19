@@ -21,3 +21,18 @@ The typical flow during a game session is:
 Note that anyone (i.e., any Discord user on a given server) can update the initiative of or remove the character of any other player.
 
 Get more information on any of the commands with `$help`, e.g., `$help init`.
+
+## Development
+
+Improvements to the code are most welcome.
+
+To get started with this Python project, note that it relies on a number of fairly common Python tools to improve the development experience, first and foremost being *poetry*.
+The script `tools/setup.sh` contains the instructions to initialise a development environment for this project.
+If on Windows, try running it from a *git bash* session or simply run the commands it contains on the command prompt or a powershell session.
+
+To run an instance of the bot:
+
+- create a Discord bot token (see Google)
+- create a `.env` file at the top of the repository
+- add the line `token=[TOKEN]` with the bot token to the `.env` file
+- run `tools/run.sh` (or the commands that script contains)
