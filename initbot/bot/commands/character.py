@@ -12,7 +12,7 @@ from initbot.models.occupation import OccupationModel
 from ...models.ability import AbilityScoreModel
 from ...models.character import CharacterModel, CharactersModel
 from .ability import get_abilities, get_mod
-from .augur import AugurModel, AUGURS_DICT, AUGURS
+from .augur import AugurModel, get_augur, get_augurs
 from .roll import DieRoll
 from .occupation import get_occupation, get_roll
 
@@ -155,7 +155,7 @@ class Character:
     @property
     def augur(self) -> Union[AugurModel, None]:
         if self.cdi.augur is not None:
-            return AUGURS_DICT[self.cdi.augur]
+            return get_augur(self.cdi.augur)
         return None
 
     @property
@@ -243,7 +243,7 @@ async def new(ctx, name: str):
         occupation=occupation_roll,
         exp=0,
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
-        augur=random.choice(AUGURS).roll,
+        augur=random.choice(get_augurs()).roll,
     )
     CDIS.append(cdi)
     store_characters()

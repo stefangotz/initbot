@@ -14,19 +14,25 @@ def _match(table: CritTableModel, roll: int) -> str:
     ).effect
 
 
-CRIT_TABLES: CritTablesModel = CritTablesModel(crit_tables=[])
-PATH: Path = Path(__file__).parent / "crits.json"
-if PATH.exists():
-    CRIT_TABLES = CritTablesModel.parse_file(PATH)
+_CRIT_TABLES: CritTablesModel = CritTablesModel(crit_tables=[])
+_PATH: Path = Path(__file__).parent / "crits.json"
+if _PATH.exists():
+    _CRIT_TABLES = CritTablesModel.parse_file(_PATH)
 else:
-    logging.warning("Unable to find %s", PATH)
+    logging.warning("Unable to find %s", _PATH)
 
-TABLES: Dict[int, CritTableModel] = {tbl.number: tbl for tbl in CRIT_TABLES.crit_tables}
+_TABLES: Dict[int, CritTableModel] = {
+    tbl.number: tbl for tbl in _CRIT_TABLES.crit_tables
+}
+
+
+def get_crit_table(number: int):
+    return _TABLES[number]
 
 
 @commands.command()
 async def crit(ctx, table: int, roll: int):
-    await ctx.send(_match(TABLES[table], roll))
+    await ctx.send(_match(get_crit_table(table), roll))
 
 
 @crit.error
