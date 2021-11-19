@@ -1,3 +1,4 @@
+from typing import Any, List
 import re
 
 _INT_PATTERN = re.compile(r"^-?(0|([1-9][0-9]*))$")
@@ -78,3 +79,23 @@ def get_first_set_match_or_over_under_flow(
         if value_to_match >= max(get_matches_from_candidate(max_candidate)):
             return max_candidate
     raise KeyError(f"Unable to find a match for {value_to_match}")
+
+
+def get_unique_prefix_match(str_to_match: str, candidates, get_str_from_candidate=str):
+    normalized_str_to_match: str = normalize_str(str_to_match)
+    matches: List[Any] = [
+        cnd
+        for cnd in candidates
+        if normalize_str(get_str_from_candidate(cnd)).startswith(
+            normalized_str_to_match
+        )
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    raise KeyError(
+        f"Unable to find unique match for {str_to_match} in {[get_str_from_candidate(cnd) for cnd in candidates]}"
+    )
+
+
+def normalize_str(strng: str) -> str:
+    return strng.lower().strip()

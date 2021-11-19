@@ -7,6 +7,10 @@ class CritModel(BaseModel):
     effect: str
 
 
-class CritTable(BaseModel):
+class CritTableModel(BaseModel):
     number: int
     crits: List[CritModel]
+
+
+class CritTablesModel(BaseModel):
+    crit_tables: List[CritTableModel]

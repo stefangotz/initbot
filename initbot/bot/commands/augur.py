@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Dict
 import json
+import logging
 import random
 
 from discord.ext import commands  # type: ignore
@@ -8,22 +9,33 @@ from discord.ext import commands  # type: ignore
 from ...models.augur import AugurModel
 
 
-with open(Path(__file__).parent / "augurs.json", encoding="utf8") as fd:
-    AUGURS: List[AugurModel] = [
-        AugurModel(**a) for a in json.load(fd)["augurs"]
-    ]  # type: ignore
+_AUGURS: List[AugurModel] = []
+_PATH: Path = Path(__file__).parent / "augurs.json"
+if _PATH.exists():
+    with open(_PATH, encoding="utf8") as fd:
+        _AUGURS = [AugurModel(**a) for a in json.load(fd)["augurs"]]  # type: ignore
+else:
+    logging.warning("Unable to find %s", _PATH)
 
-AUGURS_DICT: Dict[int, AugurModel] = {aug.roll: aug for aug in AUGURS}
+_AUGURS_DICT: Dict[int, AugurModel] = {aug.roll: aug for aug in _AUGURS}
+
+
+def get_augurs() -> List[AugurModel]:
+    return _AUGURS
+
+
+def get_augur(roll: int) -> AugurModel:
+    return _AUGURS_DICT[roll]
 
 
 @commands.command()
 async def augurs(ctx):
-    await ctx.send(str(AUGURS))
+    await ctx.send(str(_AUGURS))
 
 
 @commands.command()
 async def augur(ctx):
-    await ctx.send(str(random.choice(AUGURS)))
+    await ctx.send(str(random.choice(_AUGURS)))
 
 
 @augurs.error
