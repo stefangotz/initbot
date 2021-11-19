@@ -5,12 +5,13 @@ import random
 
 from discord.ext import commands  # type: ignore
 from pydantic.json import pydantic_encoder
+from initbot.bot.utils import get_unique_prefix_match
 
 from initbot.models.occupation import OccupationModel
 
 from ...models.ability import AbilityScoreModel
 from ...models.character import CharacterModel, CharactersModel
-from .ability import ABILITIES, get_mod
+from .ability import get_abilities, get_mod
 from .augur import AugurModel, AUGURS_DICT, AUGURS
 from .roll import DieRoll
 from .occupation import get_occupation, get_roll
@@ -41,29 +42,23 @@ class Character:
         self.cdi.user = user
 
     @property
-    def abilities(self) -> List[AbilityScoreModel]:
+    def ability_scores(self) -> List[AbilityScoreModel]:
         return [
             AbilityScoreModel(abl=abl, score=vars(self.cdi)[abl.name.lower()])
-            for abl in ABILITIES
+            for abl in get_abilities()
             if vars(self.cdi).get(abl.name.lower())
         ]
 
-    def _base_ability(self, prefix: str) -> AbilityScoreModel:
-        prefix = prefix.lower()
-        candidates = [
-            ab_score
-            for ab_score in self.abilities
-            if ab_score.abl.name.lower().startswith(prefix)
-        ]
-        if len(candidates) == 1:
-            return candidates[0]
-        raise KeyError(prefix)
+    def _get_ability_score(self, prefix: str) -> AbilityScoreModel:
+        return get_unique_prefix_match(
+            prefix, self.ability_scores, lambda ability_score: ability_score.abl.name
+        )
 
     @property
     def strength(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
-            return self._base_ability("strength")
+            return self._get_ability_score("strength")
         except KeyError:
             pass
         return None
@@ -72,7 +67,7 @@ class Character:
     def agility(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
-            return self._base_ability("agility")
+            return self._get_ability_score("agility")
         except KeyError:
             pass
         return None
@@ -81,7 +76,7 @@ class Character:
     def stamina(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
-            return self._base_ability("stamina")
+            return self._get_ability_score("stamina")
         except KeyError:
             pass
         return None
@@ -90,7 +85,7 @@ class Character:
     def personality(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
-            return self._base_ability("personality")
+            return self._get_ability_score("personality")
         except KeyError:
             pass
         return None
@@ -99,7 +94,7 @@ class Character:
     def intelligence(self) -> Union[AbilityScoreModel, None]:
         try:
             # TO DO: birth augur
-            return self._base_ability("intelligence")
+            return self._get_ability_score("intelligence")
         except KeyError:
             pass
         return None
@@ -107,7 +102,7 @@ class Character:
     @property
     def luck(self) -> Union[AbilityScoreModel, None]:
         try:
-            return self._base_ability("luck")
+            return self._get_ability_score("luck")
         except KeyError:
             pass
         return None
@@ -190,26 +185,18 @@ def from_str(name: str, user: str, create: bool = False) -> CharacterModel:
 def from_name(
     name: str, create: bool = False, user: Union[str, None] = None
 ) -> CharacterModel:
-    nrm: str = normalize_name(name)
-    matches: List[CharacterModel] = [
-        cdi for cdi in CDIS if normalize_name(cdi.name).startswith(nrm)
-    ]
-    if not matches and create and user:
-        cdi: CharacterModel = CharacterModel(name=name, user=user)  # type: ignore
-        CDIS.append(cdi)
-        matches = [cdi]
-    if len(matches) == 1:
-        return matches[0]
-    raise KeyError(f"Unable to find character with name '{name}'")
+    try:
+        return get_unique_prefix_match(name, CDIS, lambda cdi: cdi.name)
+    except KeyError as err:
+        if create and user:
+            cdi: CharacterModel = CharacterModel(name=name, user=user)  # type: ignore
+            CDIS.append(cdi)
+            return cdi
+        raise KeyError(f"Unable to find character with name '{name}'") from err
 
 
 def from_user(user: str) -> CharacterModel:
-    matches: List[CharacterModel] = [
-        cdi for cdi in CDIS if normalize_name(cdi.user).startswith(user)
-    ]
-    if len(matches) == 1:
-        return matches[0]
-    raise KeyError(f"Unable to find character for user '{user}'")
+    return get_unique_prefix_match(user, CDIS, lambda cdi: cdi.user)
 
 
 def normalize_name(name: str) -> str:

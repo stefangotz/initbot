@@ -1,24 +1,30 @@
 from pathlib import Path
 from typing import List, Dict
-import json
 import logging
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
-from ...models.ability import AbilityModel, AbilityScoreModifierModel
+from initbot.bot.utils import get_unique_prefix_match
 
-ABILITIES: List[AbilityModel] = []
-PATH: Path = Path(__file__).parent / "abilities.json"
-if PATH.exists():
-    with open(PATH, encoding="utf8") as fd:
-        ABILITIES = [
-            AbilityModel(**a) for a in json.load(fd)["abilities"]  # type: ignore
-        ]
+from ...models.ability import AbilityModel, AbilityScoreModifierModel, AbilitiesModel
+
+
+_PATH: Path = Path(__file__).parent / "abilities.json"
+_ABILITIES_MODEL: AbilitiesModel = AbilitiesModel(abiliets=[])
+if _PATH:
+    _ABILITIES_MODEL = AbilitiesModel.parse_file(_PATH)
 else:
-    logging.warning("Unable to find %s", PATH)
+    logging.warning("Unable to find %s", _PATH)
 
-ABILITIES_DICT: Dict[str, AbilityModel] = {abl.name: abl for abl in ABILITIES}
-ABILITIES_DICT.update({abl.name.lower(): abl for abl in ABILITIES})
+_ABILITIES: List[AbilityModel] = _ABILITIES_MODEL.abilities
+
+
+def get_ability(name: str) -> AbilityModel:
+    return get_unique_prefix_match(name, _ABILITIES, lambda a: a.name)
+
+
+def get_abilities() -> List[AbilityModel]:
+    return _ABILITIES
 
 
 ABILITY_SCORE_MODIFIERS: List[AbilityScoreModifierModel] = [
@@ -85,9 +91,9 @@ def get_mod(score: int) -> int:
 async def abls(ctx):
     """Lists the six character abilities and their descriptions."""
     embed = Embed(
-        title="Abilities", description="**Luck**\n" + ABILITIES_DICT["Luck"].description
+        title="Abilities", description="**Luck**\n" + get_ability("Luck").description
     )
-    for ability in ABILITIES:
+    for ability in get_abilities():
         if ability.name != "Luck":
             embed.add_field(name=ability.name, value=ability.description)
     await ctx.send(embed=embed)
@@ -95,7 +101,7 @@ async def abls(ctx):
 
 @commands.command()
 async def abl(ctx, name: str):
-    await ctx.send(str(ABILITIES_DICT[name]))
+    await ctx.send(str(get_ability(name)))
 
 
 @commands.command()
