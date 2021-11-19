@@ -10,7 +10,7 @@ from ...models.ability import AbilityModel, AbilityScoreModifierModel, Abilities
 
 
 _PATH: Path = Path(__file__).parent / "abilities.json"
-_ABILITIES_MODEL: AbilitiesModel = AbilitiesModel(abiliets=[])
+_ABILITIES_MODEL: AbilitiesModel = AbilitiesModel(abilities=[])
 if _PATH:
     _ABILITIES_MODEL = AbilitiesModel.parse_file(_PATH)
 else:
