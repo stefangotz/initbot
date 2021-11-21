@@ -4,25 +4,25 @@ import logging
 
 from discord.ext import commands  # type: ignore
 
-from ...models.crit import CritTableModel, CritTablesModel
+from ...data.crit import CritTableData, CritTablesData
 from ..utils import get_first_set_match_or_over_under_flow
 
 
-def _match(table: CritTableModel, roll: int) -> str:
+def _match(table: CritTableData, roll: int) -> str:
     return get_first_set_match_or_over_under_flow(
         roll, table.crits, lambda c: c.rolls
     ).effect
 
 
-_CRIT_TABLES: CritTablesModel = CritTablesModel(crit_tables=[])
+_CRIT_TABLES_DATA: CritTablesData = CritTablesData(crit_tables=[])
 _PATH: Path = Path(__file__).parent / "crits.json"
 if _PATH.exists():
-    _CRIT_TABLES = CritTablesModel.parse_file(_PATH)
+    _CRIT_TABLES_DATA = CritTablesData.parse_file(_PATH)
 else:
     logging.warning("Unable to find %s", _PATH)
 
-_TABLES: Dict[int, CritTableModel] = {
-    tbl.number: tbl for tbl in _CRIT_TABLES.crit_tables
+_TABLES: Dict[int, CritTableData] = {
+    tbl.number: tbl for tbl in _CRIT_TABLES_DATA.crit_tables
 }
 
 

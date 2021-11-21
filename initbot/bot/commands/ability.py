@@ -6,85 +6,55 @@ from discord.ext import commands  # type: ignore
 
 from initbot.bot.utils import get_unique_prefix_match
 
-from ...models.ability import AbilityModel, AbilityScoreModifierModel, AbilitiesModel
+from ...data.ability import AbilityData, AbilityModifierData, AbilitiesData
 
 
 _PATH: Path = Path(__file__).parent / "abilities.json"
-_ABILITIES_MODEL: AbilitiesModel = AbilitiesModel(abilities=[])
+_ABILITIES_DATA: AbilitiesData = AbilitiesData(abilities=[])
 if _PATH:
-    _ABILITIES_MODEL = AbilitiesModel.parse_file(_PATH)
+    _ABILITIES_DATA = AbilitiesData.parse_file(_PATH)
 else:
     logging.warning("Unable to find %s", _PATH)
 
-_ABILITIES: List[AbilityModel] = _ABILITIES_MODEL.abilities
+_ABILITIES: List[AbilityData] = _ABILITIES_DATA.abilities
 
 
-def get_ability(name: str) -> AbilityModel:
+def get_ability(name: str) -> AbilityData:
     return get_unique_prefix_match(name, _ABILITIES, lambda a: a.name)
 
 
-def get_abilities() -> List[AbilityModel]:
+def get_abilities() -> List[AbilityData]:
     return _ABILITIES
 
 
-ABILITY_SCORE_MODIFIERS: List[AbilityScoreModifierModel] = [
-    AbilityScoreModifierModel(
+_ABILITY_MODIFIERS: List[AbilityModifierData] = [
+    AbilityModifierData(
         score=3, mod=-3, spells=-99, max_spell_level=-99
     ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=4, mod=-2, spells=-2, max_spell_level=1
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=5, mod=-2, spells=-2, max_spell_level=1
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=6, mod=-1, spells=-1, max_spell_level=1
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=7, mod=-1, spells=-1, max_spell_level=1
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=8, mod=-1, spells=0, max_spell_level=2
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=9, mod=0, spells=0, max_spell_level=2
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=10, mod=0, spells=0, max_spell_level=3
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=11, mod=0, spells=0, max_spell_level=3
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=12, mod=0, spells=0, max_spell_level=4
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=13, mod=1, spells=0, max_spell_level=4
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=14, mod=1, spells=1, max_spell_level=4
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=15, mod=1, spells=1, max_spell_level=5
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=16, mod=2, spells=1, max_spell_level=5
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=17, mod=2, spells=2, max_spell_level=5
-    ),  # type: ignore
-    AbilityScoreModifierModel(
-        score=18, mod=3, spells=2, max_spell_level=6
-    ),  # type: ignore
+    AbilityModifierData(score=4, mod=-2, spells=-2, max_spell_level=1),  # type: ignore
+    AbilityModifierData(score=5, mod=-2, spells=-2, max_spell_level=1),  # type: ignore
+    AbilityModifierData(score=6, mod=-1, spells=-1, max_spell_level=1),  # type: ignore
+    AbilityModifierData(score=7, mod=-1, spells=-1, max_spell_level=1),  # type: ignore
+    AbilityModifierData(score=8, mod=-1, spells=0, max_spell_level=2),  # type: ignore
+    AbilityModifierData(score=9, mod=0, spells=0, max_spell_level=2),  # type: ignore
+    AbilityModifierData(score=10, mod=0, spells=0, max_spell_level=3),  # type: ignore
+    AbilityModifierData(score=11, mod=0, spells=0, max_spell_level=3),  # type: ignore
+    AbilityModifierData(score=12, mod=0, spells=0, max_spell_level=4),  # type: ignore
+    AbilityModifierData(score=13, mod=1, spells=0, max_spell_level=4),  # type: ignore
+    AbilityModifierData(score=14, mod=1, spells=1, max_spell_level=4),  # type: ignore
+    AbilityModifierData(score=15, mod=1, spells=1, max_spell_level=5),  # type: ignore
+    AbilityModifierData(score=16, mod=2, spells=1, max_spell_level=5),  # type: ignore
+    AbilityModifierData(score=17, mod=2, spells=2, max_spell_level=5),  # type: ignore
+    AbilityModifierData(score=18, mod=3, spells=2, max_spell_level=6),  # type: ignore
 ]
 
-ABILITY_SCORE_MODIFIERS_DICT: Dict[int, AbilityScoreModifierModel] = {
-    asm.score: asm for asm in ABILITY_SCORE_MODIFIERS
+_ABILITY_MODIFIERS_DICT: Dict[int, AbilityModifierData] = {
+    asm.score: asm for asm in _ABILITY_MODIFIERS
 }
 
 
 def get_mod(score: int) -> int:
-    return ABILITY_SCORE_MODIFIERS_DICT[score].mod
+    return _ABILITY_MODIFIERS_DICT[score].mod
 
 
 @commands.command()
@@ -106,12 +76,12 @@ async def abl(ctx, name: str):
 
 @commands.command()
 async def asms(ctx):
-    await ctx.send(str(ABILITY_SCORE_MODIFIERS))
+    await ctx.send(str(_ABILITY_MODIFIERS))
 
 
 @commands.command()
 async def asm(ctx, score: int):
-    await ctx.send(str(ABILITY_SCORE_MODIFIERS_DICT[score]))
+    await ctx.send(str(_ABILITY_MODIFIERS_DICT[score]))
 
 
 @abls.error

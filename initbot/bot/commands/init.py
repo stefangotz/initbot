@@ -6,7 +6,7 @@ from discord.ext import commands  # type: ignore
 from ..utils import is_int
 from .character import (
     from_tokens,
-    CharacterModel,
+    CharacterData,
     Character,
     characters,
     store_characters,
@@ -41,7 +41,7 @@ async def init(ctx, *, name_and_initiative: str):
         name = tokens[1:]
     else:
         raise Exception("Provide initiative value")
-    cdi: CharacterModel = from_tokens(name, ctx.author.display_name, create=True)
+    cdi: CharacterData = from_tokens(name, ctx.author.display_name, create=True)
     cdi.initiative = initiative
 
     store_characters()

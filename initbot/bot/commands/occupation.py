@@ -4,29 +4,29 @@ import logging
 
 from discord.ext import commands  # type: ignore
 
-from ...models.occupation import OccupationModel, OccupationsModel
+from ...data.occupation import OccupationData, OccupationsData
 from ..utils import get_first_set_match
 from .roll import DieRoll
 
 
-_OCCUPATIONS_MODEL: OccupationsModel = OccupationsModel(occupations=[])
+_OCCUPATIONS_DATA: OccupationsData = OccupationsData(occupations=[])
 _PATH: Path = Path(__file__).parent / "occupations.json"
 if _PATH.exists():
-    _OCCUPATIONS_MODEL = OccupationsModel.parse_file(_PATH)
+    _OCCUPATIONS_DATA = OccupationsData.parse_file(_PATH)
 else:
     logging.warning("Unable to find %s", _PATH)
 
 
 class Occupation:
-    def __init__(self, model: OccupationModel):
-        self.model: OccupationModel = model
+    def __init__(self, data: OccupationData):
+        self.data: OccupationData = data
 
     def __str__(self):
-        return f"**{self.model.name}** fights with *{self.model.weapon}* and has *{self.model.goods}*"
+        return f"**{self.data.name}** fights with *{self.data.weapon}* and has *{self.data.goods}*"
 
 
 _OCCUPATIONS: List[Occupation] = [
-    Occupation(model) for model in _OCCUPATIONS_MODEL.occupations
+    Occupation(data) for data in _OCCUPATIONS_DATA.occupations
 ]
 
 
@@ -34,7 +34,7 @@ def get_occupations() -> List[Occupation]:
     return _OCCUPATIONS
 
 
-def get_random_occupation() -> OccupationModel:
+def get_random_occupation() -> OccupationData:
     return get_occupation(get_roll())
 
 
@@ -42,7 +42,7 @@ def get_roll() -> int:
     return DieRoll(100).roll_one()
 
 
-def get_occupation(roll: int) -> OccupationModel:
+def get_occupation(roll: int) -> OccupationData:
     return get_first_set_match(roll, get_occupations, lambda o: o.rolls)
 
 

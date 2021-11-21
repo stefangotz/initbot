@@ -3,7 +3,7 @@ from typing import Union, List
 from pydantic import BaseModel
 
 
-class CharacterModel(BaseModel):
+class CharacterData(BaseModel):
     name: str
     user: str
     strength: Union[int, None] = None
@@ -24,5 +24,5 @@ class CharacterModel(BaseModel):
     augur: Union[int, None] = None
 
 
-class CharactersModel(BaseModel):
-    cdis: List[CharacterModel]
+class CharactersData(BaseModel):
+    characters: List[CharacterData]

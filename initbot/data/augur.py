@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 
-class AugurModel(BaseModel):
+class AugurData(BaseModel):
     description: str
     roll: int

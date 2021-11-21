@@ -6,25 +6,25 @@ import random
 
 from discord.ext import commands  # type: ignore
 
-from ...models.augur import AugurModel
+from ...data.augur import AugurData
 
 
-_AUGURS: List[AugurModel] = []
+_AUGURS: List[AugurData] = []
 _PATH: Path = Path(__file__).parent / "augurs.json"
 if _PATH.exists():
     with open(_PATH, encoding="utf8") as fd:
-        _AUGURS = [AugurModel(**a) for a in json.load(fd)["augurs"]]  # type: ignore
+        _AUGURS = [AugurData(**a) for a in json.load(fd)["augurs"]]  # type: ignore
 else:
     logging.warning("Unable to find %s", _PATH)
 
-_AUGURS_DICT: Dict[int, AugurModel] = {aug.roll: aug for aug in _AUGURS}
+_AUGURS_DICT: Dict[int, AugurData] = {aug.roll: aug for aug in _AUGURS}
 
 
-def get_augurs() -> List[AugurModel]:
+def get_augurs() -> List[AugurData]:
     return _AUGURS
 
 
-def get_augur(roll: int) -> AugurModel:
+def get_augur(roll: int) -> AugurData:
     return _AUGURS_DICT[roll]
 
 
