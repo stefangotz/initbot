@@ -5,8 +5,8 @@ import logging
 from discord.ext import commands  # type: ignore
 
 from ...data.occupation import OccupationData, OccupationsData
+from ...models.roll import DieRoll
 from ...utils import get_first_set_match
-from .roll import DieRoll
 
 
 _OCCUPATIONS_DATA: OccupationsData = OccupationsData(occupations=[])

@@ -9,10 +9,10 @@ from pydantic.json import pydantic_encoder
 from ...data.ability import AbilityScoreData
 from ...data.character import CharacterData, CharactersData
 from ...data.occupation import OccupationData
+from ...models.roll import DieRoll
 from ...utils import get_unique_prefix_match
 from .ability import get_abilities, get_mod
 from .augur import AugurData, get_augur, get_augurs
-from .roll import DieRoll
 from .occupation import get_occupation, get_roll
 
 
