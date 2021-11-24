@@ -5,7 +5,7 @@ import logging
 from discord.ext import commands  # type: ignore
 
 from ...data.occupation import OccupationData, OccupationsData
-from ..utils import get_first_set_match
+from ...utils import get_first_set_match
 from .roll import DieRoll
 
 

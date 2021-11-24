@@ -3,7 +3,7 @@ from typing import List
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
-from ..utils import is_int
+from ...utils import is_int
 from .character import (
     from_tokens,
     CharacterData,

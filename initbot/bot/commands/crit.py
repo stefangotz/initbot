@@ -5,7 +5,7 @@ import logging
 from discord.ext import commands  # type: ignore
 
 from ...data.crit import CritTableData, CritTablesData
-from ..utils import get_first_set_match_or_over_under_flow
+from ...utils import get_first_set_match_or_over_under_flow
 
 
 def _match(table: CritTableData, roll: int) -> str:

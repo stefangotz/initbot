@@ -4,7 +4,7 @@ import logging
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
-from initbot.bot.utils import get_unique_prefix_match
+from ...utils import get_unique_prefix_match
 
 from ...data.ability import AbilityData, AbilityModifierData, AbilitiesData
 

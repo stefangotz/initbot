@@ -5,12 +5,11 @@ import random
 
 from discord.ext import commands  # type: ignore
 from pydantic.json import pydantic_encoder
-from initbot.bot.utils import get_unique_prefix_match
-
-from initbot.data.occupation import OccupationData
 
 from ...data.ability import AbilityScoreData
 from ...data.character import CharacterData, CharactersData
+from ...data.occupation import OccupationData
+from ...utils import get_unique_prefix_match
 from .ability import get_abilities, get_mod
 from .augur import AugurData, get_augur, get_augurs
 from .roll import DieRoll
