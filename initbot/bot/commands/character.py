@@ -14,7 +14,6 @@ from ...models.roll import DieRoll
 from ...state.state import State
 from ...utils import get_unique_prefix_match
 from .ability import get_abilities, get_mod
-from .occupation import get_occupation, get_roll
 
 
 _CHARACTERS_DATA: CharactersData = CharactersData(characters=[])  # type: ignore
@@ -162,7 +161,7 @@ class Character:
     @property
     def occupation(self) -> Union[OccupationData, None]:
         if self.cdi.occupation is not None:
-            return get_occupation(self.cdi.occupation)
+            return self._state.occupations.get_from_roll(self.cdi.occupation)
         return None
 
 
@@ -222,8 +221,10 @@ def load_characters():
 
 @commands.command()
 async def new(ctx, name: str):
-    occupation_roll: int = get_roll()
-    occupation: OccupationData = get_occupation(occupation_roll)
+    occupation_roll: int = DieRoll(100).roll_one()
+    occupation: OccupationData = ctx.bot.initbot_state.occupations.get_from_roll(
+        occupation_roll
+    )
     luck: int = DieRoll(6, 3).roll_one()
     cdi = CharacterData(
         name=name,
