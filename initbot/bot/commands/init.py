@@ -64,7 +64,9 @@ async def inis(ctx):
     def ini_comparator(char: Character):
         return char.initiative_comparison_value()
 
-    sorted_characters = sorted(characters(), key=ini_comparator, reverse=True)
+    sorted_characters = sorted(
+        characters(ctx.bot.initbot_state), key=ini_comparator, reverse=True
+    )
     desc: str = "\n".join(
         f"{char.initiative}: **{char.name}** (*{char.user}*)"
         for char in sorted_characters

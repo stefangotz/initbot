@@ -7,12 +7,13 @@ from discord.ext import commands  # type: ignore
 from pydantic.json import pydantic_encoder
 
 from ...data.ability import AbilityScoreData
+from ...data.augur import AugurData
 from ...data.character import CharacterData, CharactersData
 from ...data.occupation import OccupationData
 from ...models.roll import DieRoll
+from ...state.state import State
 from ...utils import get_unique_prefix_match
 from .ability import get_abilities, get_mod
-from .augur import AugurData, get_augur, get_augurs
 from .occupation import get_occupation, get_roll
 
 
@@ -21,8 +22,9 @@ _CHARACTER_DATAS: List[CharacterData] = _CHARACTERS_DATA.characters
 
 
 class Character:
-    def __init__(self, cdi: CharacterData):
+    def __init__(self, cdi: CharacterData, state: State):
         self.cdi = cdi
+        self._state = state
 
     @property
     def name(self) -> str:
@@ -154,7 +156,7 @@ class Character:
     @property
     def augur(self) -> Union[AugurData, None]:
         if self.cdi.augur is not None:
-            return get_augur(self.cdi.augur)
+            return self._state.augurs.get_from_roll(self.cdi.augur)
         return None
 
     @property
@@ -164,8 +166,8 @@ class Character:
         return None
 
 
-def characters() -> List[Character]:
-    return [Character(cdi) for cdi in _CHARACTER_DATAS]
+def characters(state: State) -> List[Character]:
+    return [Character(cdi, state) for cdi in _CHARACTER_DATAS]
 
 
 def from_tokens(
@@ -242,7 +244,7 @@ async def new(ctx, name: str):
         occupation=occupation_roll,
         exp=0,
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
-        augur=random.choice(get_augurs()).roll,
+        augur=random.choice(ctx.bot.initbot_state.augurs.get_all()).roll,
     )
     _CHARACTER_DATAS.append(cdi)
     store_characters()
