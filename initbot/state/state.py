@@ -1,8 +1,17 @@
 from typing import List
 
 
+from ..data.ability import AbilityData
 from ..data.augur import AugurData
 from ..data.occupation import OccupationData
+
+
+class AbilityState:
+    def get_all(self) -> List[AbilityData]:
+        raise NotImplementedError()
+
+    def get_from_prefix(self, prefix) -> AbilityData:
+        raise NotImplementedError()
 
 
 class AugurState:
@@ -22,6 +31,10 @@ class OccupationState:
 
 
 class State:
+    @property
+    def abilities(self) -> AbilityState:
+        raise NotImplementedError()
+
     @property
     def augurs(self) -> AugurState:
         raise NotImplementedError()

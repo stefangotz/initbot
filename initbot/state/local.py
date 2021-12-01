@@ -2,10 +2,30 @@ from pathlib import Path
 from typing import Dict, List
 import logging
 
+from ..data.ability import AbilitiesData, AbilityData
 from ..data.augur import AugurData, AugursData
 from ..data.occupation import OccupationData, OccupationsData
-from ..utils import get_first_set_match
-from .state import State, AugurState, OccupationState
+from ..utils import get_first_set_match, get_unique_prefix_match
+from .state import State, AbilityState, AugurState, OccupationState
+
+
+class LocalAbilityState:
+    def __init__(self):
+        abilities_data = AbilitiesData(abilities=[])
+        path: Path = (
+            Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
+        )
+        if path.exists():
+            abilities_data = AbilitiesData.parse_file(path)
+        else:
+            logging.warning("Unable to find %s", path)
+        self._abilities = abilities_data.abilities
+
+    def get_all(self) -> List[AbilityData]:
+        return self._abilities
+
+    def get_from_prefix(self, prefix) -> AbilityData:
+        return get_unique_prefix_match(prefix, self._abilities, lambda a: a.name)
 
 
 class LocalAugurState(AugurState):
@@ -49,8 +69,13 @@ class LocalOccupationState:
 
 class LocalState(State):
     def __init__(self):
+        self._abilities = LocalAbilityState()
         self._augurs = LocalAugurState()
         self._occupations = LocalOccupationState()
+
+    @property
+    def abilities(self) -> AbilityState:
+        return self._abilities
 
     @property
     def augurs(self) -> AugurState:

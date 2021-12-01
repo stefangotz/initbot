@@ -48,7 +48,7 @@ _ABILITY_MODIFIERS: List[AbilityModifierData] = [
 ]
 
 _ABILITY_MODIFIERS_DICT: Dict[int, AbilityModifierData] = {
-    asm.score: asm for asm in _ABILITY_MODIFIERS
+    mod.score: mod for mod in _ABILITY_MODIFIERS
 }
 
 
@@ -60,9 +60,11 @@ def get_mod(score: int) -> int:
 async def abls(ctx):
     """Lists the six character abilities and their descriptions."""
     embed = Embed(
-        title="Abilities", description="**Luck**\n" + get_ability("Luck").description
+        title="Abilities",
+        description="**Luck**\n"
+        + ctx.bot.initbot_state.abilities.get_from_prefix("Luck").description,
     )
-    for ability in get_abilities():
+    for ability in ctx.bot.initbot_state.abilities.get_all():
         if ability.name != "Luck":
             embed.add_field(name=ability.name, value=ability.description)
     await ctx.send(embed=embed)
@@ -70,22 +72,22 @@ async def abls(ctx):
 
 @commands.command()
 async def abl(ctx, name: str):
-    await ctx.send(str(get_ability(name)))
+    await ctx.send(str(ctx.bot.initbot_state.abilities.get_from_prefix(name)))
 
 
 @commands.command()
-async def asms(ctx):
+async def mods(ctx):
     await ctx.send(str(_ABILITY_MODIFIERS))
 
 
 @commands.command()
-async def asm(ctx, score: int):
+async def mod(ctx, score: int):
     await ctx.send(str(_ABILITY_MODIFIERS_DICT[score]))
 
 
 @abls.error
 @abl.error
-@asms.error
-@asm.error
+@mods.error
+@mod.error
 async def handle_error(ctx, error):
     await ctx.send(str(error), delete_after=5)
