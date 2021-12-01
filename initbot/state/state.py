@@ -1,7 +1,7 @@
 from typing import List
 
 
-from ..data.ability import AbilityData
+from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.occupation import OccupationData
 
@@ -10,7 +10,13 @@ class AbilityState:
     def get_all(self) -> List[AbilityData]:
         raise NotImplementedError()
 
-    def get_from_prefix(self, prefix) -> AbilityData:
+    def get_from_prefix(self, prefix: str) -> AbilityData:
+        raise NotImplementedError()
+
+    def get_mods(self) -> List[AbilityModifierData]:
+        raise NotImplementedError()
+
+    def get_mod_from_score(self, score: int) -> AbilityModifierData:
         raise NotImplementedError()
 
 

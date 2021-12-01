@@ -2,30 +2,37 @@ from pathlib import Path
 from typing import Dict, List
 import logging
 
-from ..data.ability import AbilitiesData, AbilityData
+from ..data.ability import AbilitiesData, AbilityData, AbilityModifierData
 from ..data.augur import AugurData, AugursData
 from ..data.occupation import OccupationData, OccupationsData
-from ..utils import get_first_set_match, get_unique_prefix_match
+from ..utils import get_first_set_match, get_unique_prefix_match, get_first_match
 from .state import State, AbilityState, AugurState, OccupationState
 
 
 class LocalAbilityState:
     def __init__(self):
-        abilities_data = AbilitiesData(abilities=[])
+        self._abilities_data = AbilitiesData(abilities=[])
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
         )
         if path.exists():
-            abilities_data = AbilitiesData.parse_file(path)
+            self._abilities_data = AbilitiesData.parse_file(path)
         else:
             logging.warning("Unable to find %s", path)
-        self._abilities = abilities_data.abilities
 
     def get_all(self) -> List[AbilityData]:
-        return self._abilities
+        return self._abilities_data.abilities
 
     def get_from_prefix(self, prefix) -> AbilityData:
-        return get_unique_prefix_match(prefix, self._abilities, lambda a: a.name)
+        return get_unique_prefix_match(
+            prefix, self._abilities_data.abilities, lambda a: a.name
+        )
+
+    def get_mods(self) -> List[AbilityModifierData]:
+        return self._abilities_data.modifiers
+
+    def get_mod_from_score(self, score: int) -> AbilityModifierData:
+        return get_first_match(score, self._abilities_data.modifiers, lambda m: m.score)
 
 
 class LocalAugurState(AugurState):

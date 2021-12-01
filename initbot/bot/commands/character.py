@@ -13,7 +13,6 @@ from ...data.occupation import OccupationData
 from ...models.roll import DieRoll
 from ...state.state import State
 from ...utils import get_unique_prefix_match
-from .ability import get_abilities, get_mod
 
 
 _CHARACTERS_DATA: CharactersData = CharactersData(characters=[])  # type: ignore
@@ -45,7 +44,7 @@ class Character:
     def ability_scores(self) -> List[AbilityScoreData]:
         return [
             AbilityScoreData(abl=abl, score=vars(self.cdi)[abl.name.lower()])
-            for abl in get_abilities()
+            for abl in self._state.abilities.get_all()
             if vars(self.cdi).get(abl.name.lower())
         ]
 
@@ -125,7 +124,7 @@ class Character:
             # TO DO: modify by class (warrior gets +level)
             # TO DO: modify by birth augur
             # roll is also modified by two-handed weapon (d16)
-            return get_mod(self.agility.score)
+            return self._state.abilities.get_mod_from_score(self.agility.score).mod
         return None
 
     @initiative_modifier.setter

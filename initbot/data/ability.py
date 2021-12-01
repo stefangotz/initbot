@@ -8,15 +8,16 @@ class AbilityData(BaseModel):
     description: str
 
 
-class AbilitiesData(BaseModel):
-    abilities: List[AbilityData]
-
-
 class AbilityModifierData(BaseModel):
     score: int
     mod: int
     spells: int
     max_spell_level: int
+
+
+class AbilitiesData(BaseModel):
+    abilities: List[AbilityData]
+    modifiers: List[AbilityModifierData]
 
 
 class AbilityScoreData(BaseModel):
