@@ -11,7 +11,7 @@ from .state import State, AbilityState, AugurState, OccupationState
 
 class LocalAbilityState:
     def __init__(self):
-        self._abilities_data = AbilitiesData(abilities=[])
+        self._abilities_data = AbilitiesData(abilities=[], modifiers=[])
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
         )
