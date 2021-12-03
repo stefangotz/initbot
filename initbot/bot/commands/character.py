@@ -1,75 +1,18 @@
-from pathlib import Path
-from typing import List, Union, Iterable
+from typing import List
 import json
 import random
 
 from discord.ext import commands  # type: ignore
-from pydantic.json import pydantic_encoder
 
-from ...data.character import CharacterData, CharactersData
+from ...data.character import CharacterData
 from ...data.occupation import OccupationData
 from ...models.character import Character
 from ...models.roll import DieRoll
 from ...state.state import State
-from ...utils import get_unique_prefix_match
-
-
-_CHARACTERS_DATA: CharactersData = CharactersData(characters=[])  # type: ignore
-_CHARACTER_DATAS: List[CharacterData] = _CHARACTERS_DATA.characters
 
 
 def characters(state: State) -> List[Character]:
-    return [Character(cdi, state) for cdi in _CHARACTER_DATAS]
-
-
-def from_tokens(
-    tokens: Iterable[str], user: str, create: bool = False
-) -> CharacterData:
-    name: str = " ".join(tokens)
-    return from_str(name, user, create)
-
-
-def from_str(name: str, user: str, create: bool = False) -> CharacterData:
-    if name:
-        return from_name(name, create, user)
-    return from_user(user)
-
-
-def from_name(
-    name: str, create: bool = False, user: Union[str, None] = None
-) -> CharacterData:
-    try:
-        return get_unique_prefix_match(name, _CHARACTER_DATAS, lambda cdi: cdi.name)
-    except KeyError as err:
-        if create and user:
-            cdi: CharacterData = CharacterData(name=name, user=user)  # type: ignore
-            _CHARACTER_DATAS.append(cdi)
-            return cdi
-        raise KeyError(f"Unable to find character with name '{name}'") from err
-
-
-def from_user(user: str) -> CharacterData:
-    return get_unique_prefix_match(user, _CHARACTER_DATAS, lambda cdi: cdi.user)
-
-
-def normalize_name(name: str) -> str:
-    return name.lower().replace(" ", "_")
-
-
-def store_characters():
-    with open(
-        Path(__file__).parent / "characters.json", "w", encoding="UTF8"
-    ) as file_desc:
-        json.dump(_CHARACTERS_DATA, file_desc, default=pydantic_encoder)
-
-
-def load_characters():
-    path = Path(__file__).parent / "characters.json"
-    if path.exists():
-        global _CHARACTERS_DATA  # pylint: disable=global-statement
-        _CHARACTERS_DATA = CharactersData.parse_file(path)
-        global _CHARACTER_DATAS  # pylint: disable=global-statement
-        _CHARACTER_DATAS = _CHARACTERS_DATA.characters
+    return [Character(char_data, state) for char_data in state.characters.get_all()]
 
 
 @commands.command()
@@ -100,8 +43,7 @@ async def new(ctx, name: str):
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
         augur=random.choice(ctx.bot.initbot_state.augurs.get_all()).roll,
     )
-    _CHARACTER_DATAS.append(cdi)
-    store_characters()
+    ctx.bot.initbot_state.characters.add_and_store(cdi)
     txt: str = cdi.json()
     for idx in range(0, len(txt), 1000):
         await ctx.send(txt[idx : idx + 1000])
@@ -129,7 +71,9 @@ async def set_(ctx, *, txt):
     val = tokens[-1]
     attr = tokens[-2]
     name_tokens = tokens[0:-2]
-    cdi: CharacterData = from_tokens(name_tokens, ctx.author.display_name)
+    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+        name_tokens, ctx.author.display_name
+    )
     attr = attr.lower()
     candidates: List[str] = []
     if attr in vars(cdi):
@@ -141,7 +85,7 @@ async def set_(ctx, *, txt):
             setattr(cdi, candidates[0], int(val))
         except ValueError:
             setattr(cdi, candidates[0], val)
-        store_characters()
+        ctx.bot.initbot_state.characters.update_and_store(cdi)
         await ctx.send(
             f"{cdi.name}'s {candidates[0]} is now {getattr(cdi, candidates[0])}",
             delete_after=3,
@@ -168,16 +112,22 @@ async def remove(ctx, *args):
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
-    cdi: CharacterData = from_tokens(args, ctx.author.display_name)
-    _CHARACTER_DATAS.remove(cdi)
-    store_characters()
+    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+        args, ctx.author.display_name
+    )
+    ctx.bot.initbot_state.characters.remove_and_store(cdi)
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
 
 
 @commands.command()
 async def chars(ctx):
     """Displays all characters known to the bot."""
-    txt: str = ", ".join([f"**{cdi.name}** (_{cdi.user}_)" for cdi in _CHARACTER_DATAS])
+    txt: str = ", ".join(
+        [
+            f"**{cdi.name}** (_{cdi.user}_)"
+            for cdi in ctx.bot.initbot_state.characters.get_all()
+        ]
+    )
     if not txt:
         txt = "No characters registered"
     await ctx.send(txt)
@@ -193,7 +143,9 @@ async def char(ctx, *args):
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
-    cdi: CharacterData = from_tokens(args, ctx.author.display_name)
+    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+        args, ctx.author.display_name
+    )
     await ctx.send(json.dumps(json.loads(cdi.json()), indent=4, sort_keys=True))
 
 
@@ -204,6 +156,3 @@ async def char(ctx, *args):
 @char.error
 async def char_error(ctx, error):
     await ctx.send(str(error), delete_after=5)
-
-
-load_characters()

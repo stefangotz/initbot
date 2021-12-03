@@ -1,8 +1,8 @@
-from typing import List
-
+from typing import List, Union, Iterable
 
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
+from ..data.character import CharacterData
 from ..data.occupation import OccupationData
 
 
@@ -28,6 +28,36 @@ class AugurState:
         raise NotImplementedError()
 
 
+class CharacterState:
+    def get_all(self) -> List[CharacterData]:
+        raise NotImplementedError()
+
+    def get_from_tokens(
+        self, tokens: Iterable[str], user: str, create: bool = False
+    ) -> CharacterData:
+        raise NotImplementedError()
+
+    def get_from_str(self, name: str, user: str, create: bool = False) -> CharacterData:
+        raise NotImplementedError()
+
+    def get_from_name(
+        self, name: str, create: bool = False, user: Union[str, None] = None
+    ) -> CharacterData:
+        raise NotImplementedError()
+
+    def get_from_user(self, user: str) -> CharacterData:
+        raise NotImplementedError()
+
+    def add_and_store(self, char_data: CharacterData):
+        raise NotImplementedError()
+
+    def remove_and_store(self, char_data: CharacterData):
+        raise NotImplementedError()
+
+    def update_and_store(self, char_data: CharacterData):
+        raise NotImplementedError()
+
+
 class OccupationState:
     def get_all(self) -> List[OccupationData]:
         raise NotImplementedError()
@@ -43,6 +73,10 @@ class State:
 
     @property
     def augurs(self) -> AugurState:
+        raise NotImplementedError()
+
+    @property
+    def characters(self) -> CharacterState:
         raise NotImplementedError()
 
     @property
