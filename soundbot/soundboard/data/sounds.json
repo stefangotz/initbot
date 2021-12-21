@@ -1,16 +1,232 @@
 {
     "sounds": [
         {
-            "name": "battle",
-            "description": "Battle noises",
-            "file": "battle-160.mp3",
-            "category": "ambient"
+            "name": "Birds",
+            "file": "birds160.mp3",
+            "description": "Bird song",
+            "category": "Ambient"
         },
         {
-            "name": "roll",
-            "description": "Roll for initiative",
-            "file": "roll-160.mp3",
-            "category": "fx"
+            "name": "Thunder",
+            "file": "thunder160.mp3",
+            "description": "A thunderstorm with rain",
+            "category": "Ambient"
+        },
+        {
+            "name": "Snow",
+            "file": "snow.mp3",
+            "description": "A windy snowstorm",
+            "category": "Ambient"
+        },
+        {
+            "name": "Fire",
+            "file": "fireplace.mp3",
+            "description": "A crackling open fire",
+            "category": "Ambient"
+        },
+        {
+            "name": "Waterfall",
+            "file": "waterfall160.mp3",
+            "description": "A loud rush of water",
+            "category": "Ambient"
+        },
+        {
+            "name": "Leaves",
+            "file": "aspen-tree160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Tavern",
+            "file": "tavernbis-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Cave",
+            "file": "cave-loop-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Camp",
+            "file": "camp-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Dragon",
+            "file": "dragon-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Door",
+            "file": "door-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Magic weapon",
+            "file": "weapon-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Bow",
+            "file": "bow-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Alchemist place",
+            "file": "alchemist-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Sorcerer",
+            "file": "whispering-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Footsteps",
+            "file": "footsteps-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Cart",
+            "file": "cart-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Torch",
+            "file": "torch-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Medieval theme",
+            "file": "medievaltheme-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Friendly Land  theme",
+            "file": "friendlylandtheme-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Mystical Place theme",
+            "file": "misticalplace-theme-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Suspense theme",
+            "file": "suspense-theme.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Potion",
+            "file": "spell-heal.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Wound",
+            "file": "wound2-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Sword attack",
+            "file": "sword-attack-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Exploratiom theme",
+            "file": "exploration-theme-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Fanfares",
+            "file": "fanfares-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Blacksmith",
+            "file": "blacksmith-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Lock",
+            "file": "lock-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Village",
+            "file": "village-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Location theme",
+            "file": "location-theme-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Sleep",
+            "file": "snoring-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Win",
+            "file": "win-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Discovery",
+            "file": "discovery-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Grab",
+            "file": "grab-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Recharge",
+            "file": "recharge-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "End",
+            "file": "end-160.mp3",
+            "description": "",
+            "category": ""
+        },
+        {
+            "name": "Finding",
+            "file": "finding-160.mp3",
+            "description": "",
+            "category": ""
         }
     ]
 }
