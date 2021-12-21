@@ -33,200 +33,200 @@
         {
             "name": "Leaves",
             "file": "aspen-tree160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Wind and rustling leaves",
+            "category": "Ambient"
         },
         {
             "name": "Tavern",
             "file": "tavernbis-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Flute music and lively background chatter",
+            "category": "Ambient"
         },
         {
             "name": "Cave",
             "file": "cave-loop-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Echoing splashes and chittering animals",
+            "category": "Ambient"
         },
         {
             "name": "Camp",
             "file": "camp-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Cheers and sounds of setting up camp",
+            "category": "Event"
         },
         {
             "name": "Dragon",
             "file": "dragon-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A screech and a swoop of large leathery wings",
+            "category": "Event"
         },
         {
             "name": "Door",
             "file": "door-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A heavy latch is pulled and hinges creak",
+            "category": "Event"
         },
         {
             "name": "Magic weapon",
             "file": "weapon-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A blast of energy",
+            "category": "Event"
         },
         {
             "name": "Bow",
             "file": "bow-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "The thwock of an arrow hitting a target",
+            "category": "Event"
         },
         {
             "name": "Alchemist place",
             "file": "alchemist-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Mysterious potions bubble",
+            "category": "Ambient"
         },
         {
             "name": "Sorcerer",
             "file": "whispering-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A voice whispers an ancient incantation",
+            "category": "Ambient"
         },
         {
             "name": "Footsteps",
             "file": "footsteps-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Feet crunch on dirt and gravel",
+            "category": "Ambient"
         },
         {
             "name": "Cart",
             "file": "cart-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Wheels creak over the road",
+            "category": "Ambient"
         },
         {
             "name": "Torch",
             "file": "torch-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A bright flame roars",
+            "category": "Ambient"
         },
         {
             "name": "Medieval theme",
             "file": "medievaltheme-160.mp3",
             "description": "",
-            "category": ""
+            "category": "Music"
         },
         {
-            "name": "Friendly Land  theme",
+            "name": "Friendly Land theme",
             "file": "friendlylandtheme-160.mp3",
             "description": "",
-            "category": ""
+            "category": "Music"
         },
         {
             "name": "Mystical Place theme",
             "file": "misticalplace-theme-160.mp3",
             "description": "",
-            "category": ""
+            "category": "Music"
         },
         {
             "name": "Suspense theme",
             "file": "suspense-theme.mp3",
             "description": "",
-            "category": ""
+            "category": "Music"
         },
         {
             "name": "Potion",
             "file": "spell-heal.mp3",
-            "description": "",
-            "category": ""
+            "description": "The magical chiming of a spell",
+            "category": "Event"
         },
         {
             "name": "Wound",
             "file": "wound2-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A groan of pain",
+            "category": "Event"
         },
         {
             "name": "Sword attack",
             "file": "sword-attack-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "The clang of a sword",
+            "category": "Event"
         },
         {
-            "name": "Exploratiom theme",
+            "name": "Exploration theme",
             "file": "exploration-theme-160.mp3",
             "description": "",
-            "category": ""
+            "category": "Music"
         },
         {
             "name": "Fanfares",
             "file": "fanfares-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Trumpets sounding",
+            "category": "Event"
         },
         {
             "name": "Blacksmith",
             "file": "blacksmith-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "General hammering and clinking noises",
+            "category": "Ambient"
         },
         {
             "name": "Lock",
             "file": "lock-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "The click of a rusty lock",
+            "category": "Event"
         },
         {
             "name": "Village",
             "file": "village-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Chickens, chattering villagers, and busy sounds",
+            "category": "Ambient"
         },
         {
             "name": "Location theme",
             "file": "location-theme-160.mp3",
             "description": "",
-            "category": ""
+            "category": "Music"
         },
         {
             "name": "Sleep",
             "file": "snoring-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Gentle snoring",
+            "category": "Ambient"
         },
         {
             "name": "Win",
             "file": "win-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A celebratory chime",
+            "category": "Event"
         },
         {
             "name": "Discovery",
             "file": "discovery-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A sparkling chime",
+            "category": "Event"
         },
         {
             "name": "Grab",
             "file": "grab-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "Something has been snatched",
+            "category": "Event"
         },
         {
             "name": "Recharge",
             "file": "recharge-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "An energetic rising sound",
+            "category": "Event"
         },
         {
             "name": "End",
             "file": "end-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "A peaceful piano melody",
+            "category": "Event"
         },
         {
             "name": "Finding",
             "file": "finding-160.mp3",
-            "description": "",
-            "category": ""
+            "description": "An exciting synth chord",
+            "category": "Event"
         }
     ]
 }
