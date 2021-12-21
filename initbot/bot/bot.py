@@ -8,7 +8,7 @@ bot = Bot(command_prefix="$")
 
 @bot.event
 async def on_ready():
-    print("Logged in as {0.user}".format(bot))
+    print(f"Logged in as {bot.user}")
 
 
 def run():

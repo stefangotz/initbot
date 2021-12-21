@@ -1,0 +1,16 @@
+{
+    "sounds": [
+        {
+            "name": "battle",
+            "description": "Battle noises",
+            "file": "battle-160.mp3",
+            "category": "ambient"
+        },
+        {
+            "name": "roll",
+            "description": "Roll for initiative",
+            "file": "roll-160.mp3",
+            "category": "fx"
+        }
+    ]
+}
