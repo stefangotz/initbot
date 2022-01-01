@@ -17,14 +17,17 @@ class Sound:
     category: str
 
 
-sounds_file = Path(__file__).parents[2] / "sounds/sounds.json"
+sounds_file = Path(__file__).parents[2] / "soundboard/data/sounds.json"
+sounds_list: List[Sound] = []
 if sounds_file.exists():
     with open(sounds_file, encoding="utf8") as fd:
-        SOUNDS: List[Sound] = [
-            Sound(**a) for a in json.load(fd)["sounds"]
-        ]  # type: ignore
+        sounds_list = [Sound(**a) for a in json.load(fd)["sounds"]]  # type: ignore
 
-SOUNDS_DICT: Dict[str, Sound] = {s.name: s for s in SOUNDS}
+
+SOUNDS_DICT: Dict[str, Sound] = {s.name: s for s in sounds_list}
+SOUNDS_CATEGORIES: Dict[str, List[Sound]] = {}
+for s in sounds_list:
+    SOUNDS_CATEGORIES.setdefault(s.category, []).append(s)
 
 
 async def turn_off_soundboard(ctx: Context):
@@ -45,8 +48,8 @@ async def play_sound(bot: Bot, sound_file: str):
         if client.is_playing:
             client.stop()
 
-        if (Path("./initbot/sounds") / sound_file).exists():
-            audio = FFmpegPCMAudio(source="./initbot/sounds/" + sound_file)
+        if (Path("./soundbot/soundboard/data") / sound_file).exists():
+            audio = FFmpegPCMAudio(source="./soundbot/soundboard/data/" + sound_file)
             client.play(audio)
         else:
             raise ValueError(f"File '{sound_file}' not found")
@@ -59,8 +62,16 @@ def lookup_sound(sound_name: str):
 
 
 def format_sounds():
-    formatted_list: str = "\n".join(f"` {s.name}  ` {s.description}" for s in SOUNDS)
-    return formatted_list
+    sorted_cats = sorted(SOUNDS_CATEGORIES.keys())
+    formatted: str = ""
+    for cat in sorted_cats:
+        formatted += f"**{cat}:**\n"
+        sounds_in_cat = sorted(SOUNDS_CATEGORIES[cat], key=lambda snd: snd.name)
+        formatted += (
+            "\n".join(f"` {s.name} ` *{s.description}*" for s in sounds_in_cat) + "\n"
+        )
+        formatted += "\n"
+    return formatted
 
 
 @commands.command()
@@ -78,7 +89,7 @@ async def sounds_error(ctx, error):
 
 @commands.command(usage="[sound name]")
 async def sound(ctx, sound_name: str):
-    """Plays a sound."""
+    """Plays a sound. Use double quotes for sounds with spaces."""
     selected_sound = lookup_sound(sound_name)
     if len(selected_sound) > 0:
         await ctx.send(f":loudspeaker: Playing {sound_name}", delete_after=10)
@@ -107,7 +118,7 @@ async def shush_error(ctx, error):
 
 @commands.command(usage="status [on | off]")
 async def soundboard(ctx: Context, status: str = ""):
-    """Turn sound effects on or off. The bot will join the first voice channel it finds."""
+    """Sound on or off. The bot joins the first voice channel it finds."""
     soundboard_status: bool = any(vc.is_connected for vc in ctx.bot.voice_clients)
     if status == "on" and not soundboard_status:
         soundboard_status = True
