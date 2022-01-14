@@ -111,12 +111,22 @@ class Character:
 
     @property
     def initiative_modifier(self) -> Union[int, None]:
-        if self.cdi.initiative_modifier is None and self.agility is not None:
+        mod = None
+        if self.cdi.initiative_modifier is None:
             # TO DO: modify by class (warrior gets +level)
-            # TO DO: modify by birth augur
             # roll is also modified by two-handed weapon (d16)
-            return self._state.abilities.get_mod_from_score(self.agility.score).mod
-        return None
+            if self.agility is not None:
+                mod = self._state.abilities.get_mod_from_score(self.agility.score).mod
+            if self.cdi.augur == 24:
+                if self.cdi.initial_luck is not None:
+                    if mod is None:
+                        mod = 0
+                    mod += self._state.abilities.get_mod_from_score(
+                        self.cdi.initial_luck
+                    ).mod
+        else:
+            mod = self.cdi.initiative_modifier
+        return mod
 
     @initiative_modifier.setter
     def initiative_modifier(self, ini_mod: int):
