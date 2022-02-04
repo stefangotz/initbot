@@ -26,6 +26,14 @@ class Character:
         self.cdi.name = name
 
     @property
+    def level(self) -> int:
+        return self.cdi.level
+
+    @level.setter
+    def level(self, level: int):
+        self.cdi.level = level
+
+    @property
     def user(self) -> str:
         return self.cdi.user
 

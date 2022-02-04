@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class CharacterData(BaseModel):
     name: str
     user: str
+    level: int = 0
     strength: Union[int, None] = None
     agility: Union[int, None] = None
     stamina: Union[int, None] = None
