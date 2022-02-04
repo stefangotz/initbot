@@ -1,5 +1,7 @@
 from typing import List, Union, Iterable
 
+from initbot.data.cls import ClassData
+
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
@@ -66,6 +68,14 @@ class OccupationState:
         raise NotImplementedError()
 
 
+class ClassState:
+    def get_all(self) -> List[ClassData]:
+        raise NotImplementedError()
+
+    def get_from_name(self, name: str) -> ClassData:
+        raise NotImplementedError()
+
+
 class State:
     @property
     def abilities(self) -> AbilityState:
@@ -81,4 +91,8 @@ class State:
 
     @property
     def occupations(self) -> OccupationState:
+        raise NotImplementedError()
+
+    @property
+    def classes(self) -> ClassState:
         raise NotImplementedError()

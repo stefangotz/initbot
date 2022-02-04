@@ -8,6 +8,7 @@ from .occupation import occupations
 from .ability import abls, abl, mods, mod
 from .augur import augurs, augur
 from .tarot import tarot
+from .cls import classes, cls
 
 commands: FrozenSet[Any] = frozenset(
     (
@@ -28,5 +29,7 @@ commands: FrozenSet[Any] = frozenset(
         augurs,
         augur,
         tarot,
+        classes,
+        cls,
     )
 )

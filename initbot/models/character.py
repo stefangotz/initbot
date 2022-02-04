@@ -1,6 +1,8 @@
 from typing import List, Union
 import random
 
+from initbot.data.cls import ClassData
+
 from ..data.ability import AbilityScoreData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
@@ -162,4 +164,10 @@ class Character:
     def occupation(self) -> Union[OccupationData, None]:
         if self.cdi.occupation is not None:
             return self._state.occupations.get_from_roll(self.cdi.occupation)
+        return None
+
+    @property
+    def cls(self) -> Union[ClassData, None]:
+        if self.cdi.cls is not None:
+            return self._state.classes.get_from_name(self.cdi.cls)
         return None

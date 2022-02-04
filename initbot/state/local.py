@@ -5,15 +5,24 @@ import logging
 
 from pydantic.json import pydantic_encoder
 
+from initbot.data.cls import ClassData, ClassesData
+
 from ..data.ability import AbilitiesData, AbilityData, AbilityModifierData
 from ..data.augur import AugurData, AugursData
 from ..data.character import CharacterData, CharactersData
 from ..data.occupation import OccupationData, OccupationsData
 from ..utils import get_first_set_match, get_unique_prefix_match, get_first_match
-from .state import State, AbilityState, AugurState, CharacterState, OccupationState
+from .state import (
+    ClassState,
+    State,
+    AbilityState,
+    AugurState,
+    CharacterState,
+    OccupationState,
+)
 
 
-class LocalAbilityState:
+class LocalAbilityState(AbilityState):
     def __init__(self):
         self._abilities_data = AbilitiesData(abilities=[], modifiers=[])
         path: Path = (
@@ -59,7 +68,7 @@ class LocalAugurState(AugurState):
         return self._augurs_dict[roll]
 
 
-class LocalCharacterState:
+class LocalCharacterState(CharacterState):
     def __init__(self):
         chars_data = CharactersData(characters=[])
         self._path: Path = (
@@ -135,7 +144,7 @@ class LocalCharacterState:
             )
 
 
-class LocalOccupationState:
+class LocalOccupationState(OccupationState):
     def __init__(self):
         occupations_data: OccupationsData = OccupationsData(occupations=[])
         path: Path = (
@@ -154,12 +163,32 @@ class LocalOccupationState:
         return get_first_set_match(roll, self.get_all(), lambda o: o.rolls)
 
 
+class LocalClassState(ClassState):
+    def __init__(self):
+        classes_data: ClassesData = ClassesData(classes=[])
+        path: Path = Path(__file__).parent.parent / "bot" / "commands" / "classes.json"
+        if path.exists():
+            classes_data = ClassesData.parse_file(path)
+        else:
+            logging.warning("Unable to find %s", path)
+        self._classes: Dict[str, ClassData] = {
+            cls.name: cls for cls in classes_data.classes
+        }
+
+    def get_all(self) -> List[ClassData]:
+        return list(self._classes.values())
+
+    def get_from_name(self, name: str) -> ClassData:
+        return self._classes[name]
+
+
 class LocalState(State):
     def __init__(self):
         self._abilities = LocalAbilityState()
         self._augurs = LocalAugurState()
         self._characters = LocalCharacterState()
         self._occupations = LocalOccupationState()
+        self._classes = LocalClassState()
 
     @property
     def abilities(self) -> AbilityState:
@@ -176,3 +205,7 @@ class LocalState(State):
     @property
     def occupations(self) -> OccupationState:
         return self._occupations
+
+    @property
+    def classes(self) -> ClassState:
+        return self._classes

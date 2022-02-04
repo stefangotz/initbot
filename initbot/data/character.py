@@ -22,6 +22,7 @@ class CharacterData(BaseModel):
     initiative_modifier: Union[int, None] = None
     hit_die: Union[int, None] = None
     augur: Union[int, None] = None
+    cls: Union[str, None] = None
 
 
 class CharactersData(BaseModel):
