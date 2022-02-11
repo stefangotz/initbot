@@ -12,7 +12,11 @@ from ...state.state import State
 
 
 def characters(state: State) -> List[Character]:
-    return [Character(char_data, state) for char_data in state.characters.get_all()]
+    return [
+        Character(char_data, state)
+        for char_data in state.characters.get_all()
+        if char_data.active
+    ]
 
 
 @commands.command()
@@ -149,10 +153,48 @@ async def char(ctx, *args):
     await ctx.send(json.dumps(json.loads(cdi.json()), indent=4, sort_keys=True))
 
 
+@commands.command()
+async def park(ctx, *args):
+    """Deactivates a character so it is no longer included in the initiative order.
+
+    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages more than one character, the character name is required.
+
+    The character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
+    That's as long as no other character name starts with "Med"."""
+    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+        args, ctx.author.display_name
+    )
+    cdi.active = False
+    ctx.bot.initbot_state.characters.update_and_store(cdi)
+    await ctx.send(f"{cdi.name} is now inactive", delete_after=3)
+
+
+@commands.command()
+async def play(ctx, *args):
+    """Activates a character deactivated with the 'park' command so it is included in the initiative order again.
+
+    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages more than one character, the character name is required.
+
+    The character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
+    That's as long as no other character name starts with "Med"."""
+    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+        args, ctx.author.display_name
+    )
+    cdi.active = True
+    ctx.bot.initbot_state.characters.update_and_store(cdi)
+    await ctx.send(f"{cdi.name} is now active", delete_after=3)
+
+
 @new.error
 @set_.error
 @remove.error
 @chars.error
 @char.error
+@park.error
+@play.error
 async def char_error(ctx, error):
     await ctx.send(str(error), delete_after=5)

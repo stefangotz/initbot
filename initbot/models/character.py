@@ -182,3 +182,11 @@ class Character:
         if self.cdi.cls is not None:
             return self._state.classes.get_from_name(self.cdi.cls)
         return None
+
+    @property
+    def active(self) -> bool:
+        return self.cdi.active
+
+    @active.setter
+    def active(self, new: bool):
+        self.cdi.active = new

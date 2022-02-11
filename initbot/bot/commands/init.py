@@ -42,7 +42,12 @@ async def init(ctx, *, name_and_initiative: str):
 
     ctx.bot.initbot_state.characters.update_and_store(cdi)
 
-    await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}", delete_after=3)
+    suffix = ""
+    if not cdi.active:
+        suffix = " (note that this character is not currently active; you may want to activate this character with the 'play' command or maybe you meant a different character?)"
+    await ctx.send(
+        f"{cdi.name}'s initiative is now {cdi.initiative}" + suffix, delete_after=3
+    )
 
 
 @commands.command()
