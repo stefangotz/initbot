@@ -21,6 +21,7 @@ class CharacterData(BaseModel):
     exp: Union[int, None] = None
     alignment: Union[str, None] = None
     initiative: Union[int, None] = None
+    initiative_time: Union[int, None] = None
     initiative_modifier: Union[int, None] = None
     hit_die: Union[int, None] = None
     augur: Union[int, None] = None

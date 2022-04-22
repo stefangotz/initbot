@@ -120,6 +120,10 @@ class Character:
         return self.cdi.initiative
 
     @property
+    def initiative_time(self) -> Union[int, None]:
+        return self.cdi.initiative_time
+
+    @property
     def initiative_modifier(self) -> Union[int, None]:
         mod = None
         if self.cdi.initiative_modifier is None:

@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import List
+import logging
 
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
@@ -39,6 +41,7 @@ async def init(ctx, *, name_and_initiative: str):
         name, ctx.author.display_name, create=True
     )
     cdi.initiative = initiative
+    cdi.initiative_time = int(datetime.now().timestamp())
 
     ctx.bot.initbot_state.characters.update_and_store(cdi)
 
@@ -62,11 +65,22 @@ async def inis(ctx):
     For example, if two characters have the same initiative value and their Agility scores are known, the tie is broken based on that.
     However, if their Agility scores are not set, the tie on the initiative value is broken randomly."""
 
+    def discard_characters_with_old_initiative_times(char: Character):
+        return (
+            char.initiative_time is not None
+            and char.initiative_time > int(datetime.now().timestamp()) - 24 * 3600
+        )
+
     def ini_comparator(char: Character):
         return char.initiative_comparison_value()
 
     sorted_characters = sorted(
-        characters(ctx.bot.initbot_state), key=ini_comparator, reverse=True
+        filter(
+            discard_characters_with_old_initiative_times,
+            characters(ctx.bot.initbot_state),
+        ),
+        key=ini_comparator,
+        reverse=True,
     )
     desc: str = "\n".join(
         f"{char.initiative}: **{char.name}** (*{char.user}*)"
@@ -79,4 +93,5 @@ async def inis(ctx):
 @inis.error
 @init.error
 async def init_error(ctx, error):
+    logging.exception(ctx, error)
     await ctx.send(str(error), delete_after=5)
