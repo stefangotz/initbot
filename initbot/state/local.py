@@ -114,7 +114,11 @@ class LocalCharacterState(CharacterState):
             raise KeyError(f"Unable to find character with name '{name}'") from err
 
     def get_from_user(self, user: str) -> CharacterData:
-        return get_unique_prefix_match(user, self._characters, lambda cdi: cdi.user)
+        return get_unique_prefix_match(
+            user,
+            filter(lambda char_data: char_data.active, self._characters),
+            lambda cdi: cdi.user,
+        )
 
     def add_and_store(self, char_data: CharacterData):
         if any(char for char in self.get_all() if char.name == char_data.name):
