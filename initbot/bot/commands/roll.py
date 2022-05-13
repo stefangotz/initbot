@@ -17,9 +17,13 @@ async def roll(ctx, txt: str):
         roll_result = dice.roll_all()
         if dice.rolls == 1:
             string = str(roll_result[0])
+            total = ""
         else:
             string = str(roll_result).strip("[]")
-        await ctx.send(f"{ctx.author.display_name} rolled **{string}** on {dice}")
+            total = f" ({sum(roll_result)} total) "
+        await ctx.send(
+            f"{ctx.author.display_name} rolled **{string}{total}** on {dice}"
+        )
 
 
 @roll.error
