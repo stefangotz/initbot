@@ -20,8 +20,9 @@ class DieRoll:
         return [self.roll_one() for _ in range(0, self.rolls)]
 
     def roll_one(self) -> int:
-        return sum(
-            random.randint(1, self.sides) + self.modifier for _ in range(0, self.dice)
+        return (
+            sum(random.randint(1, self.sides) for _ in range(0, self.dice))
+            + self.modifier
         )
 
     def __str__(self):
