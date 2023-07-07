@@ -113,5 +113,16 @@ def get_unique_prefix_match(
     )
 
 
+def get_exact_or_unique_prefix_match(
+    str_to_match: str,
+    candidates: Sequence[A],
+    get_str_from_candidate=Callable[[A], str],
+) -> A:
+    exact_matches = [i for i in candidates if get_str_from_candidate(i) == str_to_match]
+    if len(exact_matches) == 1:
+        return exact_matches[0]
+    return get_unique_prefix_match(str_to_match, candidates, get_str_from_candidate)
+
+
 def normalize_str(strng: str) -> str:
     return strng.lower().strip()

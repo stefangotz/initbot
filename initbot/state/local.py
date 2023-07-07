@@ -12,6 +12,7 @@ from ..data.augur import AugurData, AugursData
 from ..data.character import CharacterData, CharactersData
 from ..data.occupation import OccupationData, OccupationsData
 from ..utils import (
+    get_exact_or_unique_prefix_match,
     get_first_set_match,
     get_unique_prefix_match,
     get_first_match,
@@ -109,7 +110,9 @@ class LocalCharacterState(CharacterState):
         self, name: str, create: bool = False, user: Union[str, None] = None
     ) -> CharacterData:
         try:
-            return get_unique_prefix_match(name, self._characters, lambda cdi: cdi.name)
+            return get_exact_or_unique_prefix_match(
+                name, self._characters, lambda cdi: cdi.name
+            )
         except KeyError as err:
             if create and user:
                 cdi: CharacterData = CharacterData(name=name, user=user)  # type: ignore
