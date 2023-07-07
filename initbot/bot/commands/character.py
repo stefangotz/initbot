@@ -48,7 +48,7 @@ async def new(ctx, name: str):
         augur=random.choice(ctx.bot.initbot_state.augurs.get_all()).roll,
     )
     ctx.bot.initbot_state.characters.add_and_store(cdi)
-    txt: str = cdi.json()
+    txt: str = cdi.model_dump_json()
     for idx in range(0, len(txt), 1000):
         await ctx.send(txt[idx : idx + 1000])
 
@@ -151,7 +151,9 @@ async def char(ctx, *args):
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
         args, ctx.author.display_name
     )
-    await ctx.send(json.dumps(json.loads(cdi.json()), indent=4, sort_keys=True))
+    await ctx.send(
+        json.dumps(json.loads(cdi.dump_model_json()), indent=4, sort_keys=True)
+    )
 
 
 @commands.command()

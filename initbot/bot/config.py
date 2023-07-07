@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public
 # License along with initbot. If not, see <https://www.gnu.org/licenses/>.
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -35,6 +35,8 @@ You should have received a copy of the GNU Affero General Public
 License along with initbot. If not, see <https://www.gnu.org/licenses/>."""
     project_version: str = "0.1.0"
     token: str
+    appId: str
+    botlink: str
 
 
 CFG = Settings(_env_file=".env", _env_file_encoding="utf-8")
