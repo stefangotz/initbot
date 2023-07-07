@@ -116,7 +116,7 @@ def get_unique_prefix_match(
 def get_exact_or_unique_prefix_match(
     str_to_match: str,
     candidates: Sequence[A],
-    get_str_from_candidate=Callable[[A], str],
+    get_str_from_candidate: Callable[[A], str],
 ) -> A:
     exact_matches = [i for i in candidates if get_str_from_candidate(i) == str_to_match]
     if len(exact_matches) == 1:
