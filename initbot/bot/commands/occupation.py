@@ -2,7 +2,7 @@ from discord.ext import commands  # type: ignore
 
 
 @commands.command()
-async def occupations(ctx):
+async def occupations(ctx) -> None:
     """Lists all character occupations, including the starting weapon and goods they confer to new characters."""
     msg = ""
     for occ in ctx.bot.initbot_state.occupations.get_all():
@@ -20,5 +20,5 @@ async def occupations(ctx):
 
 
 @occupations.error
-async def occupations_error(ctx, error):
+async def occupations_error(ctx, error) -> None:
     await ctx.send(str(error), delete_after=5)

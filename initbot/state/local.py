@@ -11,7 +11,11 @@ from ..data.ability import AbilitiesData, AbilityData, AbilityModifierData
 from ..data.augur import AugurData, AugursData
 from ..data.character import CharacterData, CharactersData
 from ..data.occupation import OccupationData, OccupationsData
-from ..utils import get_first_set_match, get_unique_prefix_match, get_first_match
+from ..utils import (
+    get_first_set_match,
+    get_unique_prefix_match,
+    get_first_match,
+)
 from .state import (
     ClassState,
     State,
@@ -116,7 +120,7 @@ class LocalCharacterState(CharacterState):
     def get_from_user(self, user: str) -> CharacterData:
         return get_unique_prefix_match(
             user,
-            filter(lambda char_data: char_data.active, self._characters),
+            tuple(filter(lambda char_data: char_data.active, self._characters)),
             lambda cdi: cdi.user,
         )
 

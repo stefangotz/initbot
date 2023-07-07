@@ -10,7 +10,7 @@ from .character import CharacterData, Character, characters
 
 
 @commands.command(usage="[character name] initiative *or* initiative [character name]")
-async def init(ctx, *, name_and_initiative: str):
+async def init(ctx, *, name_and_initiative: str) -> None:
     """Sets the initiative of a character.
 
     This sets a character's iniative to the specified *initiative*, primarily so that the *inis* command ranks the character by its initiative.
@@ -26,9 +26,9 @@ async def init(ctx, *, name_and_initiative: str):
     """
     tokens: List[str] = name_and_initiative.split()
     if len(tokens) == 0:
-        raise Exception("Provide an optional name and an init value")
+        raise ValueError("Provide an optional name and an init value")
     if len(tokens) > 4:
-        raise Exception("Too long")
+        raise ValueError("Too long")
     if is_int(tokens[-1]):
         initiative = int(tokens[-1])
         name = tokens[0:-1]
@@ -36,7 +36,7 @@ async def init(ctx, *, name_and_initiative: str):
         initiative = int(tokens[0])
         name = tokens[1:]
     else:
-        raise Exception("Provide initiative value")
+        raise ValueError("Provide initiative value")
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
         name, ctx.author.display_name, create=True
     )
@@ -47,14 +47,17 @@ async def init(ctx, *, name_and_initiative: str):
 
     suffix = ""
     if not cdi.active:
-        suffix = " (note that this character is not currently active; you may want to activate this character with the 'play' command or maybe you meant a different character?)"
+        suffix = (
+            " (note that this character is not currently active; you may want to activate this character with the 'play' command or maybe you meant a"
+            " different character?)"
+        )
     await ctx.send(
         f"{cdi.name}'s initiative is now {cdi.initiative}" + suffix, delete_after=3
     )
 
 
 @commands.command()
-async def inis(ctx):
+async def inis(ctx) -> None:
     """Lists characters in initiative order.
 
     Use the *init* command to set the initiative value of a character.
@@ -63,7 +66,8 @@ async def inis(ctx):
     Initiative order is evaluated as per the rules.
     However, this works only as far as the necessary information is available for a character.
     For example, if two characters have the same initiative value and their Agility scores are known, the tie is broken based on that.
-    However, if their Agility scores are not set, the tie on the initiative value is broken randomly."""
+    However, if their Agility scores are not set, the tie on the initiative value is broken randomly.
+    """
 
     def discard_characters_with_old_initiative_times(char: Character):
         return (
@@ -92,6 +96,6 @@ async def inis(ctx):
 
 @inis.error
 @init.error
-async def init_error(ctx, error):
+async def init_error(ctx, error) -> None:
     logging.exception(ctx, error)
     await ctx.send(str(error), delete_after=5)

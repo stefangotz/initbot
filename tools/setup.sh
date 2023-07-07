@@ -21,6 +21,8 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
 
-python3 -m pip install --user --upgrade poetry || py -m pip install --user --upgrade poetry
+if ! curl -sSL https://install.python-poetry.org | python3 -; then
+	curl -sSL https://install.python-poetry.org | py -
+fi
 poetry install
 poetry run pre-commit install

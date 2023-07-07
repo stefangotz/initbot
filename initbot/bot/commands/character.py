@@ -66,7 +66,8 @@ async def set_(ctx, *, txt):
 
     The same rule applies to the character attribute.
     You can list all character attributes with the `char` command.
-    You do not need to spell out the full attribute name as the first few unique letters are good enough (e.g., "int" for "intelligence")"""
+    You do not need to spell out the full attribute name as the first few unique letters are good enough (e.g., "int" for "intelligence")
+    """
     tokens: List[str] = txt.split()
     if len(tokens) < 2:
         raise Exception(

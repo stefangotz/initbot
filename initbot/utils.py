@@ -1,7 +1,11 @@
-from typing import Any, List
+from typing import Callable, List, Sequence, TypeVar
 import re
 
 _INT_PATTERN = re.compile(r"^-?(0|([1-9][0-9]*))$")
+
+
+A = TypeVar("A")
+B = TypeVar("B")
 
 
 def is_int(txt: str):
@@ -46,14 +50,22 @@ class RangeMatcher(Matcher):
         return self.lower >= other >= self.upper
 
 
-def get_first_match(value_to_match, candidates, get_matcher_from_candidate):
+def get_first_match(
+    value_to_match: int,
+    candidates: Sequence[A],
+    get_matcher_from_candidate: Callable[[A], Matcher],
+) -> A:
     for candidate in candidates:
         if get_matcher_from_candidate(candidate).matches(value_to_match):
             return candidate
     raise KeyError(f"Unable to find a match for {value_to_match}")
 
 
-def get_first_set_match(value_to_match, candidates, get_matches_from_candidate):
+def get_first_set_match(
+    value_to_match: int,
+    candidates: Sequence[A],
+    get_matches_from_candidate: Callable[[A], Sequence[int]],
+) -> A:
     for candidate in candidates:
         if value_to_match in get_matches_from_candidate(candidate):
             return candidate
@@ -61,8 +73,10 @@ def get_first_set_match(value_to_match, candidates, get_matches_from_candidate):
 
 
 def get_first_set_match_or_over_under_flow(
-    value_to_match, candidates, get_matches_from_candidate
-):
+    value_to_match: int,
+    candidates: Sequence[A],
+    get_matches_from_candidate: Callable[[A], Sequence[int]],
+) -> A:
     try:
         return get_first_set_match(
             value_to_match, candidates, get_matches_from_candidate
@@ -81,9 +95,11 @@ def get_first_set_match_or_over_under_flow(
     raise KeyError(f"Unable to find a match for {value_to_match}")
 
 
-def get_unique_prefix_match(str_to_match: str, candidates, get_str_from_candidate=str):
+def get_unique_prefix_match(
+    str_to_match: str, candidates: Sequence[A], get_str_from_candidate=str
+) -> A:
     normalized_str_to_match: str = normalize_str(str_to_match)
-    matches: List[Any] = [
+    matches: List[A] = [
         cnd
         for cnd in candidates
         if normalize_str(get_str_from_candidate(cnd)).startswith(
