@@ -1,7 +1,7 @@
-from pathlib import Path
-from typing import Dict, List, Iterable, Union
 import json
 import logging
+from pathlib import Path
+from typing import Dict, Iterable, List, Union
 
 from pydantic.json import pydantic_encoder
 
@@ -13,22 +13,23 @@ from ..data.character import CharacterData, CharactersData
 from ..data.occupation import OccupationData, OccupationsData
 from ..utils import (
     get_exact_or_unique_prefix_match,
+    get_first_match,
     get_first_set_match,
     get_unique_prefix_match,
-    get_first_match,
+    EqMatcher,
 )
 from .state import (
-    ClassState,
-    State,
     AbilityState,
     AugurState,
     CharacterState,
+    ClassState,
     OccupationState,
+    State,
 )
 
 
 class LocalAbilityState(AbilityState):
-    def __init__(self):
+    def __init__(self):  # type: ignore
         self._abilities_data = AbilitiesData(abilities=[], modifiers=[])
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
@@ -50,7 +51,9 @@ class LocalAbilityState(AbilityState):
         return self._abilities_data.modifiers
 
     def get_mod_from_score(self, score: int) -> AbilityModifierData:
-        return get_first_match(score, self._abilities_data.modifiers, lambda m: m.score)
+        return get_first_match(
+            score, self._abilities_data.modifiers, lambda m: EqMatcher(m.score)
+        )
 
 
 class LocalAugurState(AugurState):
@@ -74,7 +77,7 @@ class LocalAugurState(AugurState):
 
 
 class LocalCharacterState(CharacterState):
-    def __init__(self):
+    def __init__(self):  # type: ignore
         chars_data = CharactersData(characters=[])
         self._path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "characters.json"
@@ -156,7 +159,7 @@ class LocalCharacterState(CharacterState):
 
 
 class LocalOccupationState(OccupationState):
-    def __init__(self):
+    def __init__(self):  # type: ignore
         occupations_data: OccupationsData = OccupationsData(occupations=[])
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "occupations.json"
@@ -194,7 +197,7 @@ class LocalClassState(ClassState):
 
 
 class LocalState(State):
-    def __init__(self):
+    def __init__(self):  # type: ignore
         self._abilities = LocalAbilityState()
         self._augurs = LocalAugurState()
         self._characters = LocalCharacterState()

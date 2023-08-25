@@ -1,14 +1,15 @@
-from typing import FrozenSet, Any
+from typing import Any, FrozenSet
 
-from .crit import crit
-from .init import init, inis
-from .roll import roll
-from .character import new, set_, remove, chars, char, park, play
-from .occupation import occupations
-from .ability import abls, abl, mods, mod
-from .augur import augurs, augur
-from .tarot import tarot
+from .ability import abl, abls, mod, mods
+from .augur import augur, augurs
+from .character import char, chars, new, park, play, remove, set_
 from .cls import classes, cls
+from .crit import crit
+from .init import inis, init
+from .levels import levels
+from .occupation import occupations
+from .roll import roll
+from .tarot import tarot
 
 commands: FrozenSet[Any] = frozenset(
     (
@@ -23,6 +24,7 @@ commands: FrozenSet[Any] = frozenset(
         crit,
         inis,
         init,
+        levels,
         mod,
         mods,
         new,

@@ -39,4 +39,4 @@ License along with initbot. If not, see <https://www.gnu.org/licenses/>."""
     botlink: str
 
 
-CFG = Settings(_env_file=".env", _env_file_encoding="utf-8")
+CFG = Settings(_env_file=".env", _env_file_encoding="utf-8")  # type: ignore

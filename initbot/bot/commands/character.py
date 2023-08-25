@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 import json
 import random
 
@@ -20,7 +20,11 @@ def characters(state: State) -> List[Character]:
 
 
 @commands.command()
-async def new(ctx, name: str):
+async def new(ctx: Any, name: str) -> None:
+    """Creates a new character with a given name.
+
+    The core attributes of the character are rolled randomly as per standard character creation rules.
+    """
     occupation_roll: int = DieRoll(100).roll_one()
     occupation: OccupationData = ctx.bot.initbot_state.occupations.get_from_roll(
         occupation_roll
@@ -54,7 +58,7 @@ async def new(ctx, name: str):
 
 
 @commands.command(name="set", usage="[character name] <attribute> <value>")
-async def set_(ctx, *, txt):
+async def set_(ctx: Any, *, txt: str) -> None:
     """Sets a character attribute.
 
     If the Discord user manages only a single character, the character name is optional and can be ommitted.
@@ -108,7 +112,7 @@ async def set_(ctx, *, txt):
 
 
 @commands.command(usage="[character name]")
-async def remove(ctx, *args):
+async def remove(ctx: Any, *args: str) -> None:
     """Removes a character from the bot.
 
     If the Discord user manages only a single character, the character name is optional and can be ommitted.
@@ -125,12 +129,12 @@ async def remove(ctx, *args):
 
 
 @commands.command()
-async def chars(ctx):
+async def chars(ctx: Any) -> None:
     """Displays all characters known to the bot."""
     txt: str = ", ".join(
         [
-            f"**{cdi.name}** (_{cdi.user}_)"
-            for cdi in ctx.bot.initbot_state.characters.get_all()
+            f"{idx}: **{cdi.name}** (_{cdi.user}_)"
+            for idx, cdi in enumerate(ctx.bot.initbot_state.characters.get_all())
         ]
     )
     if not txt:
@@ -139,7 +143,7 @@ async def chars(ctx):
 
 
 @commands.command()
-async def char(ctx, *args):
+async def char(ctx: Any, *args: str) -> None:
     """Displays a character.
 
     If the Discord user manages only a single character, the character name is optional and can be ommitted.
@@ -152,12 +156,12 @@ async def char(ctx, *args):
         args, ctx.author.display_name
     )
     await ctx.send(
-        json.dumps(json.loads(cdi.dump_model_json()), indent=4, sort_keys=True)
+        json.dumps(json.loads(cdi.model_dump_json()), indent=4, sort_keys=True)
     )
 
 
 @commands.command()
-async def park(ctx, *args):
+async def park(ctx: Any, *args: str) -> None:
     """Deactivates a character so it is no longer included in the initiative order.
 
     If the Discord user manages only a single character, the character name is optional and can be ommitted.
@@ -175,7 +179,7 @@ async def park(ctx, *args):
 
 
 @commands.command()
-async def play(ctx, *args):
+async def play(ctx: Any, *args: str) -> None:
     """Activates a character deactivated with the 'park' command so it is included in the initiative order again.
 
     If the Discord user manages only a single character, the character name is optional and can be ommitted.
