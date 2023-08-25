@@ -74,7 +74,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
     """
     tokens: List[str] = txt.split()
     if len(tokens) < 2:
-        raise Exception(
+        raise ValueError(
             "You need to provide at least a character attribute and a value to set it to"
         )
     val = tokens[-1]
