@@ -1,7 +1,8 @@
-.git
-package-lock.json
-.vscode
-.coverage
 __pycache__
+.coverage
+.git
+.vscode
 *.env
+dist
 initbot/**/*.json
+package-lock.json

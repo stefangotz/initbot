@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public
 # License along with initbot. If not, see <https://www.gnu.org/licenses/>.
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 
@@ -34,9 +36,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU Affero General Public
 License along with initbot. If not, see <https://www.gnu.org/licenses/>."""
     project_version: str = "0.1.0"
-    token: str
-    appId: str
-    botlink: str
+    token: str = ""
+    appId: str = ""
+    botlink: str = ""
 
 
-CFG = Settings(_env_file=".env", _env_file_encoding="utf-8")  # type: ignore
+CFG = Settings(_env_file=".env", _env_file_encoding="utf-8") if Path(".env").exists() else Settings()  # type: ignore
+if not CFG.token:
+    raise ValueError(
+        "The Discord bot token is not set. Without a token, the bot is not able to authenticate. Configure the token via the environment variable TOKEN or via a '.env' file."
+    )
