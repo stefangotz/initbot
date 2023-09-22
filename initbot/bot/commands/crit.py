@@ -31,7 +31,12 @@ def get_crit_table(number: int):
 
 
 @commands.command()
-async def crit(ctx, table: int, roll: int):
+async def crit(
+    ctx,
+    table: int = commands.parameter(description="The number of the crit table (1-4)"),
+    roll: int = commands.parameter(description="What you rolled on your crit die"),
+):
+    """Shows the result of a roll on a crit table."""
     await ctx.send(_match(get_crit_table(table), roll))
 
 

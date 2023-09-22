@@ -17,17 +17,27 @@ async def abls(ctx):
 
 
 @commands.command()
-async def abl(ctx, name: str):
+async def abl(
+    ctx,
+    name: str = commands.parameter(
+        description="The name of the ability to get details on. A prefix (say, 'str' instead of 'strength') is good enough."
+    ),
+):
+    """Displays the description for the given ability."""
     await ctx.send(str(ctx.bot.initbot_state.abilities.get_from_prefix(name)))
 
 
 @commands.command()
 async def mods(ctx):
+    """Lists all ability scores, their corresponding modifiers and, for wizards, the spell count and maximum spell level implied by intelligence."""
     await ctx.send(str(ctx.bot.initbot_state.abilities.get_mods()))
 
 
 @commands.command()
-async def mod(ctx, score: int):
+async def mod(
+    ctx, score: int = commands.parameter(description="An ability score (3-18).")
+):
+    """Shows details for an ability score. It lists the corresponding modifier and, for wizards, the spell count and maximum spell level implied by intelligence."""
     await ctx.send(str(ctx.bot.initbot_state.abilities.get_mod_from_score(score)))
 
 
