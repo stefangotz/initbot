@@ -32,7 +32,7 @@ async def new(ctx: Any, name: str) -> None:
     luck: int = DieRoll(6, 3).roll_one()
     cdi = CharacterData(
         name=name,
-        user=ctx.author.display_name,
+        user=ctx.author.name,
         strength=DieRoll(6, 3).roll_one(),
         agility=DieRoll(6, 3).roll_one(),
         stamina=DieRoll(6, 3).roll_one(),
@@ -81,7 +81,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
     attr = tokens[-2]
     name_tokens = tokens[0:-2]
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name_tokens, ctx.author.display_name
+        name_tokens, ctx.author.name
     )
     attr = attr.lower()
     candidates: List[str] = []
@@ -122,7 +122,7 @@ async def remove(ctx: Any, *args: str) -> None:
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.display_name
+        args, ctx.author.name
     )
     ctx.bot.initbot_state.characters.remove_and_store(cdi)
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
@@ -153,7 +153,7 @@ async def char(ctx: Any, *args: str) -> None:
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.display_name
+        args, ctx.author.name
     )
     await ctx.send(
         json.dumps(json.loads(cdi.model_dump_json()), indent=4, sort_keys=True)
@@ -171,7 +171,7 @@ async def park(ctx: Any, *args: str) -> None:
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.display_name
+        args, ctx.author.name
     )
     cdi.active = False
     ctx.bot.initbot_state.characters.update_and_store(cdi)
@@ -189,7 +189,7 @@ async def play(ctx: Any, *args: str) -> None:
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.display_name
+        args, ctx.author.name
     )
     cdi.active = True
     ctx.bot.initbot_state.characters.update_and_store(cdi)

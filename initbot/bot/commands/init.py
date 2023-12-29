@@ -38,7 +38,7 @@ async def init(ctx, *, name_and_initiative: str) -> None:
     else:
         raise ValueError("Provide initiative value")
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name, ctx.author.display_name, create=True
+        name, ctx.author.name, create=True
     )
     cdi.initiative = initiative
     cdi.initiative_time = int(datetime.now().timestamp())
