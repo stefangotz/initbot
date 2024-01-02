@@ -7,6 +7,7 @@ from .cls import classes, cls
 from .crit import crit
 from .init import inis, init
 from .levels import levels
+from .luck import luck
 from .occupation import occupations
 from .roll import roll
 from .tarot import tarot
@@ -25,6 +26,7 @@ commands: FrozenSet[Any] = frozenset(
         inis,
         init,
         levels,
+        luck,
         mod,
         mods,
         new,
