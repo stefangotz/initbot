@@ -3,43 +3,63 @@ from typing import List
 import logging
 
 from discord import Embed  # type: ignore
-from discord.ext import commands  # type: ignore
+from discord.ext import commands
+from initbot.models.roll import DieRoll  # type: ignore
 
 from ...utils import is_int
 from .character import CharacterData, Character, characters
 
 
 @commands.command(usage="[character name] initiative *or* initiative [character name]")
-async def init(ctx, *, name_and_initiative: str) -> None:
+async def init(ctx, *args: str) -> None:
     """Sets the initiative of a character.
 
     This sets a character's iniative to the specified *initiative*, primarily so that the *inis* command ranks the character by its initiative.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted.
-    If the Discord user manages more than one character, the character name is required.
+    If the Discord user manages only a single character, the character name is optional and can be ommitted: `$init 10`
+    If the Discord user manages more than one character, the character name is required: `$init Mediocre Mel 10`
 
     The character name can be an abbreviation.
-    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
-    That's as long as no other character name starts with "Med".
+    For example, if the full name of a character is "Mediocre Mel", then typing "med" is sufficient: `$init med 10`
+    That's as long as no other character name starts with "med".
 
     If there is no character with the given name, a new character with that name is created.
+
+    The bot can roll initiative itself with this command.
+    To make that work, the character needs to be set up with all the attributes that impact iniative.
+    In most cases, one only needs to set their agility: `$set Mediocre Mel agility 10`.
+    But the class, birth augur, and other attributes may influence initiative as well.
+    With that set up, make the bot automatically roll initiative simply by omitting the initative value: `$init Mediocre Mel`
+
+    Thus, in the shortest (and most common case), one can simply use the command `$init` by itself to automatically roll and set a character's initiative.
     """
-    tokens: List[str] = name_and_initiative.split()
-    if len(tokens) == 0:
-        raise ValueError("Provide an optional name and an init value")
+    tokens: List[str] = list(args)
     if len(tokens) > 4:
         raise ValueError("Too long")
-    if is_int(tokens[-1]):
+    if len(tokens) == 0:
+        initiative = None
+        name = []
+    elif is_int(tokens[-1]):
         initiative = int(tokens[-1])
         name = tokens[0:-1]
     elif is_int(tokens[0]):
         initiative = int(tokens[0])
         name = tokens[1:]
     else:
-        raise ValueError("Provide initiative value")
+        initiative = None
+        name = tokens
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name, ctx.author.name, create=True
+        name, ctx.author.name, create=len(name) > 0
     )
+    if initiative is None:
+        char = Character(cdi, ctx.bot.initbot_state)
+        if char.initiative_modifier is not None:
+            initiative = DieRoll(20, modifier=char.initiative_modifier).roll_one()
+        else:
+            raise ValueError(
+                "Character has no initiative modifier. Set their agility and other character attributes that affect initiative with the $set command."
+            )
+
     cdi.initiative = initiative
     cdi.initiative_time = int(datetime.now().timestamp())
 
