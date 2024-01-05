@@ -53,6 +53,6 @@ async def luck(ctx, *args: str):
     )
 
 
-# @luck.error
-# async def handle_error(ctx, error):
-#     await ctx.send(str(error), delete_after=5)
+@luck.error
+async def handle_error(ctx, error):
+    await ctx.send(str(error), delete_after=5)
