@@ -13,10 +13,9 @@ from ..data.character import CharacterData, CharactersData
 from ..data.occupation import OccupationData, OccupationsData
 from ..utils import (
     get_exact_or_unique_prefix_match,
-    get_first_match,
     get_first_set_match,
+    get_first_set_match_or_over_under_flow,
     get_unique_prefix_match,
-    EqMatcher,
 )
 from .state import (
     AbilityState,
@@ -51,8 +50,8 @@ class LocalAbilityState(AbilityState):
         return self._abilities_data.modifiers
 
     def get_mod_from_score(self, score: int) -> AbilityModifierData:
-        return get_first_match(
-            score, self._abilities_data.modifiers, lambda m: EqMatcher(m.score)
+        return get_first_set_match_or_over_under_flow(
+            score, self._abilities_data.modifiers, lambda mod: [mod.score]
         )
 
 
