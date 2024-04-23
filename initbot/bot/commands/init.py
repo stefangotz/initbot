@@ -4,7 +4,7 @@ import logging
 
 from discord import Embed  # type: ignore
 from discord.ext import commands
-from initbot.models.roll import DieRoll  # type: ignore
+from initbot.models.roll import NerdDiceRoll  # type: ignore
 
 from ...utils import is_int
 from .character import CharacterData, Character, characters
@@ -54,7 +54,7 @@ async def init(ctx, *args: str) -> None:
     if initiative is None:
         char = Character(cdi, ctx.bot.initbot_state)
         if char.initiative_modifier is not None:
-            initiative = DieRoll(20, modifier=char.initiative_modifier).roll_one()
+            initiative = NerdDiceRoll(20, modifier=char.initiative_modifier).roll_one()
         else:
             raise ValueError(
                 "Character has no initiative modifier. Set their agility and other character attributes that affect initiative with the $set command."

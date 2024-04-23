@@ -4,8 +4,8 @@ import random
 import re
 
 
-_DIE_PATTERN = re.compile(
-    r"^(([0-9]+)x)?([0-9]*)[dw]([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
+_NERD_DICE_ROLL_PATTERN = re.compile(
+    r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
 )
 
 
@@ -29,7 +29,7 @@ class IntDiceRoll:
 
 
 @dataclass(frozen=True)
-class DieRoll(IntDiceRoll):
+class NerdDiceRoll(IntDiceRoll):
     sides: int
     dice: int = 1
     modifier: int = 0
@@ -58,8 +58,8 @@ class DieRoll(IntDiceRoll):
         return result
 
     @staticmethod
-    def create(spec: str) -> "DieRoll":
-        match = _DIE_PATTERN.match(spec)
+    def create(spec: str) -> "NerdDiceRoll":
+        match = _NERD_DICE_ROLL_PATTERN.match(spec)
         if match:
             args = {"sides": int(match.group(4))}
             if match.group(3):
@@ -68,9 +68,5 @@ class DieRoll(IntDiceRoll):
                 args["modifier"] = int(match.group(5))
             if match.group(2):
                 args["rolls"] = int(match.group(2))
-            return DieRoll(**args)
+            return NerdDiceRoll(**args)
         raise ValueError(f"'{spec}' is not supported")
-
-
-def die_roll(spec: str) -> DieRoll:
-    return DieRoll.create(spec)

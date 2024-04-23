@@ -7,7 +7,7 @@ from discord.ext import commands  # type: ignore
 from ...data.character import CharacterData
 from ...data.occupation import OccupationData
 from ...models.character import Character
-from ...models.roll import DieRoll
+from ...models.roll import NerdDiceRoll
 from ...state.state import State
 
 
@@ -25,24 +25,24 @@ async def new(ctx: Any, name: str) -> None:
 
     The core attributes of the character are rolled randomly as per standard character creation rules.
     """
-    occupation_roll: int = DieRoll(100).roll_one()
+    occupation_roll: int = NerdDiceRoll(100).roll_one()
     occupation: OccupationData = ctx.bot.initbot_state.occupations.get_from_roll(
         occupation_roll
     )
-    luck: int = DieRoll(6, 3).roll_one()
+    luck: int = NerdDiceRoll(6, 3).roll_one()
     cdi = CharacterData(
         name=name,
         user=ctx.author.name,
-        strength=DieRoll(6, 3).roll_one(),
-        agility=DieRoll(6, 3).roll_one(),
-        stamina=DieRoll(6, 3).roll_one(),
-        personality=DieRoll(6, 3).roll_one(),
-        intelligence=DieRoll(6, 3).roll_one(),
+        strength=NerdDiceRoll(6, 3).roll_one(),
+        agility=NerdDiceRoll(6, 3).roll_one(),
+        stamina=NerdDiceRoll(6, 3).roll_one(),
+        personality=NerdDiceRoll(6, 3).roll_one(),
+        intelligence=NerdDiceRoll(6, 3).roll_one(),
         luck=luck,
         initial_luck=luck,
-        hit_points=DieRoll(4, 1).roll_one(),
+        hit_points=NerdDiceRoll(4, 1).roll_one(),
         equipment=[
-            f"{DieRoll(12, 5).roll_one()}cp",
+            f"{NerdDiceRoll(12, 5).roll_one()}cp",
             # TO DO random.choice(EQUIPMENT),
             occupation.goods,
         ],

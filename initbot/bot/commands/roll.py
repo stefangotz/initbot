@@ -1,6 +1,6 @@
 from discord.ext import commands  # type: ignore
 
-from ...models.roll import DieRoll, die_roll
+from ...models.roll import NerdDiceRoll
 
 
 @commands.command(usage="dice")
@@ -12,8 +12,8 @@ async def roll(ctx, txt: str):
 
     To make the same roll several times in a row and get each result separately, add [rolls]x, so for example, 3x1d6+1.
     This returns, for example, 5, 7, 2."""
-    if DieRoll.is_valid_spec(txt):
-        dice = die_roll(txt)
+    if NerdDiceRoll.is_valid_spec(txt):
+        dice = NerdDiceRoll.create(txt)
         roll_result = dice.roll_all()
         if dice.rolls == 1:
             string = str(roll_result[0])
