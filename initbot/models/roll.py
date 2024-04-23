@@ -1,16 +1,64 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import Iterable, List, Type
 import random
 import re
 
 
-_DIE_PATTERN = re.compile(
+_NERD_DICE_ROLL_PATTERN = re.compile(
     r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
 )
 
 
-@dataclass
-class DieRoll:
+def render_dice_rolls(words: Iterable[str]) -> str:
+    return " ".join(map(_try_to_render_dice_roll, words))
+
+
+def _try_to_render_dice_roll(word: str) -> str:
+    for cls in _DICE_ROLL_CLASSES:
+        try:
+            return cls.create(word).roll()
+        except ValueError:
+            continue
+    return word
+
+
+class _DiceRoll(ABC):
+    @abstractmethod
+    def roll(self) -> str:
+        pass
+
+    @classmethod
+    def is_valid_spec(cls: Type, spec: str) -> bool:
+        try:
+            return cls.create(spec) is not None
+        except ValueError:
+            return False
+
+    @staticmethod
+    @abstractmethod
+    def create(spec: str) -> "_DiceRoll":
+        pass
+
+
+class IntDiceRoll(_DiceRoll, ABC):
+    def roll(self) -> str:
+        rolls = self.roll_all()
+        if len(rolls) == 1:
+            return str(rolls[0])
+        return f"{sum(rolls)} ({str(rolls).strip('[]')})"
+
+    @abstractmethod
+    def roll_all(self) -> List[int]:
+        pass
+
+    @abstractmethod
+    def roll_one(self) -> int:
+        pass
+
+
+@dataclass(frozen=True)
+class NerdDiceRoll(IntDiceRoll):
     sides: int
     dice: int = 1
     modifier: int = 0
@@ -39,19 +87,18 @@ class DieRoll:
         return result
 
     @staticmethod
-    def is_die_roll(text: str) -> bool:
-        return bool(_DIE_PATTERN.match(text))
+    def create(spec: str) -> "NerdDiceRoll":
+        match = _NERD_DICE_ROLL_PATTERN.match(spec)
+        if match:
+            args = {"sides": int(match.group(4))}
+            if match.group(3):
+                args["dice"] = int(match.group(3))
+            if match.group(5):
+                args["modifier"] = int(match.group(5))
+            if match.group(2):
+                args["rolls"] = int(match.group(2))
+            return NerdDiceRoll(**args)
+        raise ValueError(f"'{spec}' is not supported")
 
 
-def die_roll(text: str) -> DieRoll:
-    match = _DIE_PATTERN.match(text)
-    if match:
-        ret = DieRoll(int(match.group(4)))
-        if match.group(3):
-            ret.dice = int(match.group(3))
-        if match.group(5):
-            ret.modifier = int(match.group(5))
-        if match.group(2):
-            ret.rolls = int(match.group(2))
-        return ret
-    raise TypeError()
+_DICE_ROLL_CLASSES: frozenset[Type[_DiceRoll]] = frozenset((NerdDiceRoll,))

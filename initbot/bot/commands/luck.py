@@ -2,7 +2,7 @@ from typing import List
 import logging
 from discord.ext import commands  # type: ignore
 
-from initbot.models.roll import DieRoll, die_roll
+from initbot.models.roll import NerdDiceRoll
 from .character import CharacterData
 
 
@@ -28,7 +28,7 @@ async def luck(ctx, *args: str):
     """
     name: List[str] = []
     die: str = "d20"
-    if args and DieRoll.is_die_roll(args[-1]):
+    if args and NerdDiceRoll.is_valid_spec(args[-1]):
         die = args[-1]
         name = list(args[0:-1])
     else:
@@ -37,7 +37,7 @@ async def luck(ctx, *args: str):
         name, ctx.author.name
     )
     if cdi.luck is not None:
-        roll = die_roll(die).roll_one()
+        roll = NerdDiceRoll.create(die).roll_one()
     else:
         raise ValueError(
             "Character doesn't have a luck attribute value. Set it with `$set {cdi.name} luck 10`"

@@ -9,7 +9,7 @@ from ..data.character import CharacterData
 from ..data.occupation import OccupationData
 from ..state.state import State
 from ..utils import get_unique_prefix_match
-from .roll import DieRoll
+from .roll import NerdDiceRoll
 
 
 class Character:
@@ -150,9 +150,9 @@ class Character:
         self.cdi.initiative_modifier = ini_mod
 
     @property
-    def hit_die(self) -> Union[DieRoll, None]:
+    def hit_die(self) -> Union[NerdDiceRoll, None]:
         if self.cdi.hit_die is not None:
-            return DieRoll(self.cdi.hit_die)
+            return NerdDiceRoll(self.cdi.hit_die)
         # TO DO: derive from class
         return None
 
