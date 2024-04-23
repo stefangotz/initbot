@@ -27,7 +27,7 @@ async def luck(ctx, *args: str):
     """
     name: List[str] = []
     die: str = "d20"
-    if args and DieRoll.is_die_roll(args[-1]):
+    if args and DieRoll.is_valid_spec(args[-1]):
         die = args[-1]
         name = list(args[0:-1])
     else:

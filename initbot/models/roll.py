@@ -1,16 +1,35 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Type
 import random
 import re
 
 
 _DIE_PATTERN = re.compile(
-    r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
+    r"^(([0-9]+)x)?([0-9]*)[dw]([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
 )
 
 
-@dataclass
-class DieRoll:
+class IntDiceRoll:
+    def roll_all(self) -> List[int]:
+        raise NotImplementedError()
+
+    def roll_one(self) -> int:
+        raise NotImplementedError()
+
+    @classmethod
+    def is_valid_spec(cls: Type, spec: str) -> bool:
+        try:
+            return cls.create(spec) is not None
+        except ValueError:
+            return False
+
+    @staticmethod
+    def create(spec: str) -> "IntDiceRoll":
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True)
+class DieRoll(IntDiceRoll):
     sides: int
     dice: int = 1
     modifier: int = 0
@@ -39,19 +58,19 @@ class DieRoll:
         return result
 
     @staticmethod
-    def is_die_roll(text: str) -> bool:
-        return bool(_DIE_PATTERN.match(text))
+    def create(spec: str) -> "DieRoll":
+        match = _DIE_PATTERN.match(spec)
+        if match:
+            args = {"sides": int(match.group(4))}
+            if match.group(3):
+                args["dice"] = int(match.group(3))
+            if match.group(5):
+                args["modifier"] = int(match.group(5))
+            if match.group(2):
+                args["rolls"] = int(match.group(2))
+            return DieRoll(**args)
+        raise ValueError(f"'{spec}' is not supported")
 
 
-def die_roll(text: str) -> DieRoll:
-    match = _DIE_PATTERN.match(text)
-    if match:
-        ret = DieRoll(int(match.group(4)))
-        if match.group(3):
-            ret.dice = int(match.group(3))
-        if match.group(5):
-            ret.modifier = int(match.group(5))
-        if match.group(2):
-            ret.rolls = int(match.group(2))
-        return ret
-    raise TypeError()
+def die_roll(spec: str) -> DieRoll:
+    return DieRoll.create(spec)

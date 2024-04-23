@@ -12,7 +12,7 @@ async def roll(ctx, txt: str):
 
     To make the same roll several times in a row and get each result separately, add [rolls]x, so for example, 3x1d6+1.
     This returns, for example, 5, 7, 2."""
-    if DieRoll.is_die_roll(txt):
+    if DieRoll.is_valid_spec(txt):
         dice = die_roll(txt)
         roll_result = dice.roll_all()
         if dice.rolls == 1:
