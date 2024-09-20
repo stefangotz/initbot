@@ -6,3 +6,5 @@ __pycache__
 dist
 initbot/**/*.json
 package-lock.json
+build
+initbot.egg-info

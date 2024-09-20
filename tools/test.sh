@@ -21,4 +21,4 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
 
-poetry run coverage run -m --source=initbot pytest tests
+uv run -- coverage run -m --source=initbot pytest tests

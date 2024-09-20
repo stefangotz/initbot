@@ -30,7 +30,7 @@ _STEMS: FrozenSet[str] = frozenset(
     }
 )
 _URLS: Sequence[str] = tuple(
-    f"https://randomtarotcard.com/{stem}.jpg" for stem in _STEMS
+    f"https://randomtarotcard.com/{stem}.jpg" for stem in _STEMS  # noqa: E231
 )
 
 

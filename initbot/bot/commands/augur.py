@@ -7,7 +7,9 @@ from discord.ext import commands  # type: ignore
 @commands.command()
 async def augurs(ctx: Any) -> None:
     """List all birth augurs that a 0-level character may start out with."""
-    msg: str = "*Birth augurs modify certain character properties by the initial starting luck modifier of the character.*\n"
+    msg: str = (
+        "*Birth augurs modify certain character properties by the initial starting luck modifier of the character.*\n"
+    )
     for agr in ctx.bot.initbot_state.augurs.get_all():
         txt: str = f"{agr.roll}: {agr.description}\n"
         if len(msg) + len(txt) > 2000:

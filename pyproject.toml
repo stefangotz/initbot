@@ -1,29 +1,28 @@
-[tool.poetry]
+[project]
 name = "initbot"
 version = "0.1.0"
+requires-python = ">=3.8"
 description = "A Discord bot that manages RPG character initiatives"
-authors = ["Stefan Götz <github.nooneelse@spamgourmet.com>"]
-license = "AGPLv3"
+authors = [{name = "Stefan Götz", email="github.nooneelse@spamgourmet.com"}]
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+]
+dependencies = [
+    "discord-py~=2.3",
+    "pydantic-settings~=2.0",
+    "pydantic~=2.0",
+    "python-dotenv~=0.21",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<4"
-"discord.py" = "~=2.3"
-pydantic = "~=2.0"
-python-dotenv = "~=0.21"
-pydantic-settings = "~=2.0"
-
-[tool.poetry.dev-dependencies]
-coverage = "*"
-black = "*"
-pylint = "*"
-mypy = "*"
-pre-commit = "*"
-requests = "*"
-pytest = "*"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv]
+dev-dependencies = [
+    "pre-commit>=3.5.0",
+    "black>=24.8.0",
+    "coverage>=7.6.1",
+    "mypy>=1.11.2",
+    "pylint>=3.2.7",
+    "pytest>=8.3.3",
+]
 
 [tool.mypy]
 check_untyped_defs = true

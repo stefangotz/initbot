@@ -1,35 +1,26 @@
-# A container for building the initbot dist with poetry
-FROM python:slim
-
-# Install poetry
-RUN apt update && apt install -y wget
-RUN wget -qO - https://install.python-poetry.org | python3 -
-ENV PATH=$PATH:/root/.local/bin
+# A container for building the initbot dist
+FROM ghcr.io/astral-sh/uv:python3.12-alpine
 
 # Bring in the initbot Python code
 COPY . /root/
 WORKDIR /root
 # Build the initbot dist
-RUN poetry build
+RUN uv build --wheel
 
 
 
 # A container for running initbot
-FROM python:slim
+FROM python:3.12-alpine
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
+COPY --from=0 /root/dist/*.whl /tmp/
+RUN python3 -m venv /app && /app/bin/pip3 install /tmp/initbot-*.whl && rm /tmp/initbot-*.whl
+
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && mkdir -p /app
-# Copy over the initbot dist from the build layer
-COPY --from=0 /root/dist/*.tar.gz /app/
-RUN chown -R appuser /app
+RUN adduser -u 5678 --disabled-password --gecos "" appuser
 USER appuser
-WORKDIR /app
-ENV PATH=$PATH:/home/appuser/.local/bin
-RUN pip3 install --user /app/initbot-0.1.0.tar.gz
-
-CMD python3 -m initbot
+CMD /app/bin/python3 -m initbot

@@ -21,8 +21,10 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
 
-if ! curl -sSL https://install.python-poetry.org | python3 -; then
-	curl -sSL https://install.python-poetry.org | py -
+if ! which uv; then
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+	export PATH="$PATH:$HOME/.cargo/bin"
+	which uv > /dev/null
 fi
-poetry install
-poetry run pre-commit install
+uv sync
+uv run pre-commit install
