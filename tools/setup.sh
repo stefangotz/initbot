@@ -26,5 +26,7 @@ if ! which uv; then
 	export PATH="$PATH:$HOME/.cargo/bin"
 	which uv > /dev/null
 fi
+uv venv .venv
+. .venv/bin/activate
 uv sync
 uv run pre-commit install
