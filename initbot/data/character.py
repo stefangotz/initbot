@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from typing import Union, List
 
-from pydantic import BaseModel
 
-
-class CharacterData(BaseModel):
+# pylint: disable=R0801
+@dataclass
+class CharacterData:
     name: str
     user: str
     active: bool = True
@@ -26,7 +27,3 @@ class CharacterData(BaseModel):
     hit_die: Union[int, None] = None
     augur: Union[int, None] = None
     cls: Union[str, None] = None
-
-
-class CharactersData(BaseModel):
-    characters: List[CharacterData]

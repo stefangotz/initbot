@@ -1,12 +1,7 @@
-from typing import List
-
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 
-class AugurData(BaseModel):
+@dataclass(frozen=True)
+class AugurData:
     description: str
     roll: int
-
-
-class AugursData(BaseModel):
-    augurs: List[AugurData]
