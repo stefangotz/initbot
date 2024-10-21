@@ -1,5 +1,4 @@
 from typing import Any, List
-import json
 import random
 
 from discord.ext import commands  # type: ignore
@@ -52,7 +51,7 @@ async def new(ctx: Any, name: str) -> None:
         augur=random.choice(ctx.bot.initbot_state.augurs.get_all()).roll,
     )
     ctx.bot.initbot_state.characters.add_and_store(cdi)
-    txt: str = cdi.model_dump_json()
+    txt: str = str(cdi)
     for idx in range(0, len(txt), 1000):
         await ctx.send(txt[idx : idx + 1000])
 
@@ -155,9 +154,7 @@ async def char(ctx: Any, *args: str) -> None:
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
         args, ctx.author.name
     )
-    await ctx.send(
-        json.dumps(json.loads(cdi.model_dump_json()), indent=4, sort_keys=True)
-    )
+    await ctx.send(str(cdi))
 
 
 @commands.command()

@@ -1,16 +1,14 @@
+from dataclasses import dataclass
 from typing import List
-from pydantic import BaseModel
 
 
-class CritData(BaseModel):
+@dataclass
+class CritData:
     rolls: List[int]
     effect: str
 
 
-class CritTableData(BaseModel):
+@dataclass
+class CritTableData:
     number: int
     crits: List[CritData]
-
-
-class CritTablesData(BaseModel):
-    crit_tables: List[CritTableData]

@@ -1,13 +1,10 @@
+from dataclasses import dataclass
 from typing import List
-from pydantic import BaseModel
 
 
-class OccupationData(BaseModel):
+@dataclass
+class OccupationData:
     rolls: List[int]
     name: str
     weapon: str
     goods: str
-
-
-class OccupationsData(BaseModel):
-    occupations: List[OccupationData]

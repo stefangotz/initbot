@@ -1,14 +1,15 @@
+from dataclasses import dataclass
 from typing import List
 
-from pydantic import BaseModel
 
-
-class SpellsByLevelData(BaseModel):
+@dataclass(frozen=True)
+class SpellsByLevelData:
     level: int
     spells: int
 
 
-class LevelData(BaseModel):
+@dataclass
+class LevelData:
     level: int
     attack_die: str
     crit_die: str
@@ -25,12 +26,9 @@ class LevelData(BaseModel):
     sneak_hide: int
 
 
-class ClassData(BaseModel):
+@dataclass
+class ClassData:
     name: str
     hit_die: int
     weapons: List[str]
     levels: List[LevelData]
-
-
-class ClassesData(BaseModel):
-    classes: List[ClassData]
