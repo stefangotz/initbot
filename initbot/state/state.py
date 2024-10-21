@@ -5,6 +5,7 @@ from initbot.data.cls import ClassData
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
+from ..data.crit import CritTableData
 from ..data.occupation import OccupationData
 
 
@@ -76,6 +77,14 @@ class ClassState:
         raise NotImplementedError()
 
 
+class CritState:
+    def get_all(self) -> List[CritTableData]:
+        raise NotImplementedError()
+
+    def get_one(self, table: int) -> CritTableData:
+        return self.get_all()[table]
+
+
 class State:
     @property
     def abilities(self) -> AbilityState:
@@ -95,4 +104,8 @@ class State:
 
     @property
     def classes(self) -> ClassState:
+        raise NotImplementedError()
+
+    @property
+    def crits(self) -> CritState:
         raise NotImplementedError()

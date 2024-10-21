@@ -6,6 +6,7 @@ from typing import Dict, Iterable, List, Union
 from pydantic.json import pydantic_encoder
 
 from initbot.data.cls import ClassData, ClassesData
+from initbot.data.crit import CritTableData, CritTablesData
 
 from ..data.ability import AbilitiesData, AbilityData, AbilityModifierData
 from ..data.augur import AugurData, AugursData
@@ -22,6 +23,7 @@ from .state import (
     AugurState,
     CharacterState,
     ClassState,
+    CritState,
     OccupationState,
     State,
 )
@@ -195,6 +197,24 @@ class LocalClassState(ClassState):
         return self._classes[name]
 
 
+class LocalCritState(CritState):
+    def __init__(self):
+        data: CritTablesData = CritTablesData(crit_tables=[])
+        path: Path = Path(__file__).parent.parent / "bot" / "commands" / "crits.json"
+        if path.exists():
+            with path.open() as file_desc:
+                data = CritTablesData.model_validate_json(file_desc.read())
+        else:
+            logging.warning("Unable to find %s", path)
+        self._data: List[CritTableData] = data.crit_tables
+
+    def get_all(self) -> List[CritTableData]:
+        return self._data
+
+    def get_one(self, table: int) -> CritTableData:
+        return next(filter(lambda tbl: tbl.number == table, self._data))
+
+
 class LocalState(State):
     def __init__(self):  # type: ignore
         self._abilities = LocalAbilityState()
@@ -202,6 +222,7 @@ class LocalState(State):
         self._characters = LocalCharacterState()
         self._occupations = LocalOccupationState()
         self._classes = LocalClassState()
+        self._crits = LocalCritState()
 
     @property
     def abilities(self) -> AbilityState:
@@ -222,3 +243,7 @@ class LocalState(State):
     @property
     def classes(self) -> ClassState:
         return self._classes
+
+    @property
+    def crits(self) -> CritState:
+        return self._crits
