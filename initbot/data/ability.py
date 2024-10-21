@@ -1,25 +1,28 @@
-from typing import List
+from dataclasses import dataclass
+from typing import Tuple
 
-from pydantic import BaseModel
 
-
-class AbilityData(BaseModel):
+@dataclass(frozen=True)
+class AbilityData:
     name: str
     description: str
 
 
-class AbilityModifierData(BaseModel):
+@dataclass(frozen=True)
+class AbilityModifierData:
     score: int
     mod: int
     spells: int
     max_spell_level: int
 
 
-class AbilitiesData(BaseModel):
-    abilities: List[AbilityData]
-    modifiers: List[AbilityModifierData]
+@dataclass(frozen=True)
+class AbilitiesData:
+    abilities: Tuple[AbilityData, ...]
+    modifiers: Tuple[AbilityModifierData, ...]
 
 
-class AbilityScoreData(BaseModel):
+@dataclass(frozen=True)
+class AbilityScoreData:
     abl: AbilityData
     score: int = 0

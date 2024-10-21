@@ -1,14 +1,15 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Iterable, List, Union
+from typing import Dict, Iterable, List, Tuple, Union, cast
 
+from pydantic import BaseModel, ConfigDict
 from pydantic.json import pydantic_encoder
 
 from initbot.data.cls import ClassData, ClassesData
 from initbot.data.crit import CritTableData, CritTablesData
 
-from ..data.ability import AbilitiesData, AbilityData, AbilityModifierData
+from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData, AugursData
 from ..data.character import CharacterData, CharactersData
 from ..data.occupation import OccupationData, OccupationsData
@@ -29,19 +30,48 @@ from .state import (
 )
 
 
+class LocalAbilityData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    name: str
+    description: str
+
+
+class LocalAbilityModifierData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    score: int
+    mod: int
+    spells: int
+    max_spell_level: int
+
+
+class LocalAbilitiesData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    abilities: Tuple[LocalAbilityData, ...]
+    modifiers: Tuple[LocalAbilityModifierData, ...]
+
+
+class AbilityScoreData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    abl: LocalAbilityData
+    score: int = 0
+
+
 class LocalAbilityState(AbilityState):
     def __init__(self):  # type: ignore
-        self._abilities_data = AbilitiesData(abilities=[], modifiers=[])
+        self._abilities_data = LocalAbilitiesData(abilities=[], modifiers=[])
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
         )
         if path.exists():
-            self._abilities_data = AbilitiesData.parse_file(path)
+            with path.open() as file_desc:
+                self._abilities_data = LocalAbilitiesData.model_validate_json(
+                    file_desc.read()
+                )
         else:
             logging.warning("Unable to find %s", path)
 
     def get_all(self) -> List[AbilityData]:
-        return self._abilities_data.abilities
+        return cast(List[AbilityData], self._abilities_data.abilities)
 
     def get_from_prefix(self, prefix) -> AbilityData:
         return get_unique_prefix_match(
@@ -49,7 +79,7 @@ class LocalAbilityState(AbilityState):
         )
 
     def get_mods(self) -> List[AbilityModifierData]:
-        return self._abilities_data.modifiers
+        return cast(List[AbilityModifierData], self._abilities_data.modifiers)
 
     def get_mod_from_score(self, score: int) -> AbilityModifierData:
         return get_first_set_match_or_over_under_flow(
