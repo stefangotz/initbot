@@ -1,10 +1,6 @@
-from pathlib import Path
-from typing import Dict
-import logging
-
 from discord.ext import commands  # type: ignore
 
-from ...data.crit import CritTableData, CritTablesData
+from ...data.crit import CritTableData
 from ...utils import get_first_set_match_or_over_under_flow
 
 
@@ -14,22 +10,6 @@ def _match(table: CritTableData, roll: int) -> str:
     ).effect
 
 
-_CRIT_TABLES_DATA: CritTablesData = CritTablesData(crit_tables=[])
-_PATH: Path = Path(__file__).parent / "crits.json"
-if _PATH.exists():
-    _CRIT_TABLES_DATA = CritTablesData.parse_file(_PATH)
-else:
-    logging.warning("Unable to find %s", _PATH)
-
-_TABLES: Dict[int, CritTableData] = {
-    tbl.number: tbl for tbl in _CRIT_TABLES_DATA.crit_tables
-}
-
-
-def get_crit_table(number: int):
-    return _TABLES[number]
-
-
 @commands.command()
 async def crit(
     ctx,
@@ -37,7 +17,7 @@ async def crit(
     roll: int = commands.parameter(description="What you rolled on your crit die"),
 ):
     """Shows the result of a roll on a crit table."""
-    await ctx.send(_match(get_crit_table(table), roll))
+    await ctx.send(_match(ctx.bot.initbot_state.crits.get_one(table), roll))
 
 
 @crit.error
