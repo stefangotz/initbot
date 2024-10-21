@@ -503,6 +503,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "discord-py" },
+    { name = "peewee" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
@@ -516,11 +517,13 @@ dev = [
     { name = "pre-commit" },
     { name = "pylint" },
     { name = "pytest" },
+    { name = "types-peewee" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "discord-py", specifier = "~=2.3" },
+    { name = "peewee", specifier = "~=3.17" },
     { name = "pydantic", specifier = "~=2.0" },
     { name = "pydantic-settings", specifier = "~=2.0" },
     { name = "python-dotenv", specifier = "~=0.21" },
@@ -534,6 +537,7 @@ dev = [
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "pylint", specifier = ">=3.2.7" },
     { name = "pytest", specifier = ">=8.3.3" },
+    { name = "types-peewee", specifier = ">=3.17.7.20241017" },
 ]
 
 [[package]]
@@ -735,6 +739,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/ca/bc/f35b8446f4531a7cb
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08", size = 31191 },
 ]
+
+[[package]]
+name = "peewee"
+version = "3.17.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/dc/832bcf4ea5ee2ebc4ea42ef36e44a451de5d80f8b9858bf2066e30738c67/peewee-3.17.8.tar.gz", hash = "sha256:ce1d05db3438830b989a1b9d0d0aa4e7f6134d5f6fd57686eeaa26a3e6485a8c", size = 948249 }
 
 [[package]]
 name = "platformdirs"
@@ -1164,6 +1174,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b1/09/a439bec5888f00a54b8b9f05fa94d7f901d6735ef4e55dcec9bc37b5d8fa/tomlkit-0.13.2.tar.gz", hash = "sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79", size = 192885 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/b6/a447b5e4ec71e13871be01ba81f5dfc9d0af7e473da256ff46bc0e24026f/tomlkit-0.13.2-py3-none-any.whl", hash = "sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde", size = 37955 },
+]
+
+[[package]]
+name = "types-peewee"
+version = "3.17.8.20241117"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/2b/27b937c43a8a6e8c69d0ce8e6b9bdfd4a377fc4a348bc38b6ed3fd219078/types-peewee-3.17.8.20241117.tar.gz", hash = "sha256:9037c4f85d12d082b9816bc271643a8200033c39f04a1958c831735315960ed9", size = 15091 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4c/e9/0c237562a901507ed92ecf97b3892742d04b482a4811e52384809ac9cac1/types_peewee-3.17.8.20241117-py3-none-any.whl", hash = "sha256:96af41072d4e7e6d4ea3aea19e576df27cecb6f8c0b8d7a5564ce5fbd4913c52", size = 13933 },
 ]
 
 [[package]]
