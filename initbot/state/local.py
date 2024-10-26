@@ -131,11 +131,12 @@ class LocalCharacterState(CharacterState):
             lambda cdi: cdi.user,
         )
 
-    def add_and_store(self, char_data: CharacterData):
+    def add_store_and_get(self, char_data: CharacterData):
         if any(char for char in self.get_all() if char.name == char_data.name):
             raise KeyError(f"Character with name '{char_data.name}' already exists")
         self._characters.append(char_data)
         self._store()
+        return char_data
 
     def remove_and_store(self, char_data: CharacterData):
         self._characters.remove(char_data)

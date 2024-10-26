@@ -51,13 +51,13 @@ class CharacterState:
     def get_from_user(self, user: str) -> CharacterData:
         raise NotImplementedError()
 
-    def add_and_store(self, char_data: CharacterData):
+    def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
         raise NotImplementedError()
 
-    def remove_and_store(self, char_data: CharacterData):
+    def remove_and_store(self, char_data: CharacterData) -> None:
         raise NotImplementedError()
 
-    def update_and_store(self, char_data: CharacterData):
+    def update_and_store(self, char_data: CharacterData) -> None:
         raise NotImplementedError()
 
 
