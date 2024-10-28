@@ -1,4 +1,5 @@
 from typing import Any, List
+import logging
 import random
 
 from discord.ext import commands  # type: ignore
@@ -201,4 +202,5 @@ async def play(ctx: Any, *args: str) -> None:
 @park.error
 @play.error
 async def char_error(ctx, error):
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

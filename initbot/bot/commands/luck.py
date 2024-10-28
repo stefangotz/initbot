@@ -1,4 +1,5 @@
 from typing import List
+import logging
 from discord.ext import commands  # type: ignore
 
 from initbot.models.roll import DieRoll, die_roll
@@ -55,4 +56,5 @@ async def luck(ctx, *args: str):
 
 @luck.error
 async def handle_error(ctx, error):
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

@@ -117,5 +117,5 @@ async def inis(ctx) -> None:
 @inis.error
 @init.error
 async def init_error(ctx, error) -> None:
-    logging.exception(ctx, error)
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

@@ -1,3 +1,5 @@
+import logging
+
 from discord.ext import commands  # type: ignore
 
 from ...data.crit import CritTableData
@@ -22,4 +24,5 @@ async def crit(
 
 @crit.error
 async def crit_error(ctx, error):
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

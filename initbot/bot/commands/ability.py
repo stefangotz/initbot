@@ -1,3 +1,5 @@
+import logging
+
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
@@ -46,4 +48,5 @@ async def mod(
 @mods.error
 @mod.error
 async def handle_error(ctx, error):
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)
