@@ -1,4 +1,4 @@
-from typing import List, Union, Iterable
+from typing import List, Sequence, Union, Iterable
 
 from initbot.data.cls import ClassData
 
@@ -10,13 +10,13 @@ from ..data.occupation import OccupationData
 
 
 class AbilityState:
-    def get_all(self) -> List[AbilityData]:
+    def get_all(self) -> Sequence[AbilityData]:
         raise NotImplementedError()
 
     def get_from_prefix(self, prefix: str) -> AbilityData:
         raise NotImplementedError()
 
-    def get_mods(self) -> List[AbilityModifierData]:
+    def get_mods(self) -> Sequence[AbilityModifierData]:
         raise NotImplementedError()
 
     def get_mod_from_score(self, score: int) -> AbilityModifierData:
@@ -24,7 +24,7 @@ class AbilityState:
 
 
 class AugurState:
-    def get_all(self) -> List[AugurData]:
+    def get_all(self) -> Sequence[AugurData]:
         raise NotImplementedError()
 
     def get_from_roll(self, roll: int) -> AugurData:

@@ -1,7 +1,7 @@
 from dataclasses import asdict
 import logging
 from pathlib import Path
-from typing import Dict, Iterable, List, Union, cast
+from typing import Dict, Iterable, List, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -45,13 +45,13 @@ class LocalAbilityModifierData(BaseModel):
 
 class LocalAbilitiesData(BaseModel):
     model_config = ConfigDict(frozen=True)
-    abilities: List[LocalAbilityData]
-    modifiers: List[LocalAbilityModifierData]
+    abilities: Tuple[LocalAbilityData, ...] = ()
+    modifiers: Tuple[LocalAbilityModifierData, ...] = ()
 
 
 class LocalAbilityState(AbilityState):
     def __init__(self):  # type: ignore
-        self._abilities_data = LocalAbilitiesData(abilities=[], modifiers=[])
+        self._abilities_data = LocalAbilitiesData()
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
         )
@@ -63,26 +63,18 @@ class LocalAbilityState(AbilityState):
         else:
             logging.warning("Unable to find %s", path)
 
-    def get_all(self) -> List[AbilityData]:
-        return cast(List[AbilityData], self._abilities_data.abilities)
+    def get_all(self) -> Sequence[AbilityData]:
+        return cast(Tuple[AbilityData, ...], self._abilities_data.abilities)
 
     def get_from_prefix(self, prefix) -> AbilityData:
-        return cast(
-            AbilityData,
-            get_unique_prefix_match(
-                prefix, self._abilities_data.abilities, lambda a: a.name
-            ),
-        )
+        return get_unique_prefix_match(prefix, self.get_all(), lambda a: a.name)
 
-    def get_mods(self) -> List[AbilityModifierData]:
-        return cast(List[AbilityModifierData], self._abilities_data.modifiers)
+    def get_mods(self) -> Sequence[AbilityModifierData]:
+        return cast(Tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
 
     def get_mod_from_score(self, score: int) -> AbilityModifierData:
-        return cast(
-            AbilityModifierData,
-            get_first_set_match_or_over_under_flow(
-                score, self._abilities_data.modifiers, lambda mod: [mod.score]
-            ),
+        return get_first_set_match_or_over_under_flow(
+            score, self.get_mods(), lambda mod: [mod.score]
         )
 
 
@@ -93,12 +85,13 @@ class LocalAugurData(BaseModel):
 
 
 class LocalAugursData(BaseModel):
-    augurs: List[LocalAugurData]
+    model_config = ConfigDict(frozen=True)
+    augurs: Tuple[LocalAugurData, ...] = ()
 
 
 class LocalAugurState(AugurState):
     def __init__(self):
-        augurs_data = LocalAugursData(augurs=[])
+        augurs_data = LocalAugursData()
         path: Path = Path(__file__).parent.parent / "bot" / "commands" / "augurs.json"
         if path.exists():
             with path.open() as file_desc:
@@ -110,8 +103,8 @@ class LocalAugurState(AugurState):
             aug.roll: aug for aug in augurs_data.augurs
         }
 
-    def get_all(self) -> List[AugurData]:
-        return cast(List[AugurData], list(self._augurs_dict.values()))
+    def get_all(self) -> Sequence[AugurData]:
+        return cast(Tuple[AugurData, ...], tuple(self._augurs_dict.values()))
 
     def get_from_roll(self, roll: int) -> AugurData:
         return cast(AugurData, self._augurs_dict[roll])
@@ -143,12 +136,12 @@ class LocalCharacterData(BaseModel):
 
 
 class LocalCharactersData(BaseModel):
-    characters: List[LocalCharacterData]
+    characters: List[LocalCharacterData] = []
 
 
 class LocalCharacterState(CharacterState):
     def __init__(self):  # type: ignore
-        chars_data = LocalCharactersData(characters=[])
+        chars_data = LocalCharactersData()
         self._path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "characters.json"
         )
