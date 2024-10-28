@@ -1,4 +1,5 @@
 from typing import FrozenSet, Sequence
+import logging
 import random
 
 from discord.ext import commands  # type: ignore
@@ -42,4 +43,5 @@ async def tarot(ctx):
 
 @tarot.error
 async def tarot_error(ctx, error):
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

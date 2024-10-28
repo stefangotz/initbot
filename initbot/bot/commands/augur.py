@@ -1,3 +1,4 @@
+import logging
 import random
 from typing import Any
 
@@ -28,4 +29,5 @@ async def augur(ctx: Any) -> None:
 @augurs.error
 @augur.error
 async def augur_error(ctx: Any, error: Exception) -> None:
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

@@ -23,5 +23,5 @@ async def cls(
 @classes.error
 @cls.error
 async def error(ctx, err):
-    logging.exception(err)
+    logging.exception(ctx.command)
     await ctx.send(str(err), delete_after=5)

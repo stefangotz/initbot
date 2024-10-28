@@ -1,3 +1,5 @@
+import logging
+
 from discord.ext import commands  # type: ignore
 
 
@@ -21,4 +23,5 @@ async def occupations(ctx) -> None:
 
 @occupations.error
 async def occupations_error(ctx, error) -> None:
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

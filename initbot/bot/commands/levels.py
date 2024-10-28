@@ -1,3 +1,5 @@
+import logging
+
 from discord.ext import commands  # type: ignore
 
 
@@ -10,4 +12,5 @@ async def levels(ctx):
 
 @levels.error
 async def levels_error(ctx, error):
+    logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)
