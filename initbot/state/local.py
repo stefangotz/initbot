@@ -111,7 +111,7 @@ class LocalAugurState(AugurState):
         }
 
     def get_all(self) -> List[AugurData]:
-        return cast(List[AugurData], self._augurs_dict.values())
+        return cast(List[AugurData], list(self._augurs_dict.values()))
 
     def get_from_roll(self, roll: int) -> AugurData:
         return cast(AugurData, self._augurs_dict[roll])
