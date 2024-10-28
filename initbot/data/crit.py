@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Tuple
 
 
-@dataclass
+@dataclass(frozen=True)
 class CritData:
-    rolls: List[int]
+    rolls: Tuple[int, ...]
     effect: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class CritTableData:
     number: int
-    crits: List[CritData]
+    crits: Tuple[CritData, ...]
