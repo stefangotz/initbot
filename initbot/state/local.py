@@ -14,8 +14,6 @@ from ..data.character import CharacterData
 from ..data.occupation import OccupationData
 from ..utils import (
     get_exact_or_unique_prefix_match,
-    get_first_set_match,
-    get_first_set_match_or_over_under_flow,
     get_unique_prefix_match,
 )
 from .state import (
@@ -66,16 +64,8 @@ class LocalAbilityState(AbilityState):
     def get_all(self) -> Sequence[AbilityData]:
         return cast(Tuple[AbilityData, ...], self._abilities_data.abilities)
 
-    def get_from_prefix(self, prefix) -> AbilityData:
-        return get_unique_prefix_match(prefix, self.get_all(), lambda a: a.name)
-
     def get_mods(self) -> Sequence[AbilityModifierData]:
         return cast(Tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
-
-    def get_mod_from_score(self, score: int) -> AbilityModifierData:
-        return get_first_set_match_or_over_under_flow(
-            score, self.get_mods(), lambda mod: [mod.score]
-        )
 
 
 class LocalAugurData(BaseModel):
@@ -235,19 +225,21 @@ class LocalCharacterState(CharacterState):
 
 
 class LocalOccupationData(BaseModel):
-    rolls: List[int]
+    model_config = ConfigDict(frozen=True)
+    rolls: Tuple[int, ...]
     name: str
     weapon: str
     goods: str
 
 
 class LocalOccupationsData(BaseModel):
-    occupations: List[LocalOccupationData]
+    model_config = ConfigDict(frozen=True)
+    occupations: Tuple[LocalOccupationData, ...] = ()
 
 
 class LocalOccupationState(OccupationState):
     def __init__(self):  # type: ignore
-        occupations_data: LocalOccupationsData = LocalOccupationsData(occupations=[])
+        occupations_data: LocalOccupationsData = LocalOccupationsData()
         path: Path = (
             Path(__file__).parent.parent / "bot" / "commands" / "occupations.json"
         )
@@ -258,13 +250,12 @@ class LocalOccupationState(OccupationState):
                 )
         else:
             logging.warning("Unable to find %s", path)
-        self._occupations: List[LocalOccupationData] = occupations_data.occupations
+        self._occupations: Tuple[LocalOccupationData, ...] = (
+            occupations_data.occupations
+        )
 
-    def get_all(self) -> List[OccupationData]:
-        return cast(List[OccupationData], self._occupations)
-
-    def get_from_roll(self, roll: int) -> OccupationData:
-        return get_first_set_match(roll, self.get_all(), lambda o: o.rolls)
+    def get_all(self) -> Sequence[OccupationData]:
+        return cast(Tuple[OccupationData, ...], self._occupations)
 
 
 class LocalSpellsByLevelData(BaseModel):
@@ -275,85 +266,81 @@ class LocalSpellsByLevelData(BaseModel):
 
 # pylint: disable=R0801
 class LocalLevelData(BaseModel):
+    model_config = ConfigDict(frozen=True)
     level: int
     attack_die: str
     crit_die: str
     crit_table: int
-    action_dice: List[str]
+    action_dice: Tuple[str, ...]
     ref: int
     fort: int
     will: int
-    spells_by_level: List[LocalSpellsByLevelData]
+    spells_by_level: Tuple[LocalSpellsByLevelData, ...]
     thief_luck_die: int
-    threat_range: List[int]
+    threat_range: Tuple[int, ...]
     spells: int
     max_spell_level: int
     sneak_hide: int
 
 
 class LocalClassData(BaseModel):
+    model_config = ConfigDict(frozen=True)
     name: str
     hit_die: int
-    weapons: List[str]
-    levels: List[LocalLevelData]
+    weapons: Tuple[str, ...]
+    levels: Tuple[LocalLevelData, ...]
 
 
 class LocalClassesData(BaseModel):
-    classes: List[LocalClassData]
+    model_config = ConfigDict(frozen=True)
+    classes: Tuple[LocalClassData, ...] = ()
 
 
 class LocalClassState(ClassState):
     def __init__(self):
-        classes_data: LocalClassesData = LocalClassesData(classes=[])
+        classes_data: LocalClassesData = LocalClassesData()
         path: Path = Path(__file__).parent.parent / "bot" / "commands" / "classes.json"
         if path.exists():
             with path.open() as file_desc:
                 classes_data = LocalClassesData.model_validate_json(file_desc.read())
         else:
             logging.warning("Unable to find %s", path)
-        self._classes: Dict[str, LocalClassData] = {
-            cls.name: cls for cls in classes_data.classes
-        }
+        self._classes: Tuple[LocalClassData, ...] = classes_data.classes
 
-    def get_all(self) -> List[ClassData]:
-        return cast(List[ClassData], list(self._classes.values()))
-
-    def get_from_name(self, name: str) -> ClassData:
-        return cast(ClassData, self._classes[name])
+    def get_all(self) -> Sequence[ClassData]:
+        return cast(Tuple[ClassData, ...], tuple(self._classes))
 
 
 class LocalCritData(BaseModel):
-    rolls: List[int]
+    model_config = ConfigDict(frozen=True)
+    rolls: Tuple[int, ...]
     effect: str
 
 
 class LocalCritTableData(BaseModel):
+    model_config = ConfigDict(frozen=True)
     number: int
-    crits: List[LocalCritData]
+    crits: Tuple[LocalCritData, ...]
 
 
 class LocalCritTablesData(BaseModel):
-    crit_tables: List[LocalCritTableData]
+    model_config = ConfigDict(frozen=True)
+    crit_tables: Tuple[LocalCritTableData, ...] = ()
 
 
 class LocalCritState(CritState):
     def __init__(self):
-        data: LocalCritTablesData = LocalCritTablesData(crit_tables=[])
+        data: LocalCritTablesData = LocalCritTablesData()
         path: Path = Path(__file__).parent.parent / "bot" / "commands" / "crits.json"
         if path.exists():
             with path.open() as file_desc:
                 data = LocalCritTablesData.model_validate_json(file_desc.read())
         else:
             logging.warning("Unable to find %s", path)
-        self._data: List[LocalCritTableData] = data.crit_tables
+        self._data: Tuple[LocalCritTableData, ...] = data.crit_tables
 
-    def get_all(self) -> List[CritTableData]:
-        return cast(List[CritTableData], self._data)
-
-    def get_one(self, table: int) -> CritTableData:
-        return cast(
-            CritTableData, next(filter(lambda tbl: tbl.number == table, self._data))
-        )
+    def get_all(self) -> Sequence[CritTableData]:
+        return cast(Tuple[CritTableData, ...], self._data)
 
 
 class LocalState(State):

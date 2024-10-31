@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Tuple
 
 
-@dataclass
+@dataclass(frozen=True)
 class OccupationData:
-    rolls: List[int]
+    rolls: Tuple[int, ...]
     name: str
     weapon: str
     goods: str
