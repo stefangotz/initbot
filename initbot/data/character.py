@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from typing import Union, List
 
+from ..base import BaseData
+
 
 # pylint: disable=R0801
 @dataclass
-class CharacterData:
+class CharacterData(BaseData):
     name: str
     user: str
     active: bool = True

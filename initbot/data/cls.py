@@ -1,15 +1,17 @@
 from dataclasses import dataclass
 from typing import Tuple
 
+from ..base import BaseData
+
 
 @dataclass(frozen=True)
-class SpellsByLevelData:
+class SpellsByLevelData(BaseData):
     level: int
     spells: int
 
 
 @dataclass(frozen=True)
-class LevelData:
+class LevelData(BaseData):
     level: int
     attack_die: str
     crit_die: str
@@ -27,7 +29,7 @@ class LevelData:
 
 
 @dataclass(frozen=True)
-class ClassData:
+class ClassData(BaseData):
     name: str
     hit_die: int
     weapons: Tuple[str, ...]

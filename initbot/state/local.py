@@ -1,7 +1,7 @@
 from dataclasses import asdict
 import logging
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -27,13 +27,18 @@ from .state import (
 )
 
 
-class LocalAbilityData(BaseModel):
+class LocalBaseModel(BaseModel):
+    def as_dict(self) -> Dict[str, Any]:
+        return self.dict()
+
+
+class LocalAbilityData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     name: str
     description: str
 
 
-class LocalAbilityModifierData(BaseModel):
+class LocalAbilityModifierData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     score: int
     mod: int
@@ -41,7 +46,7 @@ class LocalAbilityModifierData(BaseModel):
     max_spell_level: int
 
 
-class LocalAbilitiesData(BaseModel):
+class LocalAbilitiesData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     abilities: Tuple[LocalAbilityData, ...] = ()
     modifiers: Tuple[LocalAbilityModifierData, ...] = ()
@@ -68,13 +73,13 @@ class LocalAbilityState(AbilityState):
         return cast(Tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
 
 
-class LocalAugurData(BaseModel):
+class LocalAugurData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     description: str
     roll: int
 
 
-class LocalAugursData(BaseModel):
+class LocalAugursData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     augurs: Tuple[LocalAugurData, ...] = ()
 
@@ -100,7 +105,7 @@ class LocalAugurState(AugurState):
         return cast(AugurData, self._augurs_dict[roll])
 
 
-class LocalCharacterData(BaseModel):
+class LocalCharacterData(LocalBaseModel):
     name: str
     user: str
     active: bool = True
@@ -125,7 +130,7 @@ class LocalCharacterData(BaseModel):
     cls: Union[str, None] = None
 
 
-class LocalCharactersData(BaseModel):
+class LocalCharactersData(LocalBaseModel):
     characters: List[LocalCharacterData] = []
 
 
@@ -224,7 +229,7 @@ class LocalCharacterState(CharacterState):
             )
 
 
-class LocalOccupationData(BaseModel):
+class LocalOccupationData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     rolls: Tuple[int, ...]
     name: str
@@ -232,7 +237,7 @@ class LocalOccupationData(BaseModel):
     goods: str
 
 
-class LocalOccupationsData(BaseModel):
+class LocalOccupationsData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     occupations: Tuple[LocalOccupationData, ...] = ()
 
@@ -258,14 +263,14 @@ class LocalOccupationState(OccupationState):
         return cast(Tuple[OccupationData, ...], self._occupations)
 
 
-class LocalSpellsByLevelData(BaseModel):
+class LocalSpellsByLevelData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     level: int
     spells: int
 
 
 # pylint: disable=R0801
-class LocalLevelData(BaseModel):
+class LocalLevelData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     level: int
     attack_die: str
@@ -283,7 +288,7 @@ class LocalLevelData(BaseModel):
     sneak_hide: int
 
 
-class LocalClassData(BaseModel):
+class LocalClassData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     name: str
     hit_die: int
@@ -291,7 +296,7 @@ class LocalClassData(BaseModel):
     levels: Tuple[LocalLevelData, ...]
 
 
-class LocalClassesData(BaseModel):
+class LocalClassesData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     classes: Tuple[LocalClassData, ...] = ()
 
@@ -311,19 +316,19 @@ class LocalClassState(ClassState):
         return cast(Tuple[ClassData, ...], tuple(self._classes))
 
 
-class LocalCritData(BaseModel):
+class LocalCritData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     rolls: Tuple[int, ...]
     effect: str
 
 
-class LocalCritTableData(BaseModel):
+class LocalCritTableData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     number: int
     crits: Tuple[LocalCritData, ...]
 
 
-class LocalCritTablesData(BaseModel):
+class LocalCritTablesData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     crit_tables: Tuple[LocalCritTableData, ...] = ()
 
