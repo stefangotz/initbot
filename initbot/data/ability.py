@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 
+from ..base import BaseData
+
 
 @dataclass(frozen=True)
-class AbilityData:
+class AbilityData(BaseData):
     name: str
     description: str
 
 
 @dataclass(frozen=True)
-class AbilityModifierData:
+class AbilityModifierData(BaseData):
     score: int
     mod: int
     spells: int
@@ -16,6 +18,6 @@ class AbilityModifierData:
 
 
 @dataclass(frozen=True)
-class AbilityScoreData:
+class AbilityScoreData(BaseData):
     abl: AbilityData
     score: int = 0
