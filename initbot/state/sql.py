@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Sequence, cast
 
 from peewee import Model, CharField, IntegerField, SqliteDatabase
@@ -14,20 +15,12 @@ from .state import (
 )
 
 
-db = SqliteDatabase("app.db")
-
-
-class _BaseModel(Model):
-    class Meta:
-        database = db
-
-
-class _SqlAbilityData(_BaseModel):
+class _SqlAbilityData(Model):
     name = CharField(unique=True)
     description = CharField()
 
 
-class _SqlAbilityModifierData(_BaseModel):
+class _SqlAbilityModifierData(Model):
     score = IntegerField(unique=True)
     mod = IntegerField()
     spells = IntegerField()
@@ -45,8 +38,14 @@ class _SqlAbilityState(AbilityState):
 
 
 class SqlState(State):
-    def __init__(self):  # type: ignore
+    def __init__(self, sqlite_db_file: Path):  # type: ignore
         self._abilities = _SqlAbilityState()
+        data_classes = (
+            _SqlAbilityData,
+            _SqlAbilityModifierData,
+        )
+        self._db = SqliteDatabase(sqlite_db_file)
+        self._db.bind(data_classes)
 
     @property
     def abilities(self) -> AbilityState:
@@ -73,8 +72,9 @@ class SqlState(State):
         raise NotImplementedError()
 
     def import_state(self, src: State) -> None:
-        for cls, items in (
+        data_classes_and_items = (
             (_SqlAbilityData, src.abilities.get_all()),
             (_SqlAbilityModifierData, src.abilities.get_mods()),
-        ):
+        )
+        for cls, items in data_classes_and_items:
             cls.insert_many(i.as_dict() for i in items)
