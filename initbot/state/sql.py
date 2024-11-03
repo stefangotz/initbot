@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Sequence, cast
+from typing import Sequence, Tuple, cast
 
 from peewee import Model, CharField, IntegerField, SqliteDatabase
 
 from ..data.ability import AbilityData, AbilityModifierData
+from ..data.augur import AugurData
 from .state import (
     AbilityState,
     AugurState,
@@ -37,12 +38,27 @@ class _SqlAbilityState(AbilityState):
         )
 
 
+class _SqlAugurData(Model):
+    description = CharField()
+    roll = IntegerField(primary_key=True)
+
+
+class _SqlAugurState(AugurState):
+    def get_all(self) -> Sequence[AugurData]:
+        return cast(Sequence[AugurData], tuple(_SqlAugurData.select()))
+
+    def get_from_roll(self, roll: int) -> AugurData:
+        return cast(AugurData, _SqlAugurData.select().where(_SqlAugurData.roll == roll))
+
+
 class SqlState(State):
     def __init__(self, sqlite_db_file: Path):  # type: ignore
         self._abilities = _SqlAbilityState()
-        data_classes = (
+        self._augurs = _SqlAugurState()
+        data_classes: Tuple[type[Model], ...] = (
             _SqlAbilityData,
             _SqlAbilityModifierData,
+            _SqlAugurData,
         )
         self._db = SqliteDatabase(sqlite_db_file)
         self._db.bind(data_classes)
@@ -53,7 +69,7 @@ class SqlState(State):
 
     @property
     def augurs(self) -> AugurState:
-        raise NotImplementedError()
+        return self._augurs
 
     @property
     def characters(self) -> CharacterState:
@@ -75,6 +91,7 @@ class SqlState(State):
         data_classes_and_items = (
             (_SqlAbilityData, src.abilities.get_all()),
             (_SqlAbilityModifierData, src.abilities.get_mods()),
+            (_SqlAugurData, src.augurs.get_all()),
         )
         for cls, items in data_classes_and_items:
             cls.insert_many(i.as_dict() for i in items)
