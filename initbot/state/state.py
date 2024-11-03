@@ -34,7 +34,7 @@ class AugurState:
         raise NotImplementedError()
 
     def get_from_roll(self, roll: int) -> AugurData:
-        raise NotImplementedError()
+        return next(filter(lambda i: i.roll == roll, self.get_all()))
 
 
 class CharacterState:
