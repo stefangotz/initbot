@@ -1,3 +1,4 @@
+from inspect import isclass
 from pathlib import Path
 from typing import Sequence, Tuple, cast
 
@@ -55,10 +56,11 @@ class SqlState(State):
     def __init__(self, sqlite_db_file: Path):  # type: ignore
         self._abilities = _SqlAbilityState()
         self._augurs = _SqlAugurState()
-        data_classes: Tuple[type[Model], ...] = (
-            _SqlAbilityData,
-            _SqlAbilityModifierData,
-            _SqlAugurData,
+
+        data_classes: Tuple[type[Model], ...] = tuple(
+            cast(type[Model], i)
+            for i in globals().values()
+            if isclass(i) and issubclass(i, Model)
         )
         self._db = SqliteDatabase(sqlite_db_file)
         self._db.bind(data_classes)
