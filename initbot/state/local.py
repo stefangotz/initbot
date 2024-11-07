@@ -1,7 +1,7 @@
 from dataclasses import asdict
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -12,10 +12,6 @@ from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
 from ..data.occupation import OccupationData
-from ..utils import (
-    get_exact_or_unique_prefix_match,
-    get_unique_prefix_match,
-)
 from .state import (
     AbilityState,
     AugurState,
@@ -148,52 +144,8 @@ class LocalCharacterState(CharacterState):
 
         self._characters: List[LocalCharacterData] = chars_data.characters
 
-    def _get(self, name: str) -> CharacterData:
-        candidates = [char for char in self.get_all() if char.name == name]
-        if len(candidates) == 1:
-            return candidates[0]
-        raise KeyError(f"There are {len(candidates)} characters called {name}")
-
     def get_all(self) -> Sequence[CharacterData]:
-        return cast(Tuple[CharacterData, ...], tuple(self._characters))
-
-    def get_from_tokens(
-        self, tokens: Iterable[str], user: str, create: bool = False
-    ) -> CharacterData:
-        name: str = " ".join(tokens)
-        return self.get_from_str(name, user, create)
-
-    def get_from_str(self, name: str, user: str, create: bool = False) -> CharacterData:
-        if name:
-            return self.get_from_name(name, create, user)
-        return self.get_from_user(user)
-
-    def get_from_name(
-        self, name: str, create: bool = False, user: Union[str, None] = None
-    ) -> CharacterData:
-        try:
-            return cast(
-                CharacterData,
-                get_exact_or_unique_prefix_match(
-                    name, self._characters, lambda cdi: cdi.name
-                ),
-            )
-        except KeyError as err:
-            if create and user:
-                cdi: LocalCharacterData = LocalCharacterData(name=name, user=user)  # type: ignore
-                self._characters.append(cdi)
-                return cast(CharacterData, cdi)
-            raise KeyError(f"Unable to find character with name '{name}'") from err
-
-    def get_from_user(self, user: str) -> CharacterData:
-        return cast(
-            CharacterData,
-            get_unique_prefix_match(
-                user,
-                tuple(filter(lambda char_data: char_data.active, self._characters)),
-                lambda cdi: cdi.user,
-            ),
-        )
+        return cast(Sequence[CharacterData], self._characters)
 
     def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
         if any(char for char in self.get_all() if char.name == char_data.name):

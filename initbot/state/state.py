@@ -7,6 +7,7 @@ from ..data.cls import ClassData
 from ..data.crit import CritTableData
 from ..data.occupation import OccupationData
 from ..utils import (
+    get_exact_or_unique_prefix_match,
     get_first_set_match,
     get_first_set_match_or_over_under_flow,
     get_unique_prefix_match,
@@ -44,18 +45,31 @@ class CharacterState:
     def get_from_tokens(
         self, tokens: Iterable[str], user: str, create: bool = False
     ) -> CharacterData:
-        raise NotImplementedError()
+        return self.get_from_str(" ".join(tokens), user, create)
 
     def get_from_str(self, name: str, user: str, create: bool = False) -> CharacterData:
-        raise NotImplementedError()
+        if name:
+            return self.get_from_name(name, create, user)
+        return self.get_from_user(user)
 
     def get_from_name(
         self, name: str, create: bool = False, user: Union[str, None] = None
     ) -> CharacterData:
-        raise NotImplementedError()
+        try:
+            return get_exact_or_unique_prefix_match(
+                name, self.get_all(), lambda cdi: cdi.name
+            )
+        except KeyError as err:
+            if create and user:
+                return self.add_store_and_get(CharacterData(name=name, user=user))
+            raise KeyError(f"Unable to find character with name '{name}'") from err
 
     def get_from_user(self, user: str) -> CharacterData:
-        raise NotImplementedError()
+        return get_unique_prefix_match(
+            user,
+            tuple(filter(lambda char_data: char_data.active, self.get_all())),
+            lambda cdi: cdi.user,
+        )
 
     def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
         raise NotImplementedError()
