@@ -1,4 +1,4 @@
-from typing import List, Sequence, Union, Iterable
+from typing import Sequence, Union, Iterable
 
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
@@ -38,7 +38,7 @@ class AugurState:
 
 
 class CharacterState:
-    def get_all(self) -> List[CharacterData]:
+    def get_all(self) -> Sequence[CharacterData]:
         raise NotImplementedError()
 
     def get_from_tokens(

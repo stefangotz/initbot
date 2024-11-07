@@ -154,8 +154,8 @@ class LocalCharacterState(CharacterState):
             return candidates[0]
         raise KeyError(f"There are {len(candidates)} characters called {name}")
 
-    def get_all(self) -> List[CharacterData]:
-        return cast(List[CharacterData], self._characters)
+    def get_all(self) -> Sequence[CharacterData]:
+        return cast(Tuple[CharacterData, ...], tuple(self._characters))
 
     def get_from_tokens(
         self, tokens: Iterable[str], user: str, create: bool = False
