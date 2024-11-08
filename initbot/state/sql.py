@@ -3,11 +3,21 @@ from inspect import isclass
 from pathlib import Path
 from typing import Iterable, Sequence, Tuple, cast
 
-from peewee import Model, CharField, IntegerField, SqliteDatabase, BooleanField, Field
+from peewee import (
+    Model,
+    CharField,
+    CompositeKey,
+    IntegerField,
+    SqliteDatabase,
+    BooleanField,
+    Field,
+    ForeignKeyField,
+)
 
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
+from ..data.cls import ClassData
 from ..data.occupation import OccupationData
 from .state import (
     AbilityState,
@@ -135,12 +145,69 @@ class _SqlOccupationState(OccupationState):
         return cast(Tuple[OccupationData, ...], tuple(_SqlOccupationData.select()))
 
 
+class _SqlClassData(Model):
+    name = CharField(primary_key=True)
+    hit_die = IntegerField()
+    weapons = _StrSeqField()
+
+
+class _SqlSpellsByLevelData(Model):
+    level = IntegerField()
+    spells = IntegerField()
+    class_name = CharField()
+    class_level = IntegerField()
+
+    class Meta:
+        primary_key = CompositeKey("class_name", "class_level", "level")
+
+
+class _SqlLevelData(Model):
+    level = IntegerField()
+    attack_die = CharField()
+    crit_die = CharField()
+    crit_table = IntegerField()
+    action_dice = _StrSeqField()
+    ref = IntegerField()
+    fort = IntegerField()
+    will = IntegerField()
+    thief_luck_die = IntegerField()
+    threat_range = _IntSeqField()
+    spells = IntegerField()
+    max_spell_level = IntegerField()
+    sneak_hide = IntegerField()
+    class_data = ForeignKeyField(_SqlClassData, backref="levels")
+
+    class Meta:
+        primary_key = CompositeKey("class_data", "level")
+
+    # Ideally, we could express the relationship between _SqlLevelData and _SqlSpellsByLevelData through a ForeignKeyField.
+    # Unfortunately, peewee appears to have some internal limitations that prevents two nested levels of foreign keys from working as expected.
+    # We therefore express this relationship explicitly here and through the class_name and class_name attributes of _SqlSpellsByLevelData.
+    @property
+    def spells_by_level(self) -> Tuple[_SqlSpellsByLevelData, ...]:
+        return tuple(
+            _SqlSpellsByLevelData.select().join(
+                _SqlLevelData,
+                on=(
+                    _SqlSpellsByLevelData.class_name == _SqlLevelData.class_data.name
+                    and _SqlSpellsByLevelData.class_level == _SqlLevelData.level
+                ),
+            )
+        )
+
+
+class _SqlClassState(ClassState):
+    def get_all(self) -> Sequence[ClassData]:
+        return cast(Tuple[ClassData, ...], tuple(_SqlClassData.select()))
+
+
 class SqlState(State):
     def __init__(self, sqlite_db_file: Path):  # type: ignore
         self._abilities = _SqlAbilityState()
         self._augurs = _SqlAugurState()
         self._characters = _SqlCharacterState()
         self._occupations = _SqlOccupationState()
+        self._classes = _SqlClassState()
 
         data_classes: Tuple[type[Model], ...] = tuple(
             cast(type[Model], i)
@@ -168,7 +235,7 @@ class SqlState(State):
 
     @property
     def classes(self) -> ClassState:
-        raise NotImplementedError()
+        return self._classes
 
     @property
     def crits(self) -> CritState:
@@ -184,3 +251,22 @@ class SqlState(State):
         )
         for cls, items in data_classes_and_items:
             cls.insert_many(i.as_dict() for i in items)
+        # class information can't be imported as above due to the 1:n relationships in its data model
+        for src_class in src.classes.get_all():
+            tgt_class = _SqlClassData.create(
+                **{k: v for k, v in src_class.as_dict().items() if k != "levels"}
+            )
+            for src_level in src_class.levels:
+                data = {
+                    k: v
+                    for k, v in src_level.as_dict().items()
+                    if k != "spells_by_level"
+                }
+                data.update({"class_data": tgt_class})
+                _SqlLevelData.create(**data)
+                for src_spells_by_level in src_level.spells_by_level:
+                    data = dict(src_spells_by_level.as_dict())
+                    data.update(
+                        {"class_name": src_class.name, "class_level": src_level.level}
+                    )
+                    _SqlSpellsByLevelData.create(**data)
