@@ -8,6 +8,7 @@ from peewee import Model, CharField, IntegerField, SqliteDatabase, BooleanField,
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
+from ..data.occupation import OccupationData
 from .state import (
     AbilityState,
     AugurState,
@@ -112,11 +113,34 @@ class _SqlCharacterState(CharacterState):
         cast(_SqlCharacterData, char_data).save()
 
 
+class _IntSeqField(Field):
+    field_type = "text"
+
+    def db_value(self, value: Iterable[int]) -> str:
+        return "\x1e".join(map(str, value))
+
+    def python_value(self, value: str) -> Sequence[int]:
+        return tuple(map(int, value.split("\x1e")))
+
+
+class _SqlOccupationData(Model):
+    rolls = _IntSeqField()
+    name = CharField()
+    weapon = CharField()
+    goods = CharField()
+
+
+class _SqlOccupationState(OccupationState):
+    def get_all(self) -> Sequence[OccupationData]:
+        return cast(Tuple[OccupationData, ...], tuple(_SqlOccupationData.select()))
+
+
 class SqlState(State):
     def __init__(self, sqlite_db_file: Path):  # type: ignore
         self._abilities = _SqlAbilityState()
         self._augurs = _SqlAugurState()
         self._characters = _SqlCharacterState()
+        self._occupations = _SqlOccupationState()
 
         data_classes: Tuple[type[Model], ...] = tuple(
             cast(type[Model], i)
@@ -140,7 +164,7 @@ class SqlState(State):
 
     @property
     def occupations(self) -> OccupationState:
-        raise NotImplementedError()
+        return self._occupations
 
     @property
     def classes(self) -> ClassState:
@@ -156,6 +180,7 @@ class SqlState(State):
             (_SqlAbilityModifierData, src.abilities.get_mods()),
             (_SqlAugurData, src.augurs.get_all()),
             (_SqlCharacterData, src.characters.get_all()),
+            (_SqlOccupationData, src.occupations.get_all()),
         )
         for cls, items in data_classes_and_items:
             cls.insert_many(i.as_dict() for i in items)
