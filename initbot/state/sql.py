@@ -18,6 +18,7 @@ from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
 from ..data.cls import ClassData
+from ..data.crit import CritTableData
 from ..data.occupation import OccupationData
 from .state import (
     AbilityState,
@@ -201,11 +202,27 @@ class _SqlClassState(ClassState):
         return cast(Tuple[ClassData, ...], tuple(_SqlClassData.select()))
 
 
+class _SqlCritTableData(Model):
+    number = IntegerField(primary_key=True)
+
+
+class _SqlCritData(Model):
+    rolls = _IntSeqField()
+    effect = CharField()
+    _table = ForeignKeyField(_SqlCritTableData, backref="crits")
+
+
+class _SqlCritState(CritState):
+    def get_all(self) -> Sequence[CritTableData]:
+        return cast(Tuple[CritTableData, ...], tuple(_SqlCritTableData.select()))
+
+
 class SqlState(State):
     def __init__(self, sqlite_db_file: Path):  # type: ignore
         self._abilities = _SqlAbilityState()
         self._augurs = _SqlAugurState()
         self._characters = _SqlCharacterState()
+        self._crits = _SqlCritState()
         self._occupations = _SqlOccupationState()
         self._classes = _SqlClassState()
 
@@ -239,7 +256,7 @@ class SqlState(State):
 
     @property
     def crits(self) -> CritState:
-        raise NotImplementedError()
+        return self._crits
 
     def import_state(self, src: State) -> None:
         data_classes_and_items = (
@@ -270,3 +287,9 @@ class SqlState(State):
                         {"class_name": src_class.name, "class_level": src_level.level}
                     )
                     _SqlSpellsByLevelData.create(**data)
+        for src_crit_table in src.crits.get_all():
+            tgt_crit_table = _SqlCritTableData.create(number=src_crit_table.number)
+            for src_crit in src_crit_table.crits:
+                _SqlCritData.create(
+                    rolls=src_crit.rolls, effect=src_crit.effect, _table=tgt_crit_table
+                )
