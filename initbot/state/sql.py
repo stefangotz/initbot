@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
-from typing import Iterable, Sequence, Tuple, cast
+from typing import Iterable, Sequence, Tuple, Type, cast
 
 from peewee import (
     Model,
@@ -14,6 +14,7 @@ from peewee import (
     ForeignKeyField,
 )
 
+from ..base import BaseData
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
 from ..data.character import CharacterData
@@ -52,6 +53,10 @@ class _SqlAbilityState(AbilityState):
             Sequence[AbilityModifierData], tuple(_SqlAbilityModifierData.select())
         )
 
+    def import_from(self, src: AbilityState) -> None:
+        _import_from(_SqlAbilityData, src.get_all())
+        _import_from(_SqlAbilityModifierData, src.get_mods())
+
 
 class _SqlAugurData(Model):
     description = CharField()
@@ -64,6 +69,9 @@ class _SqlAugurState(AugurState):
 
     def get_from_roll(self, roll: int) -> AugurData:
         return cast(AugurData, _SqlAugurData.select().where(_SqlAugurData.roll == roll))
+
+    def import_from(self, src: AugurState) -> None:
+        _import_from(_SqlAugurData, src.get_all())
 
 
 class _StrSeqField(Field):
@@ -123,6 +131,9 @@ class _SqlCharacterState(CharacterState):
             )
         cast(_SqlCharacterData, char_data).save()
 
+    def import_from(self, src: CharacterState) -> None:
+        _import_from(_SqlCharacterData, src.get_all())
+
 
 class _IntSeqField(Field):
     field_type = "text"
@@ -144,6 +155,9 @@ class _SqlOccupationData(Model):
 class _SqlOccupationState(OccupationState):
     def get_all(self) -> Sequence[OccupationData]:
         return cast(Tuple[OccupationData, ...], tuple(_SqlOccupationData.select()))
+
+    def import_from(self, src: OccupationState) -> None:
+        _import_from(_SqlOccupationData, src.get_all())
 
 
 class _SqlClassData(Model):
@@ -216,6 +230,16 @@ class _SqlCritState(CritState):
     def get_all(self) -> Sequence[CritTableData]:
         return cast(Tuple[CritTableData, ...], tuple(_SqlCritTableData.select()))
 
+    def import_from(self, src: CritState) -> None:
+        _SqlCritData.delete()
+        _SqlCritTableData.delete()
+        for src_crit_table in src.get_all():
+            tgt_crit_table = _SqlCritTableData.create(number=src_crit_table.number)
+            for src_crit in src_crit_table.crits:
+                _SqlCritData.create(
+                    rolls=src_crit.rolls, effect=src_crit.effect, _table=tgt_crit_table
+                )
+
 
 class SqlState(State):
     def __init__(self, sqlite_db_file: Path):  # type: ignore
@@ -267,7 +291,7 @@ class SqlState(State):
             (_SqlOccupationData, src.occupations.get_all()),
         )
         for cls, items in data_classes_and_items:
-            cls.insert_many(i.as_dict() for i in items)
+            _import_from(cls, items)
         # class information can't be imported as above due to the 1:n relationships in its data model
         for src_class in src.classes.get_all():
             tgt_class = _SqlClassData.create(
@@ -287,9 +311,8 @@ class SqlState(State):
                         {"class_name": src_class.name, "class_level": src_level.level}
                     )
                     _SqlSpellsByLevelData.create(**data)
-        for src_crit_table in src.crits.get_all():
-            tgt_crit_table = _SqlCritTableData.create(number=src_crit_table.number)
-            for src_crit in src_crit_table.crits:
-                _SqlCritData.create(
-                    rolls=src_crit.rolls, effect=src_crit.effect, _table=tgt_crit_table
-                )
+        self._crits.import_from(src.crits)
+
+
+def _import_from(cls: Type, items: Iterable[BaseData]) -> None:
+    cls.insert_many(i.as_dict() for i in items)
