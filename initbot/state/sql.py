@@ -215,6 +215,29 @@ class _SqlClassState(ClassState):
     def get_all(self) -> Sequence[ClassData]:
         return cast(Tuple[ClassData, ...], tuple(_SqlClassData.select()))
 
+    def import_from(self, src: ClassState) -> None:
+        _SqlLevelData.delete().execute()
+        _SqlSpellsByLevelData.delete().execute()
+        _SqlClassData.delete().execute()
+        for src_class in src.get_all():
+            tgt_class = _SqlClassData.create(
+                **{k: v for k, v in src_class.as_dict().items() if k != "levels"}
+            )
+            for src_level in src_class.levels:
+                data = {
+                    k: v
+                    for k, v in src_level.as_dict().items()
+                    if k != "spells_by_level"
+                }
+                data.update({"class_data": tgt_class})
+                _SqlLevelData.create(**data)
+                for src_spells_by_level in src_level.spells_by_level:
+                    data = dict(src_spells_by_level.as_dict())
+                    data.update(
+                        {"class_name": src_class.name, "class_level": src_level.level}
+                    )
+                    _SqlSpellsByLevelData.create(**data)
+
 
 class _SqlCritTableData(Model):
     number = IntegerField(primary_key=True)
@@ -231,8 +254,8 @@ class _SqlCritState(CritState):
         return cast(Tuple[CritTableData, ...], tuple(_SqlCritTableData.select()))
 
     def import_from(self, src: CritState) -> None:
-        _SqlCritData.delete()
-        _SqlCritTableData.delete()
+        _SqlCritData.delete().execute()
+        _SqlCritTableData.delete().execute()
         for src_crit_table in src.get_all():
             tgt_crit_table = _SqlCritTableData.create(number=src_crit_table.number)
             for src_crit in src_crit_table.crits:
@@ -242,7 +265,10 @@ class _SqlCritState(CritState):
 
 
 class SqlState(State):
-    def __init__(self, sqlite_db_file: Path):  # type: ignore
+    def __init__(
+        self,
+        sqlite_db_file: Path = Path.home() / ".local" / "var" / "initbot" / "app.sql",
+    ):
         self._abilities = _SqlAbilityState()
         self._augurs = _SqlAugurState()
         self._characters = _SqlCharacterState()
@@ -250,13 +276,11 @@ class SqlState(State):
         self._occupations = _SqlOccupationState()
         self._classes = _SqlClassState()
 
-        data_classes: Tuple[type[Model], ...] = tuple(
-            cast(type[Model], i)
-            for i in globals().values()
-            if isclass(i) and issubclass(i, Model)
-        )
+        sqlite_db_file.parent.mkdir(parents=True, exist_ok=True)
         self._db = SqliteDatabase(sqlite_db_file)
+        data_classes = _get_data_classes()
         self._db.bind(data_classes)
+        self._db.create_tables(data_classes)
 
     @property
     def abilities(self) -> AbilityState:
@@ -282,37 +306,14 @@ class SqlState(State):
     def crits(self) -> CritState:
         return self._crits
 
-    def import_state(self, src: State) -> None:
-        data_classes_and_items = (
-            (_SqlAbilityData, src.abilities.get_all()),
-            (_SqlAbilityModifierData, src.abilities.get_mods()),
-            (_SqlAugurData, src.augurs.get_all()),
-            (_SqlCharacterData, src.characters.get_all()),
-            (_SqlOccupationData, src.occupations.get_all()),
-        )
-        for cls, items in data_classes_and_items:
-            _import_from(cls, items)
-        # class information can't be imported as above due to the 1:n relationships in its data model
-        for src_class in src.classes.get_all():
-            tgt_class = _SqlClassData.create(
-                **{k: v for k, v in src_class.as_dict().items() if k != "levels"}
-            )
-            for src_level in src_class.levels:
-                data = {
-                    k: v
-                    for k, v in src_level.as_dict().items()
-                    if k != "spells_by_level"
-                }
-                data.update({"class_data": tgt_class})
-                _SqlLevelData.create(**data)
-                for src_spells_by_level in src_level.spells_by_level:
-                    data = dict(src_spells_by_level.as_dict())
-                    data.update(
-                        {"class_name": src_class.name, "class_level": src_level.level}
-                    )
-                    _SqlSpellsByLevelData.create(**data)
-        self._crits.import_from(src.crits)
-
 
 def _import_from(cls: Type, items: Iterable[BaseData]) -> None:
     cls.insert_many(i.as_dict() for i in items)
+
+
+def _get_data_classes() -> Tuple[type[Model], ...]:
+    return tuple(
+        cast(type[Model], i)
+        for i in globals().values()
+        if isclass(i) and issubclass(i, Model) and i is not Model
+    )
