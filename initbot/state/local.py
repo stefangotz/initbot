@@ -68,6 +68,9 @@ class LocalAbilityState(AbilityState):
     def get_mods(self) -> Sequence[AbilityModifierData]:
         return cast(Tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
 
+    def import_from(self, src: AbilityState) -> None:
+        pass
+
 
 class LocalAugurData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
@@ -99,6 +102,9 @@ class LocalAugurState(AugurState):
 
     def get_from_roll(self, roll: int) -> AugurData:
         return cast(AugurData, self._augurs_dict[roll])
+
+    def import_from(self, src: AugurState) -> None:
+        pass
 
 
 class LocalCharacterData(LocalBaseModel):
@@ -180,6 +186,9 @@ class LocalCharacterState(CharacterState):
                 LocalCharactersData(characters=self._characters).model_dump_json()
             )
 
+    def import_from(self, src: CharacterState) -> None:
+        pass
+
 
 class LocalOccupationData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
@@ -213,6 +222,9 @@ class LocalOccupationState(OccupationState):
 
     def get_all(self) -> Sequence[OccupationData]:
         return cast(Tuple[OccupationData, ...], self._occupations)
+
+    def import_from(self, src: OccupationState) -> None:
+        pass
 
 
 class LocalSpellsByLevelData(LocalBaseModel):
@@ -267,6 +279,9 @@ class LocalClassState(ClassState):
     def get_all(self) -> Sequence[ClassData]:
         return cast(Tuple[ClassData, ...], tuple(self._classes))
 
+    def import_from(self, src: ClassState) -> None:
+        pass
+
 
 class LocalCritData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
@@ -298,6 +313,9 @@ class LocalCritState(CritState):
 
     def get_all(self) -> Sequence[CritTableData]:
         return cast(Tuple[CritTableData, ...], self._data)
+
+    def import_from(self, src: CritState) -> None:
+        pass
 
 
 class LocalState(State):
