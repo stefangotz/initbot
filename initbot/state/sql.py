@@ -216,7 +216,8 @@ class _SqlClassState(ClassState):
         return cast(Tuple[ClassData, ...], tuple(_SqlClassData.select()))
 
     def import_from(self, src: ClassState) -> None:
-        _SqlLevelData.delete().execute()
+        q = _SqlLevelData.delete()
+        q.execute()
         _SqlSpellsByLevelData.delete().execute()
         _SqlClassData.delete().execute()
         for src_class in src.get_all():
