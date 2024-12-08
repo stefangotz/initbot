@@ -25,8 +25,12 @@ if ! which uv; then
 	curl -LsSf https://astral.sh/uv/install.sh | sh
 	export PATH="$PATH:$HOME/.cargo/bin"
 	which uv > /dev/null
+else
+	uv self update
 fi
-uv venv .venv
+deactivate || true
+rm -fr .venv
+uv venv --python 3.13.1 .venv
 . .venv/bin/activate
-uv sync
-uv run pre-commit install
+uv sync --python 3.13.1
+pre-commit install

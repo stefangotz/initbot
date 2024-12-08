@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
       - uses: actions/checkout@v4
@@ -21,17 +21,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --python ${{ matrix.python-version }}
       - name: black
         run: |
-          uv run -- black --check initbot tests
+          .venv/bin/black --check initbot tests
       - name: Pylint
         run: |
-          uv run -- pylint initbot tests
+          .venv/bin/pylint initbot tests
       - name: mypy
         run: |
-          uv run -- mypy -p initbot
+          .venv/bin/mypy -p initbot
       - name: test
         run: |
-          api_key=x uv run -- coverage run -m --source=initbot pytest tests
-          uv run -- coverage report
+          api_key=x .venv/bin/coverage run -m --source=initbot pytest tests
+          .venv/bin/coverage report
