@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from sys import version_info
 from typing import Iterable, Sequence, Union
 
+# pylint: disable=no-name-in-module,wrong-import-position
 if version_info >= (3, 11):
     from typing import Self
 else:
