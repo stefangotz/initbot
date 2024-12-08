@@ -217,8 +217,8 @@ class _SqlClassState(ClassState):
 
     def import_from(self, src: ClassState) -> None:
         _SqlLevelData.delete().execute()  # pylint: disable=no-value-for-parameter
-        _SqlSpellsByLevelData.delete().execute()
-        _SqlClassData.delete().execute()
+        _SqlSpellsByLevelData.delete().execute()  # pylint: disable=no-value-for-parameter
+        _SqlClassData.delete().execute()  # pylint: disable=no-value-for-parameter
         for src_class in src.get_all():
             tgt_class = _SqlClassData.create(
                 **{k: v for k, v in src_class.as_dict().items() if k != "levels"}
@@ -254,8 +254,8 @@ class _SqlCritState(CritState):
         return cast(Tuple[CritTableData, ...], tuple(_SqlCritTableData.select()))
 
     def import_from(self, src: CritState) -> None:
-        _SqlCritData.delete().execute()
-        _SqlCritTableData.delete().execute()
+        _SqlCritData.delete().execute()  # pylint: disable=no-value-for-parameter
+        _SqlCritTableData.delete().execute()  # pylint: disable=no-value-for-parameter
         for src_crit_table in src.get_all():
             tgt_crit_table = _SqlCritTableData.create(number=src_crit_table.number)
             for src_crit in src_crit_table.crits:

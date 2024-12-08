@@ -1,5 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Union, Iterable, Self
+from sys import version_info
+from typing import Iterable, Sequence, Union
+
+if version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing import Any
+
+    Self = Any
 
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
