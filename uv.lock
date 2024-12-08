@@ -507,6 +507,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -527,6 +528,7 @@ requires-dist = [
     { name = "pydantic", specifier = "~=2.0" },
     { name = "pydantic-settings", specifier = "~=2.0" },
     { name = "python-dotenv", specifier = "~=0.21" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4.12.2" },
 ]
 
 [package.metadata.requires-dev]

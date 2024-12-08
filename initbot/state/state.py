@@ -6,9 +6,7 @@ from typing import Iterable, Sequence, Union
 if version_info >= (3, 11):
     from typing import Self
 else:
-    from typing import Any
-
-    Self = Any
+    from typing_extensions import Self
 
 from ..data.ability import AbilityData, AbilityModifierData
 from ..data.augur import AugurData
