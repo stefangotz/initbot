@@ -39,6 +39,9 @@ License along with initbot. If not, see <https://www.gnu.org/licenses/>."""
     token: str = ""
     appId: str = ""
     botlink: str = ""
+    # To specify multiple command prefixes, separate them with a comma.
+    # For example: command_prefixes: str = "$,!"
+    command_prefixes: str = "$"
 
 
 CFG = Settings(_env_file=".env", _env_file_encoding="utf-8") if Path(".env").exists() else Settings()  # type: ignore

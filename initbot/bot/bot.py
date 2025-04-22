@@ -8,7 +8,7 @@ from ..state.local import LocalState
 intents = Intents.default()
 intents.message_content = True
 
-bot = Bot(command_prefix="$", intents=intents)
+bot = Bot(command_prefix=tuple(CFG.command_prefixes.split(",")), intents=intents)
 
 
 @bot.event
