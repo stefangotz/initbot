@@ -8,9 +8,11 @@ license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
 dependencies = [
     "discord-py~=2.3",
+    "peewee~=3.17",
     "pydantic-settings~=2.0",
     "pydantic~=2.0",
     "python-dotenv~=0.21",
+    "typing-extensions>=4.12.2 ; python_full_version < '3.11'",
 ]
 
 [tool.uv]
@@ -21,6 +23,7 @@ dev-dependencies = [
     "mypy>=1.11.2",
     "pylint>=3.2.7",
     "pytest>=8.3.3",
+    "types-peewee>=3.17.7.20241017",
 ]
 
 [tool.mypy]

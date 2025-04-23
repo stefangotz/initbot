@@ -2,11 +2,12 @@ from collections.abc import Mapping, Set
 from itertools import chain
 from typing import Callable, Final
 
-from .state import State
 from .local import LocalState
+from .sql import SqlState
+from .state import State
 
 
-_STATE_CLASSES: Final[Set[type[State]]] = frozenset({LocalState})
+_STATE_CLASSES: Final[Set[type[State]]] = frozenset({LocalState, SqlState})
 _FACTORIES: Final[Mapping[str, Callable[[str], State]]] = dict(
     chain.from_iterable(
         ((state_type, cls) for state_type in cls.get_supported_state_types())
