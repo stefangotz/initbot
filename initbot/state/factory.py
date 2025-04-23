@@ -1,11 +1,14 @@
 from typing import Callable, Final
 
-from .state import State
 from .local import LocalState
+from .sql import SqlState
+from .state import State
 
 
 class StateFactory:
-    _FACTORIES: Final[frozenset[Callable[[str], State]]] = frozenset()
+    _FACTORIES: Final[frozenset[Callable[[str], State]]] = frozenset(
+        (SqlState.create_with_existing_sqlite_or_fail,)
+    )
 
     @staticmethod
     def create(source: str) -> State:

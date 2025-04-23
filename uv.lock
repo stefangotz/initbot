@@ -997,11 +997,13 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "discord-py" },
+    { name = "peewee" },
     { name = "pydantic", version = "2.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pydantic", version = "2.11.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "pydantic-settings", version = "2.8.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pydantic-settings", version = "2.9.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "python-dotenv" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -1017,14 +1019,18 @@ dev = [
     { name = "pylint", version = "3.2.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pylint", version = "3.3.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "pytest" },
+    { name = "types-peewee", version = "3.17.8.20241229", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "types-peewee", version = "3.18.0.20250501", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "discord-py", specifier = "~=2.3" },
+    { name = "peewee", specifier = "~=3.17" },
     { name = "pydantic", specifier = "~=2.0" },
     { name = "pydantic-settings", specifier = "~=2.0" },
     { name = "python-dotenv", specifier = "~=0.21" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4.12.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -1035,6 +1041,7 @@ dev = [
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "pylint", specifier = ">=3.2.7" },
     { name = "pytest", specifier = ">=8.3.3" },
+    { name = "types-peewee", specifier = ">=3.17.7.20241017" },
 ]
 
 [[package]]
@@ -1436,6 +1443,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/ca/bc/f35b8446f4531a7cb
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08", size = 31191 },
 ]
+
+[[package]]
+name = "peewee"
+version = "3.18.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/ce/c2bb58d00cb12d19dea28d5a98d05a14350197a3d03eba60be9bae708bac/peewee-3.18.1.tar.gz", hash = "sha256:a76a694b3b3012ce22f00d51fd83e55bf80b595275a90ed62cd36eb45496cf1d", size = 3026130 }
 
 [[package]]
 name = "platformdirs"
@@ -2216,6 +2229,33 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b1/09/a439bec5888f00a54b8b9f05fa94d7f901d6735ef4e55dcec9bc37b5d8fa/tomlkit-0.13.2.tar.gz", hash = "sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79", size = 192885 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/b6/a447b5e4ec71e13871be01ba81f5dfc9d0af7e473da256ff46bc0e24026f/tomlkit-0.13.2-py3-none-any.whl", hash = "sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde", size = 37955 },
+]
+
+[[package]]
+name = "types-peewee"
+version = "3.17.8.20241229"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.9'",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/56/61/2695256db2c0ee064ad3bd4ed306308344fa341a495a06c369ba28241c56/types_peewee-3.17.8.20241229.tar.gz", hash = "sha256:4ba1988e1b4a3bbf8e53415a0b1347ca04a6bcb42cf2d9540b6da1d605b222f9", size = 19703 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c3/ad/ff56121e109a3d0a2868a45d1ab4d65c21a5ae636bf178524cca2ec863f1/types_peewee-3.17.8.20241229-py3-none-any.whl", hash = "sha256:545227c494b9ae1bfa9f52e45c2f8d905aa8092cd9365be859c8a2bd02b3e9b3", size = 18640 },
+]
+
+[[package]]
+name = "types-peewee"
+version = "3.18.0.20250501"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.13'",
+    "python_full_version == '3.12.*'",
+    "python_full_version == '3.11.*'",
+    "python_full_version >= '3.9' and python_full_version < '3.11'",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/70/a0/4099f608a6b1a4572fa467e7789011590ee344f2e1bf9f95fe4fcd86bdf8/types_peewee-3.18.0.20250501.tar.gz", hash = "sha256:f00dba722ace7b7b5205c7617295637cf6eef27221caa7d05cbe6ea4e6d2d471", size = 20438 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/54/9cf247518c9810b2027df9e4a3f09b99c1b3bd8b1dc583a4500f076e9c94/types_peewee-3.18.0.20250501-py3-none-any.whl", hash = "sha256:4e6dc0a85529169ce9c8035145cf1d7a2e4a436cbab60593c4e835492d15021a", size = 19091 },
 ]
 
 [[package]]
