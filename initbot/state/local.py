@@ -1,7 +1,7 @@
 from dataclasses import asdict
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Sequence, Tuple, Union, cast
+from typing import Any, Dict, Final, List, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -49,18 +49,18 @@ class LocalAbilitiesData(LocalBaseModel):
 
 
 class LocalAbilityState(AbilityState):
-    def __init__(self):  # type: ignore
+    def __init__(self, source_dir: Path):  # type: ignore
         self._abilities_data = LocalAbilitiesData()
-        path: Path = (
-            Path(__file__).parent.parent / "bot" / "commands" / "abilities.json"
-        )
+        path: Final[Path] = source_dir / "abilities.json"
         if path.exists():
             with path.open() as file_desc:
                 self._abilities_data = LocalAbilitiesData.model_validate_json(
                     file_desc.read()
                 )
         else:
-            logging.warning("Unable to find %s", path)
+            raise ValueError(
+                f"The expected file for ability data ({path}) does not exist."
+            )
 
     def get_all(self) -> Sequence[AbilityData]:
         return cast(Tuple[AbilityData, ...], self._abilities_data.abilities)
@@ -84,14 +84,16 @@ class LocalAugursData(LocalBaseModel):
 
 
 class LocalAugurState(AugurState):
-    def __init__(self):
+    def __init__(self, source_dir: Path):
         augurs_data = LocalAugursData()
-        path: Path = Path(__file__).parent.parent / "bot" / "commands" / "augurs.json"
+        path: Final[Path] = source_dir / "augurs.json"
         if path.exists():
             with path.open() as file_desc:
                 augurs_data = LocalAugursData.model_validate_json(file_desc.read())
         else:
-            logging.warning("Unable to find %s", path)
+            raise ValueError(
+                f"The expected file for augur data ({path}) does not exist."
+            )
 
         self._augurs_dict: Dict[int, LocalAugurData] = {
             aug.roll: aug for aug in augurs_data.augurs
@@ -137,16 +139,14 @@ class LocalCharactersData(LocalBaseModel):
 
 
 class LocalCharacterState(CharacterState):
-    def __init__(self):  # type: ignore
+    def __init__(self, source_dir: Path):  # type: ignore
         chars_data = LocalCharactersData()
-        self._path: Path = (
-            Path(__file__).parent.parent / "bot" / "commands" / "characters.json"
-        )
+        self._path: Final[Path] = source_dir / "characters.json"
         if self._path.exists():
             with self._path.open() as file_desc:
                 chars_data = LocalCharactersData.model_validate_json(file_desc.read())
         else:
-            logging.warning("Unable to find %s", self._path)
+            logging.warning("Did not load any character data from %s", self._path)
 
         self._characters: List[LocalCharacterData] = chars_data.characters
 
@@ -204,18 +204,18 @@ class LocalOccupationsData(LocalBaseModel):
 
 
 class LocalOccupationState(OccupationState):
-    def __init__(self):  # type: ignore
+    def __init__(self, source_dir: Path):  # type: ignore
         occupations_data: LocalOccupationsData = LocalOccupationsData()
-        path: Path = (
-            Path(__file__).parent.parent / "bot" / "commands" / "occupations.json"
-        )
+        path: Final[Path] = source_dir / "occupations.json"
         if path.exists():
             with path.open() as file_desc:
                 occupations_data = LocalOccupationsData.model_validate_json(
                     file_desc.read()
                 )
         else:
-            logging.warning("Unable to find %s", path)
+            raise ValueError(
+                f"The expected file for occupation data ({path}) does not exist."
+            )
         self._occupations: Tuple[LocalOccupationData, ...] = (
             occupations_data.occupations
         )
@@ -266,14 +266,16 @@ class LocalClassesData(LocalBaseModel):
 
 
 class LocalClassState(ClassState):
-    def __init__(self):
+    def __init__(self, source_dir: Path):
         classes_data: LocalClassesData = LocalClassesData()
-        path: Path = Path(__file__).parent.parent / "bot" / "commands" / "classes.json"
+        path: Final[Path] = source_dir / "classes.json"
         if path.exists():
             with path.open() as file_desc:
                 classes_data = LocalClassesData.model_validate_json(file_desc.read())
         else:
-            logging.warning("Unable to find %s", path)
+            raise ValueError(
+                f"The expected file for class data ({path}) does not exist."
+            )
         self._classes: Tuple[LocalClassData, ...] = classes_data.classes
 
     def get_all(self) -> Sequence[ClassData]:
@@ -301,14 +303,16 @@ class LocalCritTablesData(LocalBaseModel):
 
 
 class LocalCritState(CritState):
-    def __init__(self):
+    def __init__(self, source_dir: Path):
         data: LocalCritTablesData = LocalCritTablesData()
-        path: Path = Path(__file__).parent.parent / "bot" / "commands" / "crits.json"
+        path: Final[Path] = source_dir / "crits.json"
         if path.exists():
             with path.open() as file_desc:
                 data = LocalCritTablesData.model_validate_json(file_desc.read())
         else:
-            logging.warning("Unable to find %s", path)
+            raise ValueError(
+                f"The expected file for crit data ({path}) does not exist."
+            )
         self._data: Tuple[LocalCritTableData, ...] = data.crit_tables
 
     def get_all(self) -> Sequence[CritTableData]:
@@ -319,13 +323,18 @@ class LocalCritState(CritState):
 
 
 class LocalState(State):
-    def __init__(self):  # type: ignore
-        self._abilities = LocalAbilityState()
-        self._augurs = LocalAugurState()
-        self._characters = LocalCharacterState()
-        self._occupations = LocalOccupationState()
-        self._classes = LocalClassState()
-        self._crits = LocalCritState()
+    def __init__(self, source: str):  # type: ignore
+        source_dir = Path(source)
+        if not source_dir.exists():
+            raise ValueError(
+                f"Source directory {source_dir} does not exist. Please provide a valid path for bot state."
+            )
+        self._abilities = LocalAbilityState(source_dir)
+        self._augurs = LocalAugurState(source_dir)
+        self._characters = LocalCharacterState(source_dir)
+        self._occupations = LocalOccupationState(source_dir)
+        self._classes = LocalClassState(source_dir)
+        self._crits = LocalCritState(source_dir)
 
     @property
     def abilities(self) -> AbilityState:
@@ -350,3 +359,7 @@ class LocalState(State):
     @property
     def crits(self) -> CritState:
         return self._crits
+
+    @staticmethod
+    def create(source: str) -> State:
+        return LocalState(source)

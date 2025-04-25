@@ -3,7 +3,7 @@ from discord import Intents
 
 from .config import CFG
 from .commands import commands
-from ..state.local import LocalState
+from ..state.factory import StateFactory
 
 intents = Intents.default()
 intents.message_content = True
@@ -19,5 +19,5 @@ async def on_ready():
 def run():
     for cmd in commands:
         bot.add_command(cmd)
-    bot.initbot_state = LocalState()  # type: ignore
+    bot.initbot_state = StateFactory.create(CFG.state)  # type: ignore
     bot.run(CFG.token)
