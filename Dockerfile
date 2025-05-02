@@ -5,7 +5,7 @@ FROM ghcr.io/astral-sh/uv:python3.13-alpine
 COPY . /root/
 WORKDIR /root
 # Build the initbot dist
-RUN uv build --python 3.13 --wheel
+RUN uv build --wheel
 
 
 
@@ -17,7 +17,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 COPY --from=0 /root/dist/*.whl /tmp/
-RUN uv venv --python 3.13 /app && export VIRTUAL_ENV=/app && uv pip install /tmp/initbot-*.whl && rm /tmp/initbot-*.whl
+RUN uv venv /app && export VIRTUAL_ENV=/app && uv pip install /tmp/initbot-*.whl && rm /tmp/initbot-*.whl
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers

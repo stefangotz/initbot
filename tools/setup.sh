@@ -30,7 +30,6 @@ else
 fi
 deactivate || true
 rm -fr .venv
-uv venv --python 3.13.1 .venv
-. .venv/bin/activate
-uv sync --python 3.13.1
+uv sync
+. ./.venv/bin/activate
 pre-commit install
