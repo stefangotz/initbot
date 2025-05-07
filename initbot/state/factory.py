@@ -1,17 +1,24 @@
+from itertools import chain
 from typing import Callable, Final
 
 from .state import State
 from .local import LocalState
 
 
-class StateFactory:
-    _FACTORIES: Final[frozenset[Callable[[str], State]]] = frozenset()
+_STATE_CLASSES: Final[frozenset[type[State]]] = frozenset({LocalState})
+_FACTORIES: Final[dict[str, Callable[[str], State]]] = dict(
+    chain.from_iterable(
+        ((state_type, cls) for state_type in cls.get_supported_state_types())
+        for cls in _STATE_CLASSES
+    )
+)
 
-    @staticmethod
-    def create(source: str) -> State:
-        for factory in StateFactory._FACTORIES:
-            try:
-                return factory(source)
-            except ValueError:
-                pass
-        return LocalState(source)
+
+def create_state_from_source(source: str) -> State:
+    name = source.split(":", maxsplit=1)[0]
+    try:
+        return _FACTORIES[name](source)
+    except KeyError as exc:
+        raise ValueError(
+            f"Unknown kind of data store: {name}; supported: {_FACTORIES.keys()}"
+        ) from exc

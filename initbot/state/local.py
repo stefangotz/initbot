@@ -1,3 +1,4 @@
+from collections.abc import Set
 from dataclasses import asdict
 import logging
 from pathlib import Path
@@ -324,7 +325,7 @@ class LocalCritState(CritState):
 
 class LocalState(State):
     def __init__(self, source: str):  # type: ignore
-        source_dir = Path(source)
+        source_dir = Path(source.split(":", maxsplit=1)[-1])
         if not source_dir.exists():
             raise ValueError(
                 f"Source directory {source_dir} does not exist. Please provide a valid path for bot state."
@@ -360,6 +361,6 @@ class LocalState(State):
     def crits(self) -> CritState:
         return self._crits
 
-    @staticmethod
-    def create(source: str) -> State:
-        return LocalState(source)
+    @classmethod
+    def get_supported_state_types(cls) -> Set[str]:
+        return {"json"}

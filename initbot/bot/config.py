@@ -42,7 +42,9 @@ License along with initbot. If not, see <https://www.gnu.org/licenses/>."""
     # To specify multiple command prefixes, separate them with a comma.
     # For example: command_prefixes: str = "$,!"
     command_prefixes: str = "$"
-    state: str = str(Path.home() / ".local" / "var" / "initbot")
+    # Configures the data store that contains the bot state.
+    # The default is "json:./" which maintains the state as a set of JSON files in the current working directory.
+    state: str = "json:./"
 
 
 CFG = Settings(_env_file=".env", _env_file_encoding="utf-8") if Path(".env").exists() else Settings()  # type: ignore

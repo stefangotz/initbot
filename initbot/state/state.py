@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Set
 from typing import Iterable, Sequence, Union
 
 import sys
@@ -196,3 +197,14 @@ class State(ABC):
         }
         for target_state_name, target_state in target_states.items():
             target_state.import_from(getattr(src, target_state_name))
+
+    @classmethod
+    @abstractmethod
+    def get_supported_state_types(cls) -> Set[str]:
+        """Return the types of state that this state class supports.
+
+        The returned values are matched against the first part of the "state" setting (see config.py).
+        For example, this function may return {"foo", "bar"} to declare that it can handle any state setting starting with "foo:" or "bar:".
+        If Settings.state is "foo:sqlite:/bot.db", the factory will attempt to create an instance of the given State subclass by passing "foo:sqlite:/bot.db" to its constructor.
+        """
+        raise NotImplementedError()
