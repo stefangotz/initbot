@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Iterable, List, Type
+from typing import Type
 import random
 import re
 
@@ -49,7 +50,7 @@ class IntDiceRoll(_DiceRoll, ABC):
         return f"{sum(rolls)} ({str(rolls).strip('[]')})"
 
     @abstractmethod
-    def roll_all(self) -> List[int]:
+    def roll_all(self) -> Sequence[int]:
         pass
 
     @abstractmethod
@@ -64,8 +65,8 @@ class NerdDiceRoll(IntDiceRoll):
     modifier: int = 0
     rolls: int = 1
 
-    def roll_all(self) -> List[int]:
-        return [self.roll_one() for _ in range(0, self.rolls)]
+    def roll_all(self) -> Sequence[int]:
+        return tuple(self.roll_one() for _ in range(0, self.rolls))
 
     def roll_one(self) -> int:
         return (

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from collections.abc import Set
-from typing import Iterable, Sequence, Union
+from collections.abc import Iterable, Sequence, Set
+from typing import Union
 
 import sys
 

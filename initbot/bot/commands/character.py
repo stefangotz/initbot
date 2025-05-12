@@ -1,4 +1,5 @@
-from typing import Any, List
+from collections.abc import Sequence, Iterable
+from typing import Any
 import logging
 import random
 
@@ -11,12 +12,12 @@ from ...models.roll import NerdDiceRoll
 from ...state.state import State
 
 
-def characters(state: State) -> List[Character]:
-    return [
+def characters(state: State) -> Iterable[Character]:
+    return (
         Character(char_data, state)
         for char_data in state.characters.get_all()
         if char_data.active
-    ]
+    )
 
 
 @commands.command()
@@ -41,11 +42,11 @@ async def new(ctx: Any, name: str) -> None:
         luck=luck,
         initial_luck=luck,
         hit_points=NerdDiceRoll(4, 1).roll_one(),
-        equipment=[
+        equipment=(
             f"{NerdDiceRoll(12, 5).roll_one()}cp",
             # TO DO random.choice(EQUIPMENT),
             occupation.goods,
-        ],
+        ),
         occupation=occupation_roll,
         exp=0,
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
@@ -72,7 +73,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
     You can list all character attributes with the `char` command.
     You do not need to spell out the full attribute name as the first few unique letters are good enough (e.g., "int" for "intelligence")
     """
-    tokens: List[str] = txt.split()
+    tokens = txt.split()
     if len(tokens) < 2:
         raise ValueError(
             "You need to provide at least a character attribute and a value to set it to"
@@ -84,7 +85,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
         name_tokens, ctx.author.name
     )
     attr = attr.lower()
-    candidates: List[str] = []
+    candidates: Sequence[str] = []
     if attr in vars(cdi):
         candidates = [attr]
     else:

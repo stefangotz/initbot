@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 import logging
 
 from discord import Embed  # type: ignore
@@ -33,7 +32,7 @@ async def init(ctx, *args: str) -> None:
 
     Thus, in the shortest (and most common case), one can simply use the command `$init` by itself to automatically roll and set a character's initiative.
     """
-    tokens: List[str] = list(args)
+    tokens = list(args)
     if len(tokens) > 4:
         raise ValueError("Too long")
     if len(tokens) == 0:

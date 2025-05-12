@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Union
 
 from ..base import BaseData
 
@@ -19,7 +20,7 @@ class CharacterData(BaseData):
     luck: Union[int, None] = None
     initial_luck: Union[int, None] = None
     hit_points: Union[int, None] = None
-    equipment: Union[List[str], None] = None
+    equipment: Union[Sequence[str], None] = None
     occupation: Union[int, None] = None
     exp: Union[int, None] = None
     alignment: Union[str, None] = None

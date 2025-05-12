@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 
 from ..base import BaseData
 
@@ -16,13 +15,13 @@ class LevelData(BaseData):
     attack_die: str
     crit_die: str
     crit_table: int
-    action_dice: Tuple[str, ...]
+    action_dice: tuple[str, ...]
     ref: int
     fort: int
     will: int
-    spells_by_level: Tuple[SpellsByLevelData, ...]
+    spells_by_level: tuple[SpellsByLevelData, ...]
     thief_luck_die: int
-    threat_range: Tuple[int, ...]
+    threat_range: tuple[int, ...]
     spells: int
     max_spell_level: int
     sneak_hide: int
@@ -32,5 +31,5 @@ class LevelData(BaseData):
 class ClassData(BaseData):
     name: str
     hit_die: int
-    weapons: Tuple[str, ...]
-    levels: Tuple[LevelData, ...]
+    weapons: tuple[str, ...]
+    levels: tuple[LevelData, ...]

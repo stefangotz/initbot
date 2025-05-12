@@ -1,4 +1,5 @@
-from typing import List, Union
+from collections.abc import Sequence
+from typing import Union
 import random
 
 from initbot.data.cls import ClassData
@@ -42,12 +43,12 @@ class Character:
         self.cdi.user = user
 
     @property
-    def ability_scores(self) -> List[AbilityScoreData]:
-        return [
+    def ability_scores(self) -> Sequence[AbilityScoreData]:
+        return tuple(
             AbilityScoreData(abl=abl, score=vars(self.cdi)[abl.name.lower()])
             for abl in self._state.abilities.get_all()
             if vars(self.cdi).get(abl.name.lower())
-        ]
+        )
 
     def _get_ability_score(self, prefix: str) -> AbilityScoreData:
         return get_unique_prefix_match(

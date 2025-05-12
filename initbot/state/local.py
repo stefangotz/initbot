@@ -1,8 +1,8 @@
-from collections.abc import Set
+from collections.abc import Mapping, MutableSequence, Sequence, Set
 from dataclasses import asdict
 import logging
 from pathlib import Path
-from typing import Any, Dict, Final, List, Sequence, Tuple, Union, cast
+from typing import Any, Final, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,7 +25,7 @@ from .state import (
 
 
 class LocalBaseModel(BaseModel):
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> Mapping[str, Any]:
         return self.dict()
 
 
@@ -45,8 +45,8 @@ class LocalAbilityModifierData(LocalBaseModel):
 
 class LocalAbilitiesData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    abilities: Tuple[LocalAbilityData, ...] = ()
-    modifiers: Tuple[LocalAbilityModifierData, ...] = ()
+    abilities: tuple[LocalAbilityData, ...] = ()
+    modifiers: tuple[LocalAbilityModifierData, ...] = ()
 
 
 class LocalAbilityState(AbilityState):
@@ -64,10 +64,10 @@ class LocalAbilityState(AbilityState):
             )
 
     def get_all(self) -> Sequence[AbilityData]:
-        return cast(Tuple[AbilityData, ...], self._abilities_data.abilities)
+        return cast(tuple[AbilityData, ...], self._abilities_data.abilities)
 
     def get_mods(self) -> Sequence[AbilityModifierData]:
-        return cast(Tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
+        return cast(tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
 
     def import_from(self, src: AbilityState) -> None:
         raise NotImplementedError()
@@ -81,7 +81,7 @@ class LocalAugurData(LocalBaseModel):
 
 class LocalAugursData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    augurs: Tuple[LocalAugurData, ...] = ()
+    augurs: tuple[LocalAugurData, ...] = ()
 
 
 class LocalAugurState(AugurState):
@@ -96,12 +96,12 @@ class LocalAugurState(AugurState):
                 f"The expected file for augur data ({path}) does not exist."
             )
 
-        self._augurs_dict: Dict[int, LocalAugurData] = {
+        self._augurs_dict: Mapping[int, LocalAugurData] = {
             aug.roll: aug for aug in augurs_data.augurs
         }
 
     def get_all(self) -> Sequence[AugurData]:
-        return cast(Tuple[AugurData, ...], tuple(self._augurs_dict.values()))
+        return cast(tuple[AugurData, ...], tuple(self._augurs_dict.values()))
 
     def get_from_roll(self, roll: int) -> AugurData:
         return cast(AugurData, self._augurs_dict[roll])
@@ -123,7 +123,7 @@ class LocalCharacterData(LocalBaseModel):
     luck: Union[int, None] = None
     initial_luck: Union[int, None] = None
     hit_points: Union[int, None] = None
-    equipment: Union[List[str], None] = None
+    equipment: Union[Sequence[str], None] = None
     occupation: Union[int, None] = None
     exp: Union[int, None] = None
     alignment: Union[str, None] = None
@@ -136,7 +136,7 @@ class LocalCharacterData(LocalBaseModel):
 
 
 class LocalCharactersData(LocalBaseModel):
-    characters: List[LocalCharacterData] = []
+    characters: MutableSequence[LocalCharacterData] = []
 
 
 class LocalCharacterState(CharacterState):
@@ -149,7 +149,7 @@ class LocalCharacterState(CharacterState):
         else:
             logging.warning("Did not load any character data from %s", self._path)
 
-        self._characters: List[LocalCharacterData] = chars_data.characters
+        self._characters: MutableSequence[LocalCharacterData] = chars_data.characters
 
     def get_all(self) -> Sequence[CharacterData]:
         return cast(Sequence[CharacterData], self._characters)
@@ -193,7 +193,7 @@ class LocalCharacterState(CharacterState):
 
 class LocalOccupationData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    rolls: Tuple[int, ...]
+    rolls: tuple[int, ...]
     name: str
     weapon: str
     goods: str
@@ -201,7 +201,7 @@ class LocalOccupationData(LocalBaseModel):
 
 class LocalOccupationsData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    occupations: Tuple[LocalOccupationData, ...] = ()
+    occupations: tuple[LocalOccupationData, ...] = ()
 
 
 class LocalOccupationState(OccupationState):
@@ -217,12 +217,12 @@ class LocalOccupationState(OccupationState):
             raise ValueError(
                 f"The expected file for occupation data ({path}) does not exist."
             )
-        self._occupations: Tuple[LocalOccupationData, ...] = (
+        self._occupations: tuple[LocalOccupationData, ...] = (
             occupations_data.occupations
         )
 
     def get_all(self) -> Sequence[OccupationData]:
-        return cast(Tuple[OccupationData, ...], self._occupations)
+        return cast(tuple[OccupationData, ...], self._occupations)
 
     def import_from(self, src: OccupationState) -> None:
         raise NotImplementedError()
@@ -241,13 +241,13 @@ class LocalLevelData(LocalBaseModel):
     attack_die: str
     crit_die: str
     crit_table: int
-    action_dice: Tuple[str, ...]
+    action_dice: tuple[str, ...]
     ref: int
     fort: int
     will: int
-    spells_by_level: Tuple[LocalSpellsByLevelData, ...]
+    spells_by_level: tuple[LocalSpellsByLevelData, ...]
     thief_luck_die: int
-    threat_range: Tuple[int, ...]
+    threat_range: tuple[int, ...]
     spells: int
     max_spell_level: int
     sneak_hide: int
@@ -257,13 +257,13 @@ class LocalClassData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     name: str
     hit_die: int
-    weapons: Tuple[str, ...]
-    levels: Tuple[LocalLevelData, ...]
+    weapons: tuple[str, ...]
+    levels: tuple[LocalLevelData, ...]
 
 
 class LocalClassesData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    classes: Tuple[LocalClassData, ...] = ()
+    classes: tuple[LocalClassData, ...] = ()
 
 
 class LocalClassState(ClassState):
@@ -277,10 +277,10 @@ class LocalClassState(ClassState):
             raise ValueError(
                 f"The expected file for class data ({path}) does not exist."
             )
-        self._classes: Tuple[LocalClassData, ...] = classes_data.classes
+        self._classes: tuple[LocalClassData, ...] = classes_data.classes
 
     def get_all(self) -> Sequence[ClassData]:
-        return cast(Tuple[ClassData, ...], tuple(self._classes))
+        return cast(tuple[ClassData, ...], tuple(self._classes))
 
     def import_from(self, src: ClassState) -> None:
         raise NotImplementedError()
@@ -288,19 +288,19 @@ class LocalClassState(ClassState):
 
 class LocalCritData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    rolls: Tuple[int, ...]
+    rolls: tuple[int, ...]
     effect: str
 
 
 class LocalCritTableData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
     number: int
-    crits: Tuple[LocalCritData, ...]
+    crits: tuple[LocalCritData, ...]
 
 
 class LocalCritTablesData(LocalBaseModel):
     model_config = ConfigDict(frozen=True)
-    crit_tables: Tuple[LocalCritTableData, ...] = ()
+    crit_tables: tuple[LocalCritTableData, ...] = ()
 
 
 class LocalCritState(CritState):
@@ -314,10 +314,10 @@ class LocalCritState(CritState):
             raise ValueError(
                 f"The expected file for crit data ({path}) does not exist."
             )
-        self._data: Tuple[LocalCritTableData, ...] = data.crit_tables
+        self._data: tuple[LocalCritTableData, ...] = data.crit_tables
 
     def get_all(self) -> Sequence[CritTableData]:
-        return cast(Tuple[CritTableData, ...], self._data)
+        return cast(tuple[CritTableData, ...], self._data)
 
     def import_from(self, src: CritState) -> None:
         raise NotImplementedError()

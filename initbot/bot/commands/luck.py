@@ -1,4 +1,4 @@
-from typing import List
+from collections.abc import Iterable
 import logging
 from discord.ext import commands  # type: ignore
 
@@ -26,13 +26,13 @@ async def luck(ctx, *args: str):
     This follows the usual notation [dice]d{sides}[+/-mod] to say what kind of die to roll (how many sides), how many of those to roll, and how much bonus to add (or subtract).
     If the dice are omitted from the command, a d20 is assumed.
     """
-    name: List[str] = []
+    name: Iterable[str] = tuple()
     die: str = "d20"
     if args and NerdDiceRoll.is_valid_spec(args[-1]):
         die = args[-1]
-        name = list(args[0:-1])
+        name = tuple(args[0:-1])
     else:
-        name = list(args)
+        name = tuple(args)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
         name, ctx.author.name
     )

@@ -1,4 +1,5 @@
-from typing import Callable, List, Sequence, TypeVar
+from collections.abc import Iterable, MutableSequence, Sequence
+from typing import Callable, TypeVar
 import re
 
 _INT_PATTERN = re.compile(r"^-?(0|([1-9][0-9]*))$")
@@ -52,7 +53,7 @@ class RangeMatcher(Matcher):
 
 def get_first_match(
     value_to_match: int,
-    candidates: Sequence[A],
+    candidates: Iterable[A],
     get_matcher_from_candidate: Callable[[A], Matcher],
 ) -> A:
     for candidate in candidates:
@@ -63,7 +64,7 @@ def get_first_match(
 
 def get_first_set_match(
     value_to_match: int,
-    candidates: Sequence[A],
+    candidates: Iterable[A],
     get_matches_from_candidate: Callable[[A], Sequence[int]],
 ) -> A:
     for candidate in candidates:
@@ -99,7 +100,7 @@ def get_unique_prefix_match(
     str_to_match: str, candidates: Sequence[A], get_str_from_candidate=str
 ) -> A:
     normalized_str_to_match: str = normalize_str(str_to_match)
-    matches: List[A] = [
+    matches: MutableSequence[A] = [
         cnd
         for cnd in candidates
         if normalize_str(get_str_from_candidate(cnd)).startswith(
