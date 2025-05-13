@@ -64,10 +64,10 @@ class LocalAbilityState(AbilityState):
             )
 
     def get_all(self) -> Sequence[AbilityData]:
-        return cast(tuple[AbilityData, ...], self._abilities_data.abilities)
+        return cast(Sequence[AbilityData], self._abilities_data.abilities)
 
     def get_mods(self) -> Sequence[AbilityModifierData]:
-        return cast(tuple[AbilityModifierData, ...], self._abilities_data.modifiers)
+        return cast(Sequence[AbilityModifierData], self._abilities_data.modifiers)
 
     def import_from(self, src: AbilityState) -> None:
         raise NotImplementedError()
@@ -101,7 +101,7 @@ class LocalAugurState(AugurState):
         }
 
     def get_all(self) -> Sequence[AugurData]:
-        return cast(tuple[AugurData, ...], tuple(self._augurs_dict.values()))
+        return cast(Sequence[AugurData], tuple(self._augurs_dict.values()))
 
     def get_from_roll(self, roll: int) -> AugurData:
         return cast(AugurData, self._augurs_dict[roll])
@@ -217,12 +217,10 @@ class LocalOccupationState(OccupationState):
             raise ValueError(
                 f"The expected file for occupation data ({path}) does not exist."
             )
-        self._occupations: tuple[LocalOccupationData, ...] = (
-            occupations_data.occupations
-        )
+        self._occupations: Sequence[LocalOccupationData] = occupations_data.occupations
 
     def get_all(self) -> Sequence[OccupationData]:
-        return cast(tuple[OccupationData, ...], self._occupations)
+        return cast(Sequence[OccupationData], self._occupations)
 
     def import_from(self, src: OccupationState) -> None:
         raise NotImplementedError()
@@ -277,10 +275,10 @@ class LocalClassState(ClassState):
             raise ValueError(
                 f"The expected file for class data ({path}) does not exist."
             )
-        self._classes: tuple[LocalClassData, ...] = classes_data.classes
+        self._classes: Sequence[LocalClassData] = classes_data.classes
 
     def get_all(self) -> Sequence[ClassData]:
-        return cast(tuple[ClassData, ...], tuple(self._classes))
+        return cast(Sequence[ClassData], tuple(self._classes))
 
     def import_from(self, src: ClassState) -> None:
         raise NotImplementedError()
@@ -314,10 +312,10 @@ class LocalCritState(CritState):
             raise ValueError(
                 f"The expected file for crit data ({path}) does not exist."
             )
-        self._data: tuple[LocalCritTableData, ...] = data.crit_tables
+        self._data: Sequence[LocalCritTableData] = data.crit_tables
 
     def get_all(self) -> Sequence[CritTableData]:
-        return cast(tuple[CritTableData, ...], self._data)
+        return cast(Sequence[CritTableData], self._data)
 
     def import_from(self, src: CritState) -> None:
         raise NotImplementedError()

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..base import BaseData
@@ -15,13 +16,13 @@ class LevelData(BaseData):
     attack_die: str
     crit_die: str
     crit_table: int
-    action_dice: tuple[str, ...]
+    action_dice: Sequence[str]
     ref: int
     fort: int
     will: int
-    spells_by_level: tuple[SpellsByLevelData, ...]
+    spells_by_level: Sequence[SpellsByLevelData]
     thief_luck_die: int
-    threat_range: tuple[int, ...]
+    threat_range: Sequence[int]
     spells: int
     max_spell_level: int
     sneak_hide: int
@@ -31,5 +32,5 @@ class LevelData(BaseData):
 class ClassData(BaseData):
     name: str
     hit_die: int
-    weapons: tuple[str, ...]
-    levels: tuple[LevelData, ...]
+    weapons: Sequence[str]
+    levels: Sequence[LevelData]

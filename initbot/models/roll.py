@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Sequence, Set
 from dataclasses import dataclass
 from typing import Type
 import random
@@ -102,4 +102,4 @@ class NerdDiceRoll(IntDiceRoll):
         raise ValueError(f"'{spec}' is not supported")
 
 
-_DICE_ROLL_CLASSES: frozenset[Type[_DiceRoll]] = frozenset((NerdDiceRoll,))
+_DICE_ROLL_CLASSES: Set[Type[_DiceRoll]] = frozenset((NerdDiceRoll,))

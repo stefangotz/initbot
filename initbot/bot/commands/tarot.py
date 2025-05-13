@@ -1,10 +1,10 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Set
 import logging
 import random
 
 from discord.ext import commands  # type: ignore
 
-_STEMS: frozenset[str] = frozenset(
+_STEMS: Set[str] = frozenset(
     {
         "TheFool",
         "TheMagician",

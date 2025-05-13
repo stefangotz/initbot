@@ -1,3 +1,4 @@
+from collections.abc import Set
 from typing import Any
 
 from .ability import abl, abls, mod, mods
@@ -12,7 +13,7 @@ from .occupation import occupations
 from .roll import roll
 from .tarot import tarot
 
-commands: frozenset[Any] = frozenset(
+commands: Set[Any] = frozenset(
     (
         abl,
         abls,
