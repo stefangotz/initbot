@@ -8,6 +8,7 @@ from ..state.factory import create_state_from_source
 intents = Intents.default()
 intents.message_content = True
 
+# pylint: disable=no-member
 bot = Bot(command_prefix=tuple(CFG.command_prefixes.split(",")), intents=intents)
 
 

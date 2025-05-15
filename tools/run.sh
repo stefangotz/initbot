@@ -21,4 +21,4 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
 
-uv run -- python3 -m initbot.bot
+uv run -m initbot "$@"

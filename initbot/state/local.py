@@ -59,9 +59,7 @@ class LocalAbilityState(AbilityState):
                     file_desc.read()
                 )
         else:
-            raise ValueError(
-                f"The expected file for ability data ({path}) does not exist."
-            )
+            logging.info("No ability data loaded from %s", path)
 
     def get_all(self) -> Sequence[AbilityData]:
         return cast(Sequence[AbilityData], self._abilities_data.abilities)
@@ -92,9 +90,7 @@ class LocalAugurState(AugurState):
             with path.open() as file_desc:
                 augurs_data = LocalAugursData.model_validate_json(file_desc.read())
         else:
-            raise ValueError(
-                f"The expected file for augur data ({path}) does not exist."
-            )
+            logging.info("No augur data loaded from %s", path)
 
         self._augurs_dict: Mapping[int, LocalAugurData] = {
             aug.roll: aug for aug in augurs_data.augurs
@@ -147,7 +143,7 @@ class LocalCharacterState(CharacterState):
             with self._path.open() as file_desc:
                 chars_data = LocalCharactersData.model_validate_json(file_desc.read())
         else:
-            logging.warning("Did not load any character data from %s", self._path)
+            logging.info("No augur data loaded from {self._path}")
 
         self._characters: MutableSequence[LocalCharacterData] = chars_data.characters
 
@@ -214,9 +210,7 @@ class LocalOccupationState(OccupationState):
                     file_desc.read()
                 )
         else:
-            raise ValueError(
-                f"The expected file for occupation data ({path}) does not exist."
-            )
+            logging.info("No occupation data loaded from %s", path)
         self._occupations: Sequence[LocalOccupationData] = occupations_data.occupations
 
     def get_all(self) -> Sequence[OccupationData]:
@@ -272,9 +266,7 @@ class LocalClassState(ClassState):
             with path.open() as file_desc:
                 classes_data = LocalClassesData.model_validate_json(file_desc.read())
         else:
-            raise ValueError(
-                f"The expected file for class data ({path}) does not exist."
-            )
+            logging.info("No class data loaded from %s", path)
         self._classes: Sequence[LocalClassData] = classes_data.classes
 
     def get_all(self) -> Sequence[ClassData]:
@@ -309,9 +301,7 @@ class LocalCritState(CritState):
             with path.open() as file_desc:
                 data = LocalCritTablesData.model_validate_json(file_desc.read())
         else:
-            raise ValueError(
-                f"The expected file for crit data ({path}) does not exist."
-            )
+            logging.info("No crit data loaded from %s", path)
         self._data: Sequence[LocalCritTableData] = data.crit_tables
 
     def get_all(self) -> Sequence[CritTableData]:

@@ -24,25 +24,41 @@ Get more information on any of the commands with `$help`, e.g., `$help init`.
 
 ## Development
 
-Improvements to the code are most welcome.
+To get started on Linux or MacOS and set up everything you need for initbot development, run `./tools/setup.sh`.
+That script boils down to:
 
-To get started with this Python project, note that it relies on a number of fairly common Python tools to improve the development experience, first and foremost being *uv*.
-The script `tools/setup.sh` contains the instructions to initialise a development environment for this project.
-If on Windows, try running it from a *git bash* session or simply run the commands it contains on the command prompt or a powershell session.
+- setting up `uv`
+- setting up a Python virtual environment
+- setting up pre-commit hooks
 
-## Running initbot Locally
+On Windows, the script won't run as such, but the commands it contains should translate quite easily.
 
-To run a local instance of the bot straight from the repository:
+## Running initbot
+
+To run the bot straight from the repository:
 
 - create a Discord bot token (see Google)
-- create a `.env` file at the top of the repository
-- add the line `token=[TOKEN]` with the bot token to the `.env` file
-- run `tools/run.sh` (or the commands that script contains)
+- run `./tools/setup.sh` (or make sure you have `uv` and run `uv sync`)
+- run `./tools/run.sh` (or the commands that script contains)
 
-## Running initbot in a Container
+### Configuration
+
+Without configuration, the bot interactively prompts for any parameter it requires to run.
+However, that can be become tedious, so there are three ways to provide configuration parameters:
+
+- command line options: `./tools/run.sh --token 123`
+- environment variables: `export token=123; ./tools/run.sh`
+- a `.env` file with `token=123`
+
+The bot currently supports the configuration parameters listed in [`initbot/bot/config.py`](initbot/bot/config.py) .
+You can also run `./tools/run.sh --help` for the same information.
+
+### Containers
 
 To run initbot in a docker container:
 
-- build the image with `docker build .`
-- set up an `.env` file with a Discord bot token as above
-- run initbot with `docker run --env-file .env [IMAGE_ID]`
+- build the image with `docker build -t initbot .`
+- run initbot
+  - without configuration: `docker run -it initbot`
+  - with command line arguments: `docker run initbot --token 123`
+  - with a `.env` file containing `token=123`: `docker run --env-file .env initbot`
