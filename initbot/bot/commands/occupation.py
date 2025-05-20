@@ -2,23 +2,17 @@ import logging
 
 from discord.ext import commands  # type: ignore
 
+from .utils import send_in_parts
+
 
 @commands.command()
 async def occupations(ctx) -> None:
     """Lists all character occupations, including the starting weapon and goods they confer to new characters."""
-    msg = ""
-    for occ in ctx.bot.initbot_state.occupations.get_all():
-        occ_str: str = (
-            f"**{occ.name}** fights with *{occ.weapon}* and has *{occ.goods}*"
-        )
-        if len(msg) + 2 + len(occ_str) >= 2000:
-            await ctx.send(msg)
-            msg = ""
-        if msg:
-            msg += "\n"
-        msg += occ_str
-    if msg:
-        await ctx.send(msg)
+    parts = (
+        f"**{occ.name}** fights with *{occ.weapon}* and has *{occ.goods}*"
+        for occ in ctx.bot.initbot_state.occupations.get_all()
+    )
+    await send_in_parts(ctx, parts)
 
 
 @occupations.error

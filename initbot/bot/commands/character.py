@@ -10,6 +10,7 @@ from ...data.occupation import OccupationData
 from ...models.character import Character
 from ...models.roll import NerdDiceRoll
 from ...state.state import State
+from .utils import send_in_parts
 
 
 def characters(state: State) -> Iterable[Character]:
@@ -132,15 +133,11 @@ async def remove(ctx: Any, *args: str) -> None:
 @commands.command()
 async def chars(ctx: Any) -> None:
     """Displays all characters known to the bot."""
-    txt: str = ", ".join(
-        [
-            f"{idx}: **{cdi.name}** (_{cdi.user}_)"
-            for idx, cdi in enumerate(ctx.bot.initbot_state.characters.get_all())
-        ]
+    parts = (
+        f"- {idx}: **{cdi.name}** (_{cdi.user}_)\n"
+        for idx, cdi in enumerate(ctx.bot.initbot_state.characters.get_all())
     )
-    if not txt:
-        txt = "No characters registered"
-    await ctx.send(txt)
+    await send_in_parts(ctx, parts)
 
 
 @commands.command()
