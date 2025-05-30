@@ -1,0 +1,12 @@
+{
+    "occupations": [
+        {
+            "rolls": [
+                1
+            ],
+            "name": "test",
+            "weapon": "test",
+            "goods": "test"
+        }
+    ]
+}

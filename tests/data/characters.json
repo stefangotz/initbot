@@ -1,0 +1,30 @@
+{
+    "characters": [
+        {
+            "name": "test",
+            "user": "test",
+            "active": true,
+            "level": 0,
+            "strength": 1,
+            "agility": 1,
+            "stamina": 1,
+            "personality": 1,
+            "intelligence": 1,
+            "luck": 1,
+            "initial_luck": 1,
+            "hit_points": 1,
+            "equipment": [
+                "test"
+            ],
+            "occupation": 1,
+            "exp": 1,
+            "alignment": "Lawful",
+            "initiative": 1,
+            "initiative_time": 1747138814,
+            "initiative_modifier": null,
+            "hit_die": null,
+            "augur": 1,
+            "cls": null
+        }
+    ]
+}

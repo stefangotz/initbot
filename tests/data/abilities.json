@@ -1,0 +1,16 @@
+{
+    "abilities": [
+        {
+            "name": "test",
+            "description": "test"
+        }
+    ],
+    "modifiers": [
+        {
+            "score": 1,
+            "mod": -1,
+            "spells": -1,
+            "max_spell_level": 1
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "crit_tables": [
+        {
+            "number": 1,
+            "crits": [
+                {
+                    "rolls": [
+                        1
+                    ],
+                    "effect": "test"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "classes": [
+        {
+            "name": "test",
+            "hit_die": 1,
+            "weapons": [
+                "test"
+            ],
+            "levels": [
+                {
+                    "level": 1,
+                    "attack_die": "1d20",
+                    "crit_die": "1d20",
+                    "crit_table": 1,
+                    "action_dice": [
+                        "1d20"
+                    ],
+                    "ref": 0,
+                    "fort": 1,
+                    "will": 1,
+                    "spells_by_level": [
+                        {
+                            "level": 1,
+                            "spells": 1
+                        }
+                    ],
+                    "thief_luck_die": 1,
+                    "threat_range": [],
+                    "spells": 1,
+                    "max_spell_level": 1,
+                    "sneak_hide": 1
+                }
+            ]
+        }
+    ]
+}
