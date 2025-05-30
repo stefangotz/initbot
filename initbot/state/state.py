@@ -48,7 +48,7 @@ class AbilityState(PartialState, ABC):
         )
 
     @abstractmethod
-    def import_from(self, src: "AbilityState"):
+    def import_from(self, src: "AbilityState") -> None:
         raise NotImplementedError()
 
 
@@ -61,7 +61,7 @@ class AugurState(PartialState, ABC):
         return next(filter(lambda i: i.roll == roll, self.get_all()))
 
     @abstractmethod
-    def import_from(self, src: "AugurState"):
+    def import_from(self, src: "AugurState") -> None:
         raise NotImplementedError()
 
 
@@ -112,7 +112,7 @@ class CharacterState(PartialState, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def import_from(self, src: "CharacterState"):
+    def import_from(self, src: "CharacterState") -> None:
         raise NotImplementedError()
 
 
@@ -125,7 +125,7 @@ class OccupationState(PartialState, ABC):
         return get_first_set_match(roll, self.get_all(), lambda o: o.rolls)
 
     @abstractmethod
-    def import_from(self, src: "OccupationState"):
+    def import_from(self, src: "OccupationState") -> None:
         raise NotImplementedError()
 
 
@@ -138,7 +138,7 @@ class ClassState(PartialState, ABC):
         return next(filter(lambda cd: cd.name == name, self.get_all()))
 
     @abstractmethod
-    def import_from(self, src: "ClassState"):
+    def import_from(self, src: "ClassState") -> None:
         raise NotImplementedError()
 
 
@@ -151,7 +151,7 @@ class CritState(PartialState, ABC):
         return next(filter(lambda tbl: tbl.number == table, self.get_all()))
 
     @abstractmethod
-    def import_from(self, src: "CritState"):
+    def import_from(self, src: "CritState") -> None:
         raise NotImplementedError()
 
 
@@ -196,6 +196,7 @@ class State(ABC):
             if issubclass(type(value), PartialState)
         }
         for target_state_name, target_state in target_states.items():
+            print(f"Importing {target_state_name} from {src}")
             target_state.import_from(getattr(src, target_state_name))
 
     @classmethod
