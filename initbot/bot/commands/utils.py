@@ -13,4 +13,5 @@ async def send_in_parts(
             await ctx.send(msg)
             msg = ""
         msg += "\n" + txt
-    await ctx.send(msg)
+    if msg:
+        await ctx.send(msg)
