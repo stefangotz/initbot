@@ -97,7 +97,9 @@ def get_first_set_match_or_over_under_flow(
 
 
 def get_unique_prefix_match(
-    str_to_match: str, candidates: Sequence[A], get_str_from_candidate=str
+    str_to_match: str,
+    candidates: Sequence[A],
+    get_str_from_candidate: Callable[[A], str] = str,
 ) -> A:
     normalized_str_to_match: str = normalize_str(str_to_match)
     matches: MutableSequence[A] = [
