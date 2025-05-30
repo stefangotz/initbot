@@ -321,7 +321,7 @@ class SqlState(State):
 
 
 def _import_from(cls: Type, items: Iterable[BaseData]) -> None:
-    cls.insert_many(i.as_dict() for i in items)
+    cls.insert_many(i.as_dict() for i in items).execute()
 
 
 def _get_data_classes() -> Sequence[type[Model]]:
