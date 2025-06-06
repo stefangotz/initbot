@@ -15,6 +15,53 @@ def render_dice_rolls(words: Iterable[str]) -> str:
     return " ".join(map(_try_to_render_dice_roll, words))
 
 
+def _try_to_detect_and_render_dice_roll(
+    word: str, context: str = ""
+) -> tuple[str, bool]:
+    """Attempts to render a dice roll, returns (result, was_dice_roll)."""
+    if any(
+        phrase in context.lower()
+        for phrase in ["system", "edition", "game", "rulebook"]
+    ):
+        return word, False
+
+    for cls in _DICE_ROLL_CLASSES:
+        try:
+            return cls.create(word).roll(), True
+        except ValueError:
+            continue
+    return word, False
+
+
+def render_dice_rolls_in_text(text: str) -> str:
+    """Replaces dice roll expressions found in text with their rolled results."""
+    words = text.split()
+    result_words = []
+
+    for word in words:
+        clean_word = word.strip(".,!?;:()[]{}\"'-")
+        rendered_word, was_dice = _try_to_detect_and_render_dice_roll(clean_word, text)
+
+        if was_dice:
+            prefix = word[: len(word) - len(word.lstrip(".,!?;:()[]{}\"'-"))]
+            suffix = word[len(word.rstrip(".,!?;:()[]{}\"'-")) :]
+            result_words.append(prefix + rendered_word + suffix)
+        else:
+            result_words.append(word)
+
+    return " ".join(result_words)
+
+
+def contains_dice_rolls(text: str) -> bool:
+    words = text.split()
+    for word in words:
+        clean_word = word.strip(".,!?;:()[]{}\"'-")
+        _, was_dice = _try_to_detect_and_render_dice_roll(clean_word, text)
+        if was_dice:
+            return True
+    return False
+
+
 def _try_to_render_dice_roll(word: str) -> str:
     for cls in _DICE_ROLL_CLASSES:
         try:
