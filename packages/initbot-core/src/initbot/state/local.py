@@ -2,6 +2,7 @@ from collections.abc import Mapping, MutableSequence, Sequence, Set
 from dataclasses import asdict
 import logging
 from pathlib import Path
+import time
 from typing import Any, Final, Union, cast
 
 from pydantic import BaseModel, ConfigDict
@@ -129,6 +130,7 @@ class LocalCharacterData(LocalBaseModel):
     hit_die: Union[int, None] = None
     augur: Union[int, None] = None
     cls: Union[str, None] = None
+    creation_time: Union[int, None] = None
 
 
 class LocalCharactersData(LocalBaseModel):
@@ -154,6 +156,7 @@ class LocalCharacterState(CharacterState):
         if any(char for char in self.get_all() if char.name == char_data.name):
             raise KeyError(f"Character with name '{char_data.name}' already exists")
         local_char_data = LocalCharacterData(**asdict(char_data))
+        local_char_data.creation_time = int(time.time())
         self._characters.append(local_char_data)
         self._store()
         return cast(CharacterData, local_char_data)

@@ -195,3 +195,7 @@ class Character:
     @active.setter
     def active(self, new: bool):
         self.cdi.active = new
+
+    @property
+    def creation_time(self) -> Union[int, None]:
+        return self.cdi.creation_time

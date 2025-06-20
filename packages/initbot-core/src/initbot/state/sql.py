@@ -2,6 +2,7 @@ from collections.abc import Iterable, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
+import time
 from typing import Type, cast
 
 from peewee import (
@@ -112,6 +113,7 @@ class _SqlCharacterData(Model):
     hit_die = IntegerField(null=True)
     augur = IntegerField(null=True)
     cls = CharField(null=True)
+    creation_time = IntegerField(null=True)
 
 
 class _SqlCharacterState(CharacterState):
@@ -119,6 +121,7 @@ class _SqlCharacterState(CharacterState):
         return cast(Sequence[CharacterData], tuple(_SqlCharacterData.select()))
 
     def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
+        char_data.creation_time = int(time.time())
         return cast(
             CharacterData,
             _SqlCharacterData.create(
@@ -303,12 +306,22 @@ class SqlState(State):
                 path,
                 pragmas={"journal_mode": "wal", "synchronous": "normal"},
             )
+
         else:
             raise ValueError(f"Unsupported state type: {state_type}")
 
         data_classes = _get_data_classes()
         self._db.bind(data_classes)
         self._db.create_tables(data_classes)
+
+        # migration: add creation_time
+        with self._db.connection_context():
+            cursor = self._db.execute_sql("PRAGMA table_info(_sqlcharacterdata);")
+            columns = [row[1] for row in cursor.fetchall()]
+            if "creation_time" not in columns:
+                self._db.execute_sql(
+                    "ALTER TABLE _sqlcharacterdata ADD COLUMN creation_time INTEGER DEFAULT NULL;"
+                )
 
     @property
     def abilities(self) -> AbilityState:

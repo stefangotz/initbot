@@ -30,3 +30,4 @@ class CharacterData(BaseData):
     hit_die: Union[int, None] = None
     augur: Union[int, None] = None
     cls: Union[str, None] = None
+    creation_time: Union[int, None] = None
