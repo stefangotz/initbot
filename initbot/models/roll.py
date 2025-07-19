@@ -7,7 +7,8 @@ import re
 
 
 _NERD_DICE_ROLL_PATTERN = re.compile(
-    r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
+    r"^(?:(?P<rolls>[0-9]+)x)?(?P<dice>[0-9]*)d(?P<sides>[0-9]+)(?P<modifier>[+-][0-9]+)?$",
+    re.IGNORECASE,
 )
 
 
@@ -138,14 +139,12 @@ class NerdDiceRoll(IntDiceRoll):
     def create(spec: str) -> "NerdDiceRoll":
         match = _NERD_DICE_ROLL_PATTERN.match(spec)
         if match:
-            args = {"sides": int(match.group(4))}
-            if match.group(3):
-                args["dice"] = int(match.group(3))
-            if match.group(5):
-                args["modifier"] = int(match.group(5))
-            if match.group(2):
-                args["rolls"] = int(match.group(2))
-            return NerdDiceRoll(**args)
+            kwargs = {
+                name: int(match[name])
+                for name in ("sides", "dice", "modifier", "rolls")
+                if match[name]
+            }
+            return NerdDiceRoll(**kwargs)
         raise ValueError(f"'{spec}' is not supported")
 
 
