@@ -28,7 +28,7 @@ async def on_message(message):
     prefixes: tuple[str, ...] = tuple(
         p.strip() for p in CFG.command_prefixes.split(",")
     )
-    command_names: tuple[str, ...] = tuple(cmd.name for cmd in commands)
+    command_names: tuple[str, ...] = tuple(cmd.name for cmd in commands) + ("help",)
     prefixed_commands: tuple[str, ...] = tuple(
         "".join(parts) for parts in product(prefixes, command_names)
     )
@@ -37,12 +37,16 @@ async def on_message(message):
         for prefixed_command in prefixed_commands
     )
 
-    if not is_command and contains_dice_rolls(message.content):
+    if contains_dice_rolls(message.content):
         result_text = render_dice_rolls_in_text(message.content)
-        if result_text != message.content:
-            await message.channel.send(result_text)
+    else:
+        result_text = message.content
 
-    await bot.process_commands(message)
+    if is_command:
+        message.content = result_text
+        await bot.process_commands(message)
+    elif result_text != message.content:
+        await message.channel.send(result_text)
 
 
 def run():
