@@ -1,3 +1,5 @@
+from itertools import product
+
 from discord.ext.commands import Bot
 from discord import Intents
 
@@ -23,9 +25,16 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    prefixes = [p.strip() for p in CFG.command_prefixes.split(",")]
+    prefixes: tuple[str, ...] = tuple(
+        p.strip() for p in CFG.command_prefixes.split(",")
+    )
+    command_names: tuple[str, ...] = tuple(cmd.name for cmd in commands)
+    prefixed_commands: tuple[str, ...] = tuple(
+        "".join(parts) for parts in product(prefixes, command_names)
+    )
     is_command = any(
-        message.content.startswith(prefix) for prefix in prefixes if prefix
+        message.content.startswith(prefixed_command)
+        for prefixed_command in prefixed_commands
     )
 
     if not is_command and contains_dice_rolls(message.content):
