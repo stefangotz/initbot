@@ -43,7 +43,8 @@ async def on_message(message):
         result_text = message.content
 
     if is_command:
-        message.content = result_text
+        if not message.content.split(sep=None, maxsplit=1)[0].endswith("roll"):
+            message.content = result_text
         await bot.process_commands(message)
     elif result_text != message.content:
         await message.channel.send(result_text)
