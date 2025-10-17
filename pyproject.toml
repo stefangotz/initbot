@@ -18,8 +18,8 @@ dependencies = [
 [project.scripts]
 initbot = "initbot.bot.bot:run"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pre-commit>=3.5.0",
     "black>=24.8.0",
     "coverage>=7.6.1",
