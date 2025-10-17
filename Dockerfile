@@ -1,5 +1,5 @@
 # A container for building the initbot dist
-FROM ghcr.io/astral-sh/uv:python3.13-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
 # Bring in the initbot Python code
 COPY . /root/
@@ -10,7 +10,7 @@ RUN uv build --wheel
 
 
 # A container for running initbot
-FROM ghcr.io/astral-sh/uv:python3.13-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-alpine
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
