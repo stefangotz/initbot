@@ -1,7 +1,7 @@
 [project]
 name = "initbot"
 version = "0.1.0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 description = "A Discord bot that manages RPG character initiatives"
 authors = [{name = "Stefan Götz", email="github.nooneelse@spamgourmet.com"}]
 license = "AGPL-3.0-or-later"
