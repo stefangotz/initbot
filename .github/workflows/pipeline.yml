@@ -30,6 +30,12 @@ jobs:
       - name: black
         run: |
           .venv/bin/black --check initbot tests
+      - name: flake8
+        run: |
+          .venv/bin/flake8 initbot tests
+      - name: zizmor
+        run: |
+          .venv/bin/zizmor .github/workflows/
       - name: Pylint
         run: |
           .venv/bin/pylint initbot tests
