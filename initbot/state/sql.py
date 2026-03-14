@@ -127,7 +127,9 @@ class _SqlCharacterState(CharacterState):
         )
 
     def remove_and_store(self, char_data: CharacterData) -> None:
-        _SqlCharacterData.delete().where(_SqlCharacterData.name == char_data.name)
+        _SqlCharacterData.delete().where(
+            _SqlCharacterData.name == char_data.name
+        ).execute()
 
     def update_and_store(self, char_data: CharacterData) -> None:
         if not isinstance(char_data, _SqlCharacterData):
