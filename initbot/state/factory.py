@@ -6,7 +6,6 @@ from .local import LocalState
 from .sql import SqlState
 from .state import State
 
-
 _STATE_CLASSES: Final[Set[type[State]]] = frozenset({LocalState, SqlState})
 _FACTORIES: Final[Mapping[str, Callable[[str], State]]] = dict(
     chain.from_iterable(

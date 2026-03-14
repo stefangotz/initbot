@@ -5,7 +5,6 @@ from typing import Type
 import random
 import re
 
-
 _NERD_DICE_ROLL_PATTERN = re.compile(
     r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
 )
