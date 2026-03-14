@@ -53,7 +53,7 @@ async def new(ctx: Any, name: str) -> None:
         alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
         augur=random.choice(ctx.bot.initbot_state.augurs.get_all()).roll,
     )
-    ctx.bot.initbot_state.characters.add_and_store(cdi)
+    cdi = ctx.bot.initbot_state.characters.add_store_and_get(cdi)
     txt: str = str(cdi)
     for idx in range(0, len(txt), 1000):
         await ctx.send(txt[idx : idx + 1000])
