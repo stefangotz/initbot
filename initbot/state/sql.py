@@ -78,10 +78,14 @@ class _SqlAugurState(AugurState):
 class _StrSeqField(Field):
     field_type = "text"
 
-    def db_value(self, value: Iterable[str]) -> str:
+    def db_value(self, value: Iterable[str]) -> str | None:
+        if value is None:
+            return None
         return "\x1e".join(value)
 
     def python_value(self, value: str) -> Sequence[str]:
+        if value is None:
+            return ()
         return value.split("\x1e")
 
 
