@@ -1,3 +1,4 @@
+import dataclasses
 from collections.abc import Sequence, Iterable
 from typing import Any
 import logging
@@ -86,11 +87,12 @@ async def set_(ctx: Any, *, txt: str) -> None:
         name_tokens, ctx.author.name
     )
     attr = attr.lower()
+    char_fields = [f.name for f in dataclasses.fields(CharacterData)]
     candidates: Sequence[str] = []
-    if attr in vars(cdi):
+    if attr in char_fields:
         candidates = [attr]
     else:
-        candidates = [key for key in vars(cdi) if key.lower().startswith(attr)]
+        candidates = [key for key in char_fields if key.lower().startswith(attr)]
     if len(candidates) == 1:
         try:
             setattr(cdi, candidates[0], int(val))
@@ -103,12 +105,12 @@ async def set_(ctx: Any, *, txt: str) -> None:
         )
     elif not candidates:
         await ctx.send(
-            f"Character attribute {attr} isn't supported. Pick one of the following: {', '.join(vars(cdi).keys())}",
+            f"Character attribute {attr} isn't supported. Pick one of the following: {', '.join(char_fields)}",
             delete_after=5,
         )
     else:
         await ctx.send(
-            f"Character attribute {attr} is ambiguous. Pick one of the following: {', '.join(vars(cdi).keys())}",
+            f"Character attribute {attr} is ambiguous. Pick one of the following: {', '.join(char_fields)}",
             delete_after=5,
         )
 
