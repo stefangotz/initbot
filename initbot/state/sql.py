@@ -136,7 +136,16 @@ class _SqlCharacterState(CharacterState):
             raise TypeError(
                 f"Only character data returned by the State class can be updated: {char_data}"
             )
-        cast(_SqlCharacterData, char_data).save()
+        obj = cast(_SqlCharacterData, char_data)
+        pk_name = type(obj)._meta.primary_key.name
+        fields_to_update = {
+            field: obj.__data__.get(name)
+            for name, field in type(obj)._meta.fields.items()
+            if name != pk_name
+        }
+        _SqlCharacterData.update(fields_to_update).where(
+            _SqlCharacterData.name == obj.name
+        ).execute()
 
     def import_from(self, src: CharacterState) -> None:
         _import_from(_SqlCharacterData, src.get_all())
