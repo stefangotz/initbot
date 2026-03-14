@@ -25,6 +25,13 @@ repos:
       - id: zizmor
   - repo: local
     hooks:
+      - id: pylint
+        name: pylint
+        entry: uv run pylint
+        language: system
+        types: [python]
+        args: [initbot, tests]
+        pass_filenames: false
       - id: pytest
         name: pytest
         entry: uv run pytest

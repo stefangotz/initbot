@@ -30,7 +30,7 @@ async def test_char_by_prefix(mock_ctx):
 async def test_char_missing_sends_error(mock_ctx):
     try:
         await char.callback(mock_ctx, "Nonexistent")
-    except Exception as exc:
+    except KeyError as exc:
         await char_error(mock_ctx, exc)
     mock_ctx.send.assert_called()
 

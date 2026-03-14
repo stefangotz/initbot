@@ -1,13 +1,13 @@
 import re
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 from initbot.bot.commands.roll import roll
 
 
-@pytest.fixture
-def roll_ctx():
+@pytest.fixture(name="roll_ctx")
+def _roll_ctx():
     ctx = MagicMock()
     ctx.author.display_name = "testuser"
     ctx.send = AsyncMock(return_value=None)

@@ -1,20 +1,10 @@
-import pathlib
 import shutil
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from initbot.state.factory import create_state_from_source
-
-
-DATA_DIR = pathlib.Path(__file__).parent / "data"
-REFERENCE_FILES = [
-    "abilities.json",
-    "augurs.json",
-    "occupations.json",
-    "classes.json",
-    "crits.json",
-]
+from tests.helpers import DATA_DIR, REFERENCE_FILES
 
 
 def _make_json_state(tmp_path):
