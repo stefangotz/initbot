@@ -21,4 +21,4 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
 
-uv run -m initbot "$@"
+uv run initbot "$@"

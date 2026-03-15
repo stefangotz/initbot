@@ -29,22 +29,22 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }}
       - name: black
         run: |
-          .venv/bin/black --check initbot tests
+          .venv/bin/black --check packages/initbot-core/src packages/initbot-chat/src tests
       - name: flake8
         run: |
-          .venv/bin/flake8 initbot tests
+          .venv/bin/flake8 packages/initbot-core/src packages/initbot-chat/src tests
       - name: zizmor
         run: |
           .venv/bin/zizmor .github/workflows/
       - name: Pylint
         run: |
-          .venv/bin/pylint initbot tests
+          uv run pylint initbot tests
       - name: mypy
         run: |
-          .venv/bin/mypy -p initbot
+          .venv/bin/mypy packages/initbot-core/src packages/initbot-chat/src
       - name: pip-audit
         run: uv run pip-audit
       - name: test
         run: |
-          api_key=x .venv/bin/coverage run -m --source=initbot pytest tests
+          api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src pytest tests
           .venv/bin/coverage report

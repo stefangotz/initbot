@@ -1,22 +1,8 @@
-[project]
-name = "initbot"
-version = "0.1.0"
-requires-python = ">=3.10"
-description = "A Discord bot that manages RPG character initiatives"
-authors = [{name = "Stefan Götz", email="github.nooneelse@spamgourmet.com"}]
-license = "AGPL-3.0-or-later"
-license-files = ["LICENSE"]
-dependencies = [
-    "discord-py~=2.3",
-    "peewee~=4.0",
-    "pydantic-settings~=2.0",
-    "pydantic~=2.0",
-    "python-dotenv~=1.2",
-    "typing-extensions>=4.12.2 ; python_full_version < '3.11'",
+[tool.uv.workspace]
+members = [
+    "packages/initbot-core",
+    "packages/initbot-chat",
 ]
-
-[project.scripts]
-initbot = "initbot.bot.bot:run"
 
 [dependency-groups]
 dev = [
@@ -33,11 +19,15 @@ dev = [
     "zizmor>=1.23.1",
 ]
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-
 [tool.black]
 target-version = ["py310", "py311", "py312", "py313", "py314"]
 
 [tool.mypy]
 check_untyped_defs = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "packages/initbot-core/src:packages/initbot-chat/src"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

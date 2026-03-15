@@ -8,6 +8,27 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
+[manifest]
+members = [
+    "initbot-chat",
+    "initbot-core",
+]
+
+[manifest.dependency-groups]
+dev = [
+    { name = "black", specifier = ">=24.8.0" },
+    { name = "coverage", specifier = ">=7.6.1" },
+    { name = "flake8", specifier = ">=7.3.0" },
+    { name = "mypy", specifier = ">=1.11.2" },
+    { name = "pip-audit", specifier = ">=2.7" },
+    { name = "pre-commit", specifier = ">=3.5.0" },
+    { name = "pylint", specifier = ">=3.2.7" },
+    { name = "pytest", specifier = ">=8.3.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+    { name = "types-peewee", specifier = ">=3.17.7.20241017" },
+    { name = "zizmor", specifier = ">=1.23.1" },
+]
+
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
@@ -806,11 +827,25 @@ wheels = [
 ]
 
 [[package]]
-name = "initbot"
+name = "initbot-chat"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "packages/initbot-chat" }
 dependencies = [
     { name = "discord-py" },
+    { name = "initbot-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "discord-py", specifier = "~=2.3" },
+    { name = "initbot-core", editable = "packages/initbot-core" },
+]
+
+[[package]]
+name = "initbot-core"
+version = "0.1.0"
+source = { editable = "packages/initbot-core" }
+dependencies = [
     { name = "peewee" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -818,44 +853,13 @@ dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "black" },
-    { name = "coverage" },
-    { name = "flake8" },
-    { name = "mypy" },
-    { name = "pip-audit" },
-    { name = "pre-commit" },
-    { name = "pylint" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "types-peewee" },
-    { name = "zizmor" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "discord-py", specifier = "~=2.3" },
-    { name = "peewee", specifier = "~=3.17" },
+    { name = "peewee", specifier = "~=4.0" },
     { name = "pydantic", specifier = "~=2.0" },
     { name = "pydantic-settings", specifier = "~=2.0" },
-    { name = "python-dotenv", specifier = "~=0.21" },
+    { name = "python-dotenv", specifier = "~=1.2" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4.12.2" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "black", specifier = ">=24.8.0" },
-    { name = "coverage", specifier = ">=7.6.1" },
-    { name = "flake8", specifier = ">=7.3.0" },
-    { name = "mypy", specifier = ">=1.11.2" },
-    { name = "pip-audit", specifier = ">=2.7" },
-    { name = "pre-commit", specifier = ">=3.5.0" },
-    { name = "pylint", specifier = ">=3.2.7" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "types-peewee", specifier = ">=3.17.7.20241017" },
-    { name = "zizmor", specifier = ">=1.23.1" },
 ]
 
 [[package]]
@@ -1286,11 +1290,11 @@ wheels = [
 
 [[package]]
 name = "peewee"
-version = "3.19.0"
+version = "4.0.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/88/b0/79462b42e89764998756e0557f2b58a15610a5b4512fbbcccae58fba7237/peewee-3.19.0.tar.gz", hash = "sha256:f88292a6f0d7b906cb26bca9c8599b8f4d8920ebd36124400d0cbaaaf915511f", size = 974035, upload-time = "2026-01-07T17:24:59.597Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/a0/307e09edfae54f103d66b54d82fdfd22cfc25e733731c97173f4ec661fc3/peewee-4.0.1.tar.gz", hash = "sha256:beb1a173a52952a4d69197ca36408166740b2ced339c0e8159617c3fa1e1c4da", size = 700753, upload-time = "2026-03-01T17:26:56.125Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/41/19c65578ef9a54b3083253c68a607f099642747168fe00f3a2bceb7c3a34/peewee-3.19.0-py3-none-any.whl", hash = "sha256:de220b94766e6008c466e00ce4ba5299b9a832117d9eb36d45d0062f3cfd7417", size = 411885, upload-time = "2026-01-07T17:24:58.33Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/99/0f8d9e46df9812ab31dadb07ba304c3ff6d6076bf19a67f4d046790be2e1/peewee-4.0.1-py3-none-any.whl", hash = "sha256:10afaa02c9f6d0f2dfe0f5b9007075c985eb141ab740a8831e37be2a61b3595c", size = 139369, upload-time = "2026-03-01T17:26:54.597Z" },
 ]
 
 [[package]]
@@ -1757,11 +1761,11 @@ wheels = [
 
 [[package]]
 name = "python-dotenv"
-version = "0.21.1"
+version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f5/d7/d548e0d5a68b328a8d69af833a861be415a17cb15ce3d8f0cd850073d2e1/python-dotenv-0.21.1.tar.gz", hash = "sha256:1c93de8f636cde3ce377292818d0e440b6e45a82f215c3744979151fa8151c49", size = 35930, upload-time = "2023-01-21T10:22:47.277Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/62/f19d1e9023aacb47241de3ab5a5d5fedf32c78a71a9e365bb2153378c141/python_dotenv-0.21.1-py3-none-any.whl", hash = "sha256:41e12e0318bebc859fcc4d97d4db8d20ad21721a6aa5047dd59f090391cb549a", size = 19284, upload-time = "2023-01-21T10:22:45.958Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
 ]
 
 [[package]]
