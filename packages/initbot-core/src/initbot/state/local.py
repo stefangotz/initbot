@@ -26,7 +26,7 @@ from .state import (
 
 class LocalBaseModel(BaseModel):
     def as_dict(self) -> Mapping[str, Any]:
-        return self.dict()
+        return self.model_dump()
 
 
 class LocalAbilityData(LocalBaseModel):
