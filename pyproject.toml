@@ -11,7 +11,7 @@ dependencies = [
     "peewee~=4.0",
     "pydantic-settings~=2.0",
     "pydantic~=2.0",
-    "python-dotenv~=0.21",
+    "python-dotenv~=1.2",
     "typing-extensions>=4.12.2 ; python_full_version < '3.11'",
 ]
 
