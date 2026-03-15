@@ -42,6 +42,8 @@ jobs:
       - name: mypy
         run: |
           .venv/bin/mypy -p initbot
+      - name: pip-audit
+        run: uv run pip-audit
       - name: test
         run: |
           api_key=x .venv/bin/coverage run -m --source=initbot pytest tests
