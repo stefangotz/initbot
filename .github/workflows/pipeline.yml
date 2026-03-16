@@ -48,3 +48,17 @@ jobs:
         run: |
           api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src pytest tests
           .venv/bin/coverage report
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Build Docker image
+        run: docker build -t initbot .
+      - name: Verify invalid token raises LoginFailure
+        run: |
+          output=$(docker run --rm initbot --token 123 2>&1) || true
+          echo "$output"
+          echo "$output" | grep -qF "discord.errors.LoginFailure"
