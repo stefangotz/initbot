@@ -1,0 +1,41 @@
+<!--
+  Copyright 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
+
+  This file is part of initbot.
+
+  initbot is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
+
+  initbot is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public
+  License along with initbot. If not, see <https://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Initiative Tracker</title>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js">
+  </script>
+</head>
+<body>
+  <h1>Initiative Order</h1>
+  <div data-init="@get('/s/{{ secret }}/sse')">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th></tr>
+      </thead>
+      <tbody id="initiative-rows">
+        <tr><td colspan="4">Waiting for data…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

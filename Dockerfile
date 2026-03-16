@@ -1,27 +1,28 @@
-# A container for building the initbot dist
-FROM ghcr.io/astral-sh/uv:python3.14-alpine
-
-# Bring in the initbot Python code
+# Stage 1: build all three wheels
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 COPY . /root/
 WORKDIR /root
-# Build the initbot dist
-RUN uv build --package initbot-core --wheel && uv build --package initbot-chat --wheel
+RUN uv build --package initbot-core --wheel \
+    && uv build --package initbot-chat --wheel \
+    && uv build --package initbot-web --wheel
 
-
-
-# A container for running initbot
-FROM ghcr.io/astral-sh/uv:python3.14-alpine
-# Keeps Python from generating .pyc files in the container
+# Stage 2: install wheels into shared venv
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS base
 ENV PYTHONDONTWRITEBYTECODE=1
-# Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
-
-COPY --from=0 /root/dist/*.whl /tmp/
-RUN uv venv /app && export VIRTUAL_ENV=/app && uv pip install --no-cache --compile-bytecode /tmp/*.whl && rm /tmp/*.whl
-
-# Creates a non-root user with an explicit UID and adds permission to access the /app folder
-# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
+COPY --from=builder /root/dist/*.whl /tmp/
+RUN uv venv /app \
+    && export VIRTUAL_ENV=/app \
+    && uv pip install --no-cache --compile-bytecode /tmp/*.whl \
+    && rm /tmp/*.whl
 RUN adduser -u 5678 --disabled-password --gecos "" appuser
 USER appuser
 WORKDIR /home/appuser
+
+# Stage 3a: chat bot image
+FROM base AS chat
 ENTRYPOINT ["/app/bin/initbot"]
+
+# Stage 3b: web app image
+FROM base AS web
+ENTRYPOINT ["/app/bin/initbot-web"]

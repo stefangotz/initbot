@@ -1,0 +1,33 @@
+services:
+  chat:
+    build:
+      context: .
+      target: chat
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.chat
+        required: false
+    environment:
+      STATE: sqlite:/data/app.sqlite
+    volumes:
+      - data:/data
+
+  web:
+    build:
+      context: .
+      target: web
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.web
+        required: false
+    environment:
+      STATE: sqlite:/data/app.sqlite
+    ports:
+      - "8080:8080"
+    volumes:
+      - data:/data
+
+volumes:
+  data:

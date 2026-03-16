@@ -2,6 +2,7 @@
 members = [
     "packages/initbot-core",
     "packages/initbot-chat",
+    "packages/initbot-web",
 ]
 
 [dependency-groups]
@@ -11,6 +12,7 @@ dev = [
     "coverage>=7.6.1",
     "pip-audit>=2.7",
     "flake8>=7.3.0",
+    "httpx>=0.27",
     "mypy>=1.11.2",
     "pylint>=3.2.7",
     "pytest>=8.3.3",
@@ -26,7 +28,11 @@ target-version = ["py310", "py311", "py312", "py313", "py314"]
 check_untyped_defs = true
 namespace_packages = true
 explicit_package_bases = true
-mypy_path = "packages/initbot-core/src:packages/initbot-chat/src"
+mypy_path = "packages/initbot-core/src:packages/initbot-chat/src:packages/initbot-web/src"
+
+[[tool.mypy.overrides]]
+module = ["uvicorn", "uvicorn.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

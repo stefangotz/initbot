@@ -1,8 +1,7 @@
 **/__pycache__
 **/.classpath
 **/.dockerignore
-**/.env
-**/.env
+**/.env*
 **/.git
 **/.gitignore
 **/.project
@@ -26,3 +25,10 @@
 **/values.dev.yaml
 README.md
 dist/
+.claude/
+.github/
+**/.mypy_cache
+**/.pytest_cache
+**/*.egg-info
+**/build
+**/.coverage

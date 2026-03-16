@@ -29,10 +29,10 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }}
       - name: black
         run: |
-          .venv/bin/black --check packages/initbot-core/src packages/initbot-chat/src tests
+          .venv/bin/black --check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
       - name: flake8
         run: |
-          .venv/bin/flake8 packages/initbot-core/src packages/initbot-chat/src tests
+          .venv/bin/flake8 packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
       - name: zizmor
         run: |
           .venv/bin/zizmor .github/workflows/
@@ -41,12 +41,12 @@ jobs:
           uv run pylint initbot tests
       - name: mypy
         run: |
-          .venv/bin/mypy packages/initbot-core/src packages/initbot-chat/src
+          .venv/bin/mypy packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
       - name: pip-audit
         run: uv run pip-audit
       - name: test
         run: |
-          api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src pytest tests
+          api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src,packages/initbot-web/src pytest tests
           .venv/bin/coverage report
 
   docker:
@@ -55,10 +55,17 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - name: Build Docker image
-        run: docker build -t initbot .
-      - name: Verify invalid token raises LoginFailure
+      - name: Build Docker images
         run: |
-          output=$(docker run --rm initbot --token 123 2>&1) || true
+          docker build --target chat -t initbot-chat .
+          docker build --target web  -t initbot-web  .
+      - name: "Verify chat: invalid token raises LoginFailure"
+        run: |
+          output=$(docker run --rm initbot-chat --token 123 2>&1) || true
           echo "$output"
           echo "$output" | grep -qF "discord.errors.LoginFailure"
+      - name: "Verify web: missing SQLite state raises SystemExit"
+        run: |
+          output=$(docker run --rm initbot-web 2>&1) || true
+          echo "$output"
+          echo "$output" | grep -qF "initbot-web requires a SQLite state URI"

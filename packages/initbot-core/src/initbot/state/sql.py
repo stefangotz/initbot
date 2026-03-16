@@ -299,7 +299,10 @@ class SqlState(State):
             if not path.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.touch(exist_ok=True)
-            self._db = SqliteDatabase(path)
+            self._db = SqliteDatabase(
+                path,
+                pragmas={"journal_mode": "wal", "synchronous": "normal"},
+            )
         else:
             raise ValueError(f"Unsupported state type: {state_type}")
 
