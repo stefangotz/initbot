@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 from typing import Iterable
 
 from discord.ext.commands import Context

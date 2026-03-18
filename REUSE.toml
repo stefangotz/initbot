@@ -1,0 +1,14 @@
+version = 1
+
+[[annotations]]
+path = [
+    "**.md",
+    "**.json",
+    "**.sqlite",
+    "uv.lock",
+    ".python-version",
+    "LICENSE",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Stefan Götz <github.nooneelse@spamgourmet.com>"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

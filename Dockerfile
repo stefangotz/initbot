@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Stage 1: build all three wheels
 FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 COPY . /root/

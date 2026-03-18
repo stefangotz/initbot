@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 name: CI/CD
 
 on:
@@ -42,6 +46,8 @@ jobs:
       - name: mypy
         run: |
           .venv/bin/mypy packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
+      - name: reuse
+        run: uv run reuse lint
       - name: pip-audit
         run: uv run pip-audit
       - name: test
