@@ -10,11 +10,11 @@ from pydantic import BaseModel, ConfigDict
 from initbot.data.cls import ClassData
 from initbot.data.crit import CritTableData
 
-from ..data.ability import AbilityData, AbilityModifierData
-from ..data.augur import AugurData
-from ..data.character import CharacterData
-from ..data.occupation import OccupationData
-from .state import (
+from initbot.data.ability import AbilityData, AbilityModifierData
+from initbot.data.augur import AugurData
+from initbot.data.character import CharacterData
+from initbot.data.occupation import OccupationData
+from initbot.state.state import (
     AbilityState,
     AugurState,
     CharacterState,

@@ -2,7 +2,7 @@ import logging
 
 from discord.ext import commands  # type: ignore
 
-from ...models.roll import render_dice_rolls
+from initbot.models.roll import render_dice_rolls
 
 
 @commands.command()

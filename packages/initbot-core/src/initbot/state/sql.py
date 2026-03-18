@@ -16,14 +16,14 @@ from peewee import (
     ForeignKeyField,
 )
 
-from ..base import BaseData
-from ..data.ability import AbilityData, AbilityModifierData
-from ..data.augur import AugurData
-from ..data.character import CharacterData
-from ..data.cls import ClassData
-from ..data.crit import CritTableData
-from ..data.occupation import OccupationData
-from .state import (
+from initbot.base import BaseData
+from initbot.data.ability import AbilityData, AbilityModifierData
+from initbot.data.augur import AugurData
+from initbot.data.character import CharacterData
+from initbot.data.cls import ClassData
+from initbot.data.crit import CritTableData
+from initbot.data.occupation import OccupationData
+from initbot.state.state import (
     AbilityState,
     AugurState,
     CharacterState,

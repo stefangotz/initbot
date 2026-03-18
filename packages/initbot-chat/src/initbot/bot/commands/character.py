@@ -6,12 +6,12 @@ import random
 
 from discord.ext import commands  # type: ignore
 
-from ...data.character import CharacterData
-from ...data.occupation import OccupationData
-from ...models.character import Character
-from ...models.roll import NerdDiceRoll
-from ...state.state import State
-from .utils import send_in_parts
+from initbot.data.character import CharacterData
+from initbot.data.occupation import OccupationData
+from initbot.models.character import Character
+from initbot.models.roll import NerdDiceRoll
+from initbot.state.state import State
+from initbot.bot.commands.utils import send_in_parts
 
 
 def characters(state: State) -> Iterable[Character]:

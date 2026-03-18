@@ -4,7 +4,7 @@ from typing import Any
 
 from discord.ext import commands  # type: ignore
 
-from .utils import send_in_parts
+from initbot.bot.commands.utils import send_in_parts
 
 
 @commands.command()

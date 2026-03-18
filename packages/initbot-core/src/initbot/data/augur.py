@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..base import BaseData
+from initbot.base import BaseData
 
 
 @dataclass(frozen=True)

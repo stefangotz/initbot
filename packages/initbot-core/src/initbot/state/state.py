@@ -10,13 +10,13 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self
 
-from ..data.ability import AbilityData, AbilityModifierData
-from ..data.augur import AugurData
-from ..data.character import CharacterData
-from ..data.cls import ClassData
-from ..data.crit import CritTableData
-from ..data.occupation import OccupationData
-from ..utils import (
+from initbot.data.ability import AbilityData, AbilityModifierData
+from initbot.data.augur import AugurData
+from initbot.data.character import CharacterData
+from initbot.data.cls import ClassData
+from initbot.data.crit import CritTableData
+from initbot.data.occupation import OccupationData
+from initbot.utils import (
     get_exact_or_unique_prefix_match,
     get_first_set_match,
     get_first_set_match_or_over_under_flow,

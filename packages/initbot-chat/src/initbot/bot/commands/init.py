@@ -5,8 +5,8 @@ from discord import Embed  # type: ignore
 from discord.ext import commands
 from initbot.models.roll import NerdDiceRoll  # type: ignore
 
-from ...utils import is_int
-from .character import CharacterData, Character, characters
+from initbot.utils import is_int
+from initbot.bot.commands.character import CharacterData, Character, characters
 
 
 @commands.command(usage="[character name] initiative *or* initiative [character name]")

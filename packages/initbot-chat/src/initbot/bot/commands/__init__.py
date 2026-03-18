@@ -1,17 +1,17 @@
 from collections.abc import Set
 from typing import Any
 
-from .ability import abl, abls, mod, mods
-from .augur import augur, augurs
-from .character import char, chars, new, park, play, remove, set_
-from .cls import classes, cls
-from .crit import crit
-from .init import inis, init
-from .levels import levels
-from .luck import luck
-from .occupation import occupations
-from .roll import roll
-from .tarot import tarot
+from initbot.bot.commands.ability import abl, abls, mod, mods
+from initbot.bot.commands.augur import augur, augurs
+from initbot.bot.commands.character import char, chars, new, park, play, remove, set_
+from initbot.bot.commands.cls import classes, cls
+from initbot.bot.commands.crit import crit
+from initbot.bot.commands.init import inis, init
+from initbot.bot.commands.levels import levels
+from initbot.bot.commands.luck import luck
+from initbot.bot.commands.occupation import occupations
+from initbot.bot.commands.roll import roll
+from initbot.bot.commands.tarot import tarot
 
 commands: Set[Any] = frozenset(
     (

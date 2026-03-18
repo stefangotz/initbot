@@ -3,7 +3,7 @@ import logging
 from discord.ext import commands  # type: ignore
 
 from initbot.models.roll import NerdDiceRoll
-from .character import CharacterData
+from initbot.bot.commands.character import CharacterData
 
 
 @commands.command()

@@ -23,8 +23,8 @@ from starlette.templating import Jinja2Templates
 
 from initbot.state.factory import create_state_from_source
 
-from .config import WebSettings
-from .routes.tracker import make_routes
+from initbot.web.config import WebSettings
+from initbot.web.routes.tracker import make_routes
 
 
 def create_app(settings: WebSettings | None = None) -> Starlette:

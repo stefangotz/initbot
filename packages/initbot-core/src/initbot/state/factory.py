@@ -2,9 +2,9 @@ from collections.abc import Mapping, Set
 from itertools import chain
 from typing import Callable, Final
 
-from .local import LocalState
-from .sql import SqlState
-from .state import State
+from initbot.state.local import LocalState
+from initbot.state.sql import SqlState
+from initbot.state.state import State
 
 _STATE_CLASSES: Final[Set[type[State]]] = frozenset({LocalState, SqlState})
 _FACTORIES: Final[Mapping[str, Callable[[str], State]]] = dict(

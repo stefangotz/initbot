@@ -3,10 +3,10 @@ from itertools import product
 from discord.ext.commands import Bot
 from discord import Intents
 
-from .config import CFG
-from .commands import commands
-from ..state.factory import create_state_from_source
-from ..models.roll import render_dice_rolls_in_text, contains_dice_rolls
+from initbot.bot.config import CFG
+from initbot.bot.commands import commands
+from initbot.state.factory import create_state_from_source
+from initbot.models.roll import render_dice_rolls_in_text, contains_dice_rolls
 
 intents = Intents.default()
 intents.message_content = True

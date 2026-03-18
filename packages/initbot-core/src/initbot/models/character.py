@@ -4,13 +4,13 @@ import random
 
 from initbot.data.cls import ClassData
 
-from ..data.ability import AbilityScoreData
-from ..data.augur import AugurData
-from ..data.character import CharacterData
-from ..data.occupation import OccupationData
-from ..state.state import State
-from ..utils import get_unique_prefix_match
-from .roll import NerdDiceRoll
+from initbot.data.ability import AbilityScoreData
+from initbot.data.augur import AugurData
+from initbot.data.character import CharacterData
+from initbot.data.occupation import OccupationData
+from initbot.state.state import State
+from initbot.utils import get_unique_prefix_match
+from initbot.models.roll import NerdDiceRoll
 
 
 class Character:

@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Union
 
-from ..base import BaseData
+from initbot.base import BaseData
 
 
 # pylint: disable=R0801
