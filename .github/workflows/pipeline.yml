@@ -30,9 +30,9 @@ jobs:
       - name: black
         run: |
           .venv/bin/black --check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
-      - name: flake8
+      - name: ruff
         run: |
-          .venv/bin/flake8 packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
+          .venv/bin/ruff check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
       - name: zizmor
         run: |
           .venv/bin/zizmor .github/workflows/
