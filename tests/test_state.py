@@ -6,7 +6,7 @@
 from pathlib import Path
 import unittest
 
-from initbot.state.factory import create_state_from_source
+from initbot_core.state.factory import create_state_from_source
 
 
 class Test(unittest.TestCase):

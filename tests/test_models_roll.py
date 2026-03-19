@@ -6,7 +6,7 @@
 import re
 import unittest
 
-from initbot.models.roll import render_dice_rolls
+from initbot_core.models.roll import render_dice_rolls
 
 
 class TestModelsRolls(unittest.TestCase):

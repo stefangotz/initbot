@@ -4,8 +4,8 @@
 
 from starlette.testclient import TestClient
 
-from initbot.web.app import create_app
-from initbot.web.config import WebSettings
+from initbot_web.app import create_app
+from initbot_web.config import WebSettings
 
 
 def test_tracker_page(tmp_path):

@@ -6,8 +6,8 @@ import shutil
 
 import pytest
 
-from initbot.data.character import CharacterData
-from initbot.state.factory import create_state_from_source
+from initbot_core.data.character import CharacterData
+from initbot_core.state.factory import create_state_from_source
 from tests.helpers import DATA_DIR, REFERENCE_FILES
 
 

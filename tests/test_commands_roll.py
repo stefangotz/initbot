@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from initbot.bot.commands.roll import roll
+from initbot_chat.commands.roll import roll
 
 
 @pytest.fixture(name="roll_ctx")

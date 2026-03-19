@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from initbot.state.factory import create_state_from_source
+from initbot_core.state.factory import create_state_from_source
 from tests.helpers import DATA_DIR, REFERENCE_FILES
 
 

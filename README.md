@@ -71,9 +71,9 @@ In addition to `.env` files, parameters can be supplied via:
 - environment variables: `export token=123; ./tools/run_chat.sh`
 
 Supported parameters are listed in
-[`packages/initbot-chat/src/initbot/bot/config.py`](packages/initbot-chat/src/initbot/bot/config.py)
+[`packages/initbot-chat/src/initbot_chat/config.py`](packages/initbot-chat/src/initbot_chat/config.py)
 and
-[`packages/initbot-web/src/initbot/web/config.py`](packages/initbot-web/src/initbot/web/config.py).
+[`packages/initbot-web/src/initbot_web/config.py`](packages/initbot-web/src/initbot_web/config.py).
 You can also run `./tools/run_chat.sh --help` or `./tools/run_web.sh --help`.
 
 ### Containers

@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from initbot.data.character import CharacterData
-from initbot.bot.commands.character import chars, char, char_error, remove, set_
+from initbot_core.data.character import CharacterData
+from initbot_chat.commands.character import chars, char, char_error, remove, set_
 
 
 async def test_chars_empty_state(mock_ctx):
