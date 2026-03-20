@@ -49,9 +49,9 @@ class Character:  # pylint: disable=too-many-public-methods
     @property
     def ability_scores(self) -> Sequence[AbilityScoreData]:
         return tuple(
-            AbilityScoreData(abl=abl, score=vars(self.cdi)[abl.name.lower()])
+            AbilityScoreData(abl=abl, score=getattr(self.cdi, abl.name.lower()))
             for abl in self._state.abilities.get_all()
-            if vars(self.cdi).get(abl.name.lower())
+            if getattr(self.cdi, abl.name.lower(), None)
         )
 
     def _get_ability_score(self, prefix: str) -> AbilityScoreData:

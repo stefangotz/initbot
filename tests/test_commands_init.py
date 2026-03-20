@@ -30,10 +30,8 @@ async def test_init_value_first(mock_ctx):
 
 
 async def test_init_auto_roll(mock_ctx):
-    # Set initiative_modifier directly so auto-roll works in both JSON and SQLite backends.
-    # (The agility-based path uses vars() which doesn't work on Peewee model instances.)
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser", initiative_modifier=0)
+        CharacterData(name="Mel", user="testuser", agility=14)
     )
     await init.callback(mock_ctx)
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
