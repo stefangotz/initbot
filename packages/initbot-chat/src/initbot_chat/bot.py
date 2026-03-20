@@ -41,7 +41,9 @@ async def on_message(message):
         for prefixed_command in prefixed_commands
     )
 
-    if contains_dice_rolls(message.content):
+    if len(
+        message.content
+    ) <= CFG.max_inline_roll_message_length and contains_dice_rolls(message.content):
         result_text = render_dice_rolls_in_text(message.content)
     else:
         result_text = message.content

@@ -21,6 +21,10 @@ class Settings(BaseSettings):
         default="json:./",
         description="The data store that contains the bot state. This is a URI that specifies the type of data store and the location of the data store. The default is 'json:./' which maintains the state as a set of JSON files in the current working directory.",
     )
+    max_inline_roll_message_length: int = Field(
+        default=90,
+        description="Messages longer than this number of characters will not have dice roll expressions expanded inline. This prevents the bot from expanding dice-roll-like expressions in longer, non-game messages.",
+    )
 
 
 CFG = Settings(_env_file=[".env", ".env.chat"], _env_file_encoding="utf-8", _cli_parse_args=True)  # type: ignore
