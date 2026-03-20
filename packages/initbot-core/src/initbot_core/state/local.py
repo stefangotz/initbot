@@ -2,21 +2,20 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import logging
+import time
 from collections.abc import Mapping, MutableSequence, Sequence, Set
 from dataclasses import asdict
-import logging
 from pathlib import Path
-import time
 from typing import Any, Final, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from initbot_core.data.cls import ClassData
-from initbot_core.data.crit import CritTableData
-
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
 from initbot_core.data.character import CharacterData
+from initbot_core.data.cls import ClassData
+from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
 from initbot_core.state.state import (
     AbilityState,

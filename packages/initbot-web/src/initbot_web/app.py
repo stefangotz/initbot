@@ -9,7 +9,6 @@ from starlette.applications import Starlette
 from starlette.templating import Jinja2Templates
 
 from initbot_core.state.factory import create_state_from_source
-
 from initbot_web.config import WebSettings
 from initbot_web.routes.tracker import make_routes
 

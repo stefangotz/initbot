@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from collections.abc import Iterable
 import logging
+from collections.abc import Iterable
+
 from discord.ext import commands  # type: ignore
 
-from initbot_core.models.roll import NerdDiceRoll
 from initbot_chat.commands.character import CharacterData
+from initbot_core.models.roll import NerdDiceRoll
 
 
 @commands.command()

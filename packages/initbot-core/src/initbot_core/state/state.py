@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
 from typing import Union
-
-import sys
 
 # pylint: disable=no-name-in-module,wrong-import-position
 if sys.version_info >= (3, 11):

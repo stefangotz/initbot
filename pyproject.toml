@@ -26,8 +26,15 @@ dev = [
     "reuse>=6.2.0",
 ]
 
+[tool.ruff]
+src = [
+    "packages/initbot-core/src",
+    "packages/initbot-chat/src",
+    "packages/initbot-web/src",
+]
+
 [tool.ruff.lint]
-select = ["E", "F", "S"]
+select = ["E", "F", "I", "S"]
 ignore = [
     "E501",   # pre-existing long lines, not in scope here
     "S311",   # random is used for game mechanics (dice, character gen), not security

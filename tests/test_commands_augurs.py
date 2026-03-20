@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from initbot_chat.commands.augur import augurs, augur
+from initbot_chat.commands.augur import augur, augurs
 
 
 async def test_augurs_lists_all(mock_ctx):

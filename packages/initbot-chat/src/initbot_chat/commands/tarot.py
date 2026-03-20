@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from collections.abc import Sequence, Set
 import logging
 import random
+from collections.abc import Sequence, Set
 
 from discord.ext import commands  # type: ignore
 

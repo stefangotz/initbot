@@ -2,19 +2,18 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import random
 from collections.abc import Sequence
 from typing import Union
-import random
-
-from initbot_core.data.cls import ClassData
 
 from initbot_core.data.ability import AbilityScoreData
 from initbot_core.data.augur import AugurData
 from initbot_core.data.character import CharacterData
+from initbot_core.data.cls import ClassData
 from initbot_core.data.occupation import OccupationData
+from initbot_core.models.roll import NerdDiceRoll
 from initbot_core.state.state import State
 from initbot_core.utils import get_unique_prefix_match
-from initbot_core.models.roll import NerdDiceRoll
 
 
 class Character:  # pylint: disable=too-many-public-methods

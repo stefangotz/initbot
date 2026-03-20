@@ -3,19 +3,19 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import dataclasses
-from collections.abc import Sequence, Iterable
-from typing import Any
 import logging
 import random
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from discord.ext import commands  # type: ignore
 
+from initbot_chat.commands.utils import send_in_parts
 from initbot_core.data.character import CharacterData
 from initbot_core.data.occupation import OccupationData
 from initbot_core.models.character import Character
 from initbot_core.models.roll import NerdDiceRoll
 from initbot_core.state.state import State
-from initbot_chat.commands.utils import send_in_parts
 
 
 def characters(state: State) -> Iterable[Character]:

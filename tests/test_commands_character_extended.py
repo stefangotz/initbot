@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from initbot_core.data.character import CharacterData
 from initbot_chat.commands.character import new, park, play
+from initbot_core.data.character import CharacterData
 
 
 async def test_new_creates_character(mock_ctx):

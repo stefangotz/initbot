@@ -2,22 +2,22 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import time
 from collections.abc import Iterable, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
-import time
 from typing import Type, cast
 
 from peewee import (
-    Model,
+    BooleanField,
     CharField,
     CompositeKey,
-    IntegerField,
-    SqliteDatabase,
-    BooleanField,
     Field,
     ForeignKeyField,
+    IntegerField,
+    Model,
+    SqliteDatabase,
 )
 
 from initbot_core.base import BaseData

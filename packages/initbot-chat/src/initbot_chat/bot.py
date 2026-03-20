@@ -4,13 +4,13 @@
 
 from itertools import product
 
-from discord.ext.commands import Bot
 from discord import Intents
+from discord.ext.commands import Bot
 
-from initbot_chat.config import CFG
 from initbot_chat.commands import commands
+from initbot_chat.config import CFG
+from initbot_core.models.roll import contains_dice_rolls, render_dice_rolls_in_text
 from initbot_core.state.factory import create_state_from_source
-from initbot_core.models.roll import render_dice_rolls_in_text, contains_dice_rolls
 
 intents = Intents.default()
 intents.message_content = True

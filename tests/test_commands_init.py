@@ -4,8 +4,8 @@
 
 import time
 
+from initbot_chat.commands.init import inis, init, init_error
 from initbot_core.data.character import CharacterData
-from initbot_chat.commands.init import init, init_error, inis
 
 
 async def test_init_explicit_value(mock_ctx):

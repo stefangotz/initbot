@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from initbot_core.state.factory import create_state_from_source
 

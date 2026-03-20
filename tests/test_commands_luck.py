@@ -4,8 +4,8 @@
 
 from unittest.mock import patch
 
-from initbot_core.data.character import CharacterData
 from initbot_chat.commands.luck import handle_error, luck
+from initbot_core.data.character import CharacterData
 
 
 async def test_luck_no_luck_attribute(mock_ctx):
