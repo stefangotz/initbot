@@ -23,8 +23,8 @@ class Test(unittest.TestCase):
     def _test_state(self, state):
         self.assertIsNotNone(state)
         self.assertIsNotNone(state.abilities)
-        self.assertEqual(len(state.abilities.get_all()), 1)
-        self.assertEqual(len(state.abilities.get_mods()), 1)
+        self.assertEqual(len(state.abilities.get_all()), 6)
+        self.assertEqual(len(state.abilities.get_mods()), 16)
         self.assertIsNotNone(state.augurs)
         self.assertEqual(len(state.augurs.get_all()), 1)
         self.assertIsNotNone(state.characters)

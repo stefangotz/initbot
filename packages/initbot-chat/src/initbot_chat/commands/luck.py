@@ -19,7 +19,7 @@ async def luck(ctx, *args: str):
 
     The command accepts an optional character name and optional dice to roll.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted: `$luck`
+    If the Discord user manages only a single character, the character name is optional and can be omitted: `$luck`
     If the Discord user manages more than one character, the character name is required: `$luck Mediocre Mel`
 
     The character name can be an abbreviation.
@@ -44,7 +44,7 @@ async def luck(ctx, *args: str):
         roll = NerdDiceRoll.create(die).roll_one()
     else:
         raise ValueError(
-            "Character doesn't have a luck attribute value. Set it with `$set {cdi.name} luck 10`"
+            f"Character doesn't have a luck attribute value. Set it with `$set {cdi.name} luck 10`"
         )
 
     if roll <= cdi.luck:

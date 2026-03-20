@@ -17,9 +17,9 @@ from initbot_chat.commands.character import CharacterData, Character, characters
 async def init(ctx, *args: str) -> None:
     """Sets the initiative of a character.
 
-    This sets a character's iniative to the specified *initiative*, primarily so that the *inis* command ranks the character by its initiative.
+    This sets a character's initiative to the specified *initiative*, primarily so that the *inis* command ranks the character by its initiative.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted: `$init 10`
+    If the Discord user manages only a single character, the character name is optional and can be omitted: `$init 10`
     If the Discord user manages more than one character, the character name is required: `$init Mediocre Mel 10`
 
     The character name can be an abbreviation.
@@ -29,10 +29,10 @@ async def init(ctx, *args: str) -> None:
     If there is no character with the given name, a new character with that name is created.
 
     The bot can roll initiative itself with this command.
-    To make that work, the character needs to be set up with all the attributes that impact iniative.
+    To make that work, the character needs to be set up with all the attributes that impact initiative.
     In most cases, one only needs to set their agility: `$set Mediocre Mel agility 10`.
     But the class, birth augur, and other attributes may influence initiative as well.
-    With that set up, make the bot automatically roll initiative simply by omitting the initative value: `$init Mediocre Mel`
+    With that set up, make the bot automatically roll initiative simply by omitting the initiative value: `$init Mediocre Mel`
 
     Thus, in the shortest (and most common case), one can simply use the command `$init` by itself to automatically roll and set a character's initiative.
     """
@@ -85,6 +85,9 @@ async def inis(ctx) -> None:
 
     Use the *init* command to set the initiative value of a character.
     Use the *remove* command to remove a character.
+
+    Only characters whose initiative was set within the last 24 hours are shown.
+    Parked (inactive) characters are excluded. Use the *play* command to reactivate them.
 
     Initiative order is evaluated as per the rules.
     However, this works only as far as the necessary information is available for a character.

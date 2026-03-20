@@ -30,7 +30,12 @@ def characters(state: State) -> Iterable[Character]:
 async def new(ctx: Any, name: str) -> None:
     """Creates a new character with a given name.
 
-    The core attributes of the character are rolled randomly as per standard character creation rules.
+    The core attributes of the character are rolled randomly as per standard character creation rules:
+    - Ability scores (strength, agility, stamina, personality, intelligence, luck): 3d6 each
+    - Hit points: 1d4
+    - Occupation: d100 on the occupation table
+    - Alignment: randomly Lawful, Neutral, or Chaotic
+    - Birth augur: randomly chosen from the augur table
     """
     occupation_roll: int = NerdDiceRoll(100).roll_one()
     occupation: OccupationData = ctx.bot.initbot_state.occupations.get_from_roll(
@@ -68,7 +73,7 @@ async def new(ctx: Any, name: str) -> None:
 async def set_(ctx: Any, *, txt: str) -> None:
     """Sets a character attribute.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages only a single character, the character name is optional and can be omitted.
     If the Discord user manages more than one character, the character name is required.
 
     The character name can be an abbreviation.
@@ -123,7 +128,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
 async def remove(ctx: Any, *args: str) -> None:
     """Removes a character from the bot.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages only a single character, the character name is optional and can be omitted.
     If the Discord user manages more than one character, the character name is required.
 
     The character name can be an abbreviation.
@@ -150,7 +155,7 @@ async def chars(ctx: Any) -> None:
 async def char(ctx: Any, *args: str) -> None:
     """Displays a character.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages only a single character, the character name is optional and can be omitted.
     If the Discord user manages more than one character, the character name is required.
 
     The character name can be an abbreviation.
@@ -166,7 +171,7 @@ async def char(ctx: Any, *args: str) -> None:
 async def park(ctx: Any, *args: str) -> None:
     """Deactivates a character so it is no longer included in the initiative order.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages only a single character, the character name is optional and can be omitted.
     If the Discord user manages more than one character, the character name is required.
 
     The character name can be an abbreviation.
@@ -184,7 +189,7 @@ async def park(ctx: Any, *args: str) -> None:
 async def play(ctx: Any, *args: str) -> None:
     """Activates a character deactivated with the 'park' command so it is included in the initiative order again.
 
-    If the Discord user manages only a single character, the character name is optional and can be ommitted.
+    If the Discord user manages only a single character, the character name is optional and can be omitted.
     If the Discord user manages more than one character, the character name is required.
 
     The character name can be an abbreviation.

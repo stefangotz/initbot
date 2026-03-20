@@ -70,9 +70,9 @@ def test_lookup_by_user(initbot_state):
 
 
 def test_abilities_lookup(initbot_state):
-    result = initbot_state.abilities.get_from_prefix("test")
+    result = initbot_state.abilities.get_from_prefix("Strength")
     assert result is not None
-    assert result.name == "test"
+    assert result.name == "Strength"
 
 
 def test_augur_lookup(initbot_state):

@@ -20,7 +20,7 @@ async def cls(
         description="The name of one of the character classes."
     ),
 ):
-    """Shows details on a class."""
+    """Shows details on a class. The class name must be given in full (unlike most other commands, prefix matching is not supported)."""
     await ctx.send(str(ctx.bot.initbot_state.classes.get_from_name(name))[:2000])
 
 
