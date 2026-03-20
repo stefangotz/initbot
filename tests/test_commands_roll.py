@@ -22,7 +22,7 @@ async def test_roll_single_die(roll_ctx):
     await roll.callback(roll_ctx, "d6")
     roll_ctx.send.assert_called_once()
     msg = roll_ctx.send.call_args[0][0]
-    assert re.search(r"testuser rolled \d+", msg)
+    assert re.search(r"testuser rolled (\*\*\d+\*\* .|\d+)", msg)
 
 
 async def test_roll_multiple_words(roll_ctx):

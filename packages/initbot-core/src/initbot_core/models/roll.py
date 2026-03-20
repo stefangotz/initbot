@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import random
+import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
 from dataclasses import dataclass
 from typing import Type
-import random
-import re
 
 _NERD_DICE_ROLL_PATTERN = re.compile(
     r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
@@ -136,6 +136,27 @@ class NerdDiceRoll(IntDiceRoll):
                 result += "+"
             result += str(self.modifier)
         return result
+
+    def _format_die_value(self, value: int) -> str:
+        if self.dice == 1:
+            if value == self.dice + self.modifier:
+                return f"**{value}** \U0001f480"
+            if value == self.dice * self.sides + self.modifier:
+                return f"**{value}** \U0001f3af"
+        return str(value)
+
+    def roll(self) -> str:
+        rolls = self.roll_all()
+        if self.rolls == 1:
+            if self.dice == 1:
+                return self._format_die_value(rolls[0])
+            return (
+                str(rolls[0])
+                if len(rolls) == 1
+                else f"{sum(rolls)} ({str(list(rolls)).strip('[]')})"
+            )
+        formatted = [self._format_die_value(r) for r in rolls]
+        return f"{sum(rolls)} ({', '.join(formatted)})"
 
     @staticmethod
     def create(spec: str) -> "NerdDiceRoll":
