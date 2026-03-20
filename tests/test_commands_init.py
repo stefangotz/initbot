@@ -6,6 +6,7 @@ import time
 
 from initbot_chat.commands.init import inis, init, init_error
 from initbot_core.data.character import CharacterData
+from initbot_core.models.character import Character
 
 
 async def test_init_explicit_value(mock_ctx):
@@ -35,8 +36,9 @@ async def test_init_auto_roll(mock_ctx):
     )
     await init.callback(mock_ctx)
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
+    modifier = Character(mel, mock_ctx.bot.initbot_state).initiative_modifier
     assert isinstance(mel.initiative, int)
-    assert 1 <= mel.initiative <= 20
+    assert 1 + modifier <= mel.initiative <= 20 + modifier
 
 
 async def test_init_auto_roll_no_agility(mock_ctx):
