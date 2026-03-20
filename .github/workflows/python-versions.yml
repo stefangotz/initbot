@@ -19,3 +19,5 @@ jobs:
           persist-credentials: false
       - name: Check Python version lifecycle
         run: python .github/scripts/check_python_versions.py
+      - name: Check Python version consistency
+        run: pipx run check-python-versions packages/initbot-core packages/initbot-chat packages/initbot-web

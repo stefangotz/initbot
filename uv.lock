@@ -18,6 +18,7 @@ members = [
 [manifest.dependency-groups]
 dev = [
     { name = "black", specifier = ">=24.8.0" },
+    { name = "check-python-versions", specifier = ">=0.24.0" },
     { name = "coverage", specifier = ">=7.6.1" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mypy", specifier = ">=1.11.2" },
@@ -468,6 +469,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/40/65/e7c6c77d7aaa4c0d7974f2e403e17f0ed2cb0fc135f77d686b916bf1eead/charset_normalizer-3.4.5-cp314-cp314-win_amd64.whl", hash = "sha256:4481e6da1830c8a1cc0b746b47f603b653dadb690bcd851d039ffaefe70533aa", size = 143511, upload-time = "2026-03-06T06:02:26.195Z" },
     { url = "https://files.pythonhosted.org/packages/ba/91/52b0841c71f152f563b8e072896c14e3d83b195c188b338d3cc2e582d1d4/charset_normalizer-3.4.5-cp314-cp314-win_arm64.whl", hash = "sha256:97ab7787092eb9b50fb47fa04f24c75b768a606af1bcba1957f07f128a7219e4", size = 133775, upload-time = "2026-03-06T06:02:27.473Z" },
     { url = "https://files.pythonhosted.org/packages/c5/60/3a621758945513adfd4db86827a5bafcc615f913dbd0b4c2ed64a65731be/charset_normalizer-3.4.5-py3-none-any.whl", hash = "sha256:9db5e3fcdcee89a78c04dffb3fe33c79f77bd741a624946db2591c81b2fc85b0", size = 55455, upload-time = "2026-03-06T06:03:17.827Z" },
+]
+
+[[package]]
+name = "check-python-versions"
+version = "0.24.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "tomlkit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/e9/2fbfb6d4ae3cf6612803bdd5c2d94a39e186693cdfe2be937fc56e1440ae/check_python_versions-0.24.0.tar.gz", hash = "sha256:991232173aa68ec29668dd08407cb748becdb80b6fb7992b4a6d02a0706b78aa", size = 80266, upload-time = "2025-11-13T13:18:42.668Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/75/2e/afa8a6cd880cd0d39e9d71bbc1e93b17c3d0a8b718bf1df8414dd083c9f9/check_python_versions-0.24.0-py3-none-any.whl", hash = "sha256:2474f3d5b8c68aad583e8c74a42bcd96979c97066aae379484b5e29b883ad24b", size = 57672, upload-time = "2025-11-13T13:18:39.6Z" },
 ]
 
 [[package]]

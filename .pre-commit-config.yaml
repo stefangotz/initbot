@@ -40,6 +40,16 @@ repos:
       - id: reuse
   - repo: local
     hooks:
+      - id: check-python-versions
+        name: check-python-versions
+        entry: uv run check-python-versions
+        language: system
+        args:
+          - packages/initbot-core
+          - packages/initbot-chat
+          - packages/initbot-web
+        pass_filenames: false
+        always_run: true
       - id: pylint
         name: pylint
         entry: uv run pylint
