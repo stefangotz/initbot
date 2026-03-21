@@ -12,7 +12,7 @@ async def test_new_creates_character(mock_ctx):
     names = [c.name for c in characters]
     assert "Newchar" in names
     newchar = next(c for c in characters if c.name == "Newchar")
-    # Ability scores are rolled 3d6 so must be in 3–18
+    # Ability scores are rolled 3d6 so must be in 3-18
     for attr in ("strength", "agility", "stamina", "personality", "intelligence"):
         val = getattr(newchar, attr)
         assert isinstance(val, int), f"{attr} should be an int"

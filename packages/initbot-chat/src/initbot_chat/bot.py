@@ -32,7 +32,7 @@ async def on_message(message):
     prefixes: tuple[str, ...] = tuple(
         p.strip() for p in CFG.command_prefixes.split(",")
     )
-    command_names: tuple[str, ...] = tuple(cmd.name for cmd in commands) + ("help",)
+    command_names: tuple[str, ...] = (*tuple(cmd.name for cmd in commands), "help")
     prefixed_commands: tuple[str, ...] = tuple(
         "".join(parts) for parts in product(prefixes, command_names)
     )
