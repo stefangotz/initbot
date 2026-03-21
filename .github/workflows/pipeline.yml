@@ -55,6 +55,28 @@ jobs:
           api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src,packages/initbot-web/src pytest tests
           .venv/bin/coverage report
 
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+        with:
+          version: "0.10.10"
+          checksum: "3e1027f26ce8c7e4c32e2277a7fed2cb410f2f1f9320d3df97653d40e21f415b"
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync --python 3.14
+      - name: Generate SBOM
+        run: uv run cyclonedx-py environment --of JSON -o bom.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: sbom
+          path: bom.json
+
   docker:
     runs-on: ubuntu-latest
     steps:
