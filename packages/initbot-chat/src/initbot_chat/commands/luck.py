@@ -31,7 +31,7 @@ async def luck(ctx, *args: str):
     This follows the usual notation [dice]d{sides}[+/-mod] to say what kind of die to roll (how many sides), how many of those to roll, and how much bonus to add (or subtract).
     If the dice are omitted from the command, a d20 is assumed.
     """
-    name: Iterable[str] = tuple()
+    name: Iterable[str] = ()
     die: str = "d20"
     if args and NerdDiceRoll.is_valid_spec(args[-1]):
         die = args[-1]
