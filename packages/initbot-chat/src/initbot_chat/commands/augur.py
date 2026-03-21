@@ -6,7 +6,7 @@ import logging
 import random
 from typing import Any
 
-from discord.ext import commands  # type: ignore
+from discord.ext import commands
 
 from initbot_chat.commands.utils import send_in_parts
 

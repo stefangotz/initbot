@@ -4,7 +4,7 @@
 
 import logging
 
-from discord.ext import commands  # type: ignore
+from discord.ext import commands
 
 from initbot_core.data.crit import CritTableData
 from initbot_core.utils import get_first_set_match_or_over_under_flow

@@ -6,7 +6,7 @@ import logging
 import random
 from collections.abc import Sequence, Set
 
-from discord.ext import commands  # type: ignore
+from discord.ext import commands
 
 _STEMS: Set[str] = frozenset(
     {

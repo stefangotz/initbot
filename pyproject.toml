@@ -63,6 +63,7 @@ target-version = ["py310", "py311", "py312", "py313", "py314"]
 
 [tool.mypy]
 check_untyped_defs = true
+warn_unused_ignores = true
 namespace_packages = true
 explicit_package_bases = true
 mypy_path = "packages/initbot-core/src:packages/initbot-chat/src:packages/initbot-web/src"

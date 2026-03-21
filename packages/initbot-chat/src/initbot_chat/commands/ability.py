@@ -4,8 +4,8 @@
 
 import logging
 
-from discord import Embed  # type: ignore
-from discord.ext import commands  # type: ignore
+from discord import Embed
+from discord.ext import commands
 
 from initbot_chat.commands.utils import send_in_parts
 

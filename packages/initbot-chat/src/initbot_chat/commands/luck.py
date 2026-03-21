@@ -5,7 +5,7 @@
 import logging
 from collections.abc import Iterable
 
-from discord.ext import commands  # type: ignore
+from discord.ext import commands
 
 from initbot_chat.commands.character import CharacterData
 from initbot_core.models.roll import NerdDiceRoll

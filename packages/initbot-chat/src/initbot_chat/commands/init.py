@@ -5,11 +5,11 @@
 import logging
 from datetime import datetime
 
-from discord import Embed  # type: ignore
+from discord import Embed
 from discord.ext import commands
 
 from initbot_chat.commands.character import Character, CharacterData, characters
-from initbot_core.models.roll import NerdDiceRoll  # type: ignore
+from initbot_core.models.roll import NerdDiceRoll
 from initbot_core.utils import is_int
 
 

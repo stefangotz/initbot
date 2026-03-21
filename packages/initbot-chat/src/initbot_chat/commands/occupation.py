@@ -4,7 +4,7 @@
 
 import logging
 
-from discord.ext import commands  # type: ignore
+from discord.ext import commands
 
 from initbot_chat.commands.utils import send_in_parts
 
