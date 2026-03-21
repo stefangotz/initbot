@@ -41,7 +41,6 @@ select = ["E", "F", "I", "S", "B", "C4", "UP", "PERF", "RUF"]
 ignore = [
     "E501",   # pre-existing long lines, not in scope here
     "S311",   # random is used for game mechanics (dice, character gen), not security
-    "UP007",  # Union[X, Y] -> X | Y: defer as a separate mechanical cleanup step
 ]
 
 [tool.ruff.lint.per-file-ignores]

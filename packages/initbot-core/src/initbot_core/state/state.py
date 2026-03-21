@@ -5,7 +5,6 @@
 import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
-from typing import Union
 
 # pylint: disable=no-name-in-module,wrong-import-position
 if sys.version_info >= (3, 11):
@@ -84,7 +83,7 @@ class CharacterState(PartialState, ABC):
         return self.get_from_user(user)
 
     def get_from_name(
-        self, name: str, create: bool = False, user: Union[str, None] = None
+        self, name: str, create: bool = False, user: str | None = None
     ) -> CharacterData:
         try:
             return get_exact_or_unique_prefix_match(

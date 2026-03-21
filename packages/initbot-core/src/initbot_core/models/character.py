@@ -4,7 +4,6 @@
 
 import random
 from collections.abc import Sequence
-from typing import Union
 
 from initbot_core.data.ability import AbilityScoreData
 from initbot_core.data.augur import AugurData
@@ -59,7 +58,7 @@ class Character:  # pylint: disable=too-many-public-methods
         )
 
     @property
-    def strength(self) -> Union[AbilityScoreData, None]:
+    def strength(self) -> AbilityScoreData | None:
         try:
             # TO DO: birth augur
             return self._get_ability_score("strength")
@@ -68,7 +67,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return None
 
     @property
-    def agility(self) -> Union[AbilityScoreData, None]:
+    def agility(self) -> AbilityScoreData | None:
         try:
             # TO DO: birth augur
             return self._get_ability_score("agility")
@@ -77,7 +76,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return None
 
     @property
-    def stamina(self) -> Union[AbilityScoreData, None]:
+    def stamina(self) -> AbilityScoreData | None:
         try:
             # TO DO: birth augur
             return self._get_ability_score("stamina")
@@ -86,7 +85,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return None
 
     @property
-    def personality(self) -> Union[AbilityScoreData, None]:
+    def personality(self) -> AbilityScoreData | None:
         try:
             # TO DO: birth augur
             return self._get_ability_score("personality")
@@ -95,7 +94,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return None
 
     @property
-    def intelligence(self) -> Union[AbilityScoreData, None]:
+    def intelligence(self) -> AbilityScoreData | None:
         try:
             # TO DO: birth augur
             return self._get_ability_score("intelligence")
@@ -104,7 +103,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return None
 
     @property
-    def luck(self) -> Union[AbilityScoreData, None]:
+    def luck(self) -> AbilityScoreData | None:
         try:
             return self._get_ability_score("luck")
         except KeyError:
@@ -112,7 +111,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return None
 
     @property
-    def hit_points(self) -> Union[int, None]:
+    def hit_points(self) -> int | None:
         return self.cdi.hit_points
 
     @hit_points.setter
@@ -120,15 +119,15 @@ class Character:  # pylint: disable=too-many-public-methods
         self.cdi.hit_points = hit_points
 
     @property
-    def initiative(self) -> Union[int, None]:
+    def initiative(self) -> int | None:
         return self.cdi.initiative
 
     @property
-    def initiative_time(self) -> Union[int, None]:
+    def initiative_time(self) -> int | None:
         return self.cdi.initiative_time
 
     @property
-    def initiative_modifier(self) -> Union[int, None]:
+    def initiative_modifier(self) -> int | None:
         mod = None
         if self.cdi.initiative_modifier is None:
             # TO DO: roll is modified by two-handed weapon (d16)
@@ -154,7 +153,7 @@ class Character:  # pylint: disable=too-many-public-methods
         self.cdi.initiative_modifier = ini_mod
 
     @property
-    def hit_die(self) -> Union[NerdDiceRoll, None]:
+    def hit_die(self) -> NerdDiceRoll | None:
         if self.cdi.hit_die is not None:
             return NerdDiceRoll(self.cdi.hit_die)
         # TO DO: derive from class
@@ -174,19 +173,19 @@ class Character:  # pylint: disable=too-many-public-methods
         return ini
 
     @property
-    def augur(self) -> Union[AugurData, None]:
+    def augur(self) -> AugurData | None:
         if self.cdi.augur is not None:
             return self._state.augurs.get_from_roll(self.cdi.augur)
         return None
 
     @property
-    def occupation(self) -> Union[OccupationData, None]:
+    def occupation(self) -> OccupationData | None:
         if self.cdi.occupation is not None:
             return self._state.occupations.get_from_roll(self.cdi.occupation)
         return None
 
     @property
-    def cls(self) -> Union[ClassData, None]:
+    def cls(self) -> ClassData | None:
         if self.cdi.cls is not None:
             return self._state.classes.get_from_name(self.cdi.cls)
         return None
@@ -200,5 +199,5 @@ class Character:  # pylint: disable=too-many-public-methods
         self.cdi.active = new
 
     @property
-    def creation_time(self) -> Union[int, None]:
+    def creation_time(self) -> int | None:
         return self.cdi.creation_time
