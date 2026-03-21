@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import asyncio
 import re
+from asyncio import sleep
 from datetime import datetime
 
 from datastar_py import ServerSentEventGenerator as SSE
@@ -14,19 +14,30 @@ from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
 from initbot_core.models.character import Character
+from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
 
 POLL_INTERVAL = 1.5
 STALE_SECONDS = 24 * 3600
 
 
-def make_routes(state: State, templates: Jinja2Templates, secret: str) -> list[Route]:
+def make_routes(
+    state: State,
+    templates: Jinja2Templates,
+    secret: str,
+    vuln_state: VulnerabilityState,
+) -> list[Route]:
     async def tracker_page(request: Request) -> Response:
-        return templates.TemplateResponse(request, "tracker.html", {"secret": secret})
+        return templates.TemplateResponse(
+            request,
+            "tracker.html",
+            {"secret": secret, "has_vulnerabilities": vuln_state.has_vulnerabilities},
+        )
 
     @datastar_response
     async def tracker_sse(request: Request):
         last_snapshot: tuple[tuple[str, int | None], ...] = ()
+        last_vuln = vuln_state.has_vulnerabilities
         while not await request.is_disconnected():
             now = int(datetime.now().timestamp())
             chars = [
@@ -43,12 +54,26 @@ def make_routes(state: State, templates: Jinja2Templates, secret: str) -> list[R
                 last_snapshot = snapshot
                 yield SSE.patch_elements(_render_rows(chars))
 
-            await asyncio.sleep(POLL_INTERVAL)
+            current_vuln = vuln_state.has_vulnerabilities
+            if current_vuln != last_vuln:
+                last_vuln = current_vuln
+                yield SSE.patch_elements(_render_alert(current_vuln))
+
+            await sleep(POLL_INTERVAL)
 
     return [
         Route(f"/s/{secret}/", tracker_page),
         Route(f"/s/{secret}/sse", tracker_sse),
     ]
+
+
+def _render_alert(has_vulnerabilities: bool) -> str:
+    content = (
+        "<p>This application needs to receive a security update.</p>"
+        if has_vulnerabilities
+        else ""
+    )
+    return f'<div id="security-alert">{content}</div>'
 
 
 def _render_rows(chars: list[Character]) -> str:

@@ -13,6 +13,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   </script>
 </head>
 <body>
+  <div id="security-alert">{% if has_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
   <div data-init="@get('/s/{{ secret }}/sse')">
     <table>

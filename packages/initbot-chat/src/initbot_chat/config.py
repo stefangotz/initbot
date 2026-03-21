@@ -25,6 +25,18 @@ class Settings(BaseSettings):
         default=90,
         description="Messages longer than this number of characters will not have dice roll expressions expanded inline. This prevents the bot from expanding dice-roll-like expressions in longer, non-game messages.",
     )
+    alert_channel_id: str = Field(
+        default="",
+        description=(
+            "The numeric ID of the Discord channel where security vulnerability alerts are posted. "
+            "This setting is required. Without it the bot will exit at startup and list all available "
+            "channel IDs to help you configure the correct value. "
+            "To find a channel ID in Discord: enable Developer Mode under User Settings → Advanced, "
+            "then right-click the desired channel and select 'Copy Channel ID'. "
+            "Set this to the exact string 'ignore security vulnerabilities' only if you intentionally "
+            "want to disable security checks and accept the risk of running a bot with known vulnerabilities."
+        ),
+    )
 
 
 CFG = Settings(_env_file=[".env", ".env.chat"], _env_file_encoding="utf-8", _cli_parse_args=True)  # type: ignore
