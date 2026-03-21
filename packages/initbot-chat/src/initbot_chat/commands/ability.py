@@ -7,6 +7,8 @@ import logging
 from discord import Embed  # type: ignore
 from discord.ext import commands  # type: ignore
 
+from initbot_chat.commands.utils import send_in_parts
+
 
 @commands.command()
 async def abls(ctx):
@@ -36,7 +38,11 @@ async def abl(
 @commands.command()
 async def mods(ctx):
     """Lists all ability scores, their corresponding modifiers and, for wizards, the spell count and maximum spell level implied by intelligence."""
-    await ctx.send(str(ctx.bot.initbot_state.abilities.get_mods()))
+    parts = [
+        f"{m.score}: {m.mod:+d} modifier, {m.spells} spells, max spell level {m.max_spell_level}"
+        for m in ctx.bot.initbot_state.abilities.get_mods()
+    ]
+    await send_in_parts(ctx, parts)
 
 
 @commands.command()
@@ -44,7 +50,10 @@ async def mod(
     ctx, score: int = commands.parameter(description="An ability score (3-18).")
 ):
     """Shows details for an ability score. It lists the corresponding modifier and, for wizards, the spell count and maximum spell level implied by intelligence."""
-    await ctx.send(str(ctx.bot.initbot_state.abilities.get_mod_from_score(score)))
+    m = ctx.bot.initbot_state.abilities.get_mod_from_score(score)
+    await ctx.send(
+        f"{m.score}: {m.mod:+d} modifier, {m.spells} spells, max spell level {m.max_spell_level}"
+    )
 
 
 @abls.error
