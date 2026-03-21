@@ -63,6 +63,9 @@ mypy_path = "packages/initbot-core/src:packages/initbot-chat/src:packages/initbo
 module = ["uvicorn", "uvicorn.*"]
 ignore_missing_imports = true
 
+[tool.coverage.report]
+fail_under = 80
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
