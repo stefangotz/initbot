@@ -50,6 +50,8 @@ jobs:
         run: uv run reuse lint
       - name: pip-audit
         run: uv run pip-audit
+      - name: detect-secrets
+        run: git ls-files -z | xargs -0 .venv/bin/detect-secrets-hook --baseline .secrets.baseline
       - name: test
         run: |
           api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src,packages/initbot-web/src pytest tests

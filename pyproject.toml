@@ -27,6 +27,7 @@ dev = [
     "reuse>=6.2.0",
     "mutmut>=2.5",
     "cyclonedx-bom>=7.2.0",
+    "detect-secrets>=1.5",
 ]
 
 [tool.ruff]

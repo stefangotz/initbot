@@ -30,6 +30,11 @@ repos:
           - packages/initbot-chat/src
           - packages/initbot-web/src
         pass_filenames: false
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0  # commit 01886c8a910c64595c47f186ca1ffc0b77fa5458
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
   - repo: https://github.com/hadolint/hadolint
     rev: v2.14.0  # commit 57e1618d78fd469a92c1e584e8c9313024656623
     hooks:
