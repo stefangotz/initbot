@@ -13,7 +13,7 @@ A = TypeVar("A")
 B = TypeVar("B")
 
 
-def is_int(txt: str):
+def is_int(txt: str) -> bool:
     return _INT_PATTERN.match(txt) is not None
 
 

@@ -123,7 +123,7 @@ class NerdDiceRoll(IntDiceRoll):
             + self.modifier
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         result = ""
         if self.rolls != 1:
             result += f"{self.rolls}x"

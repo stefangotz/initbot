@@ -26,7 +26,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return self.cdi.name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name: str) -> None:
         self.cdi.name = name
 
     @property
@@ -34,7 +34,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return self.cdi.level
 
     @level.setter
-    def level(self, level: int):
+    def level(self, level: int) -> None:
         self.cdi.level = level
 
     @property
@@ -42,7 +42,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return self.cdi.user
 
     @user.setter
-    def user(self, user: str):
+    def user(self, user: str) -> None:
         self.cdi.user = user
 
     @property
@@ -116,7 +116,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return self.cdi.hit_points
 
     @hit_points.setter
-    def hit_points(self, hit_points: int):
+    def hit_points(self, hit_points: int) -> None:
         self.cdi.hit_points = hit_points
 
     @property
@@ -150,7 +150,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return mod
 
     @initiative_modifier.setter
-    def initiative_modifier(self, ini_mod: int):
+    def initiative_modifier(self, ini_mod: int) -> None:
         self.cdi.initiative_modifier = ini_mod
 
     @property
@@ -196,7 +196,7 @@ class Character:  # pylint: disable=too-many-public-methods
         return self.cdi.active
 
     @active.setter
-    def active(self, new: bool):
+    def active(self, new: bool) -> None:
         self.cdi.active = new
 
     @property
