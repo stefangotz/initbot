@@ -25,6 +25,7 @@ dev = [
     "types-peewee>=3.17.7.20241017",
     "zizmor>=1.23.1",
     "reuse>=6.2.0",
+    "mutmut>=2.5",
 ]
 
 [tool.ruff]
@@ -73,9 +74,23 @@ ignore_missing_imports = true
 [tool.coverage.report]
 fail_under = 80
 
+[tool.mutmut]
+paths_to_mutate = [
+    "packages/initbot-core/src/",
+    "packages/initbot-chat/src/",
+    "packages/initbot-web/src/",
+]
+tests_dir = ["tests/"]
+pytest_add_cli_args = ["--tb=no", "-q"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = [
+    "packages/initbot-core/src",
+    "packages/initbot-chat/src",
+    "packages/initbot-web/src",
+]
 filterwarnings = [
     "error::DeprecationWarning",
     "error::PendingDeprecationWarning",

@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Mutation Testing
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Weekly on Sunday at 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-testing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+        with:
+          version: "0.10.10"
+          checksum: "3e1027f26ce8c7e4c32e2277a7fed2cb410f2f1f9320d3df97653d40e21f415b"
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync --python 3.14
+      - name: Run mutation testing
+        env:
+          api_key: x
+        run: uv run mutmut run || true
+      - name: Report results
+        run: uv run mutmut results || true
