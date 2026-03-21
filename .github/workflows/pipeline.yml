@@ -72,6 +72,24 @@ jobs:
         run: |
           docker build --target chat -t initbot-chat .
           docker build --target web  -t initbot-web  .
+      - name: "Trivy: scan initbot-chat"
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: initbot-chat
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+      - name: "Trivy: scan initbot-web"
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: initbot-web
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
       - name: "Verify chat: invalid token raises LoginFailure"
         run: |
           output=$(docker run --rm initbot-chat --token 123 2>&1) || true

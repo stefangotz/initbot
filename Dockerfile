@@ -19,7 +19,8 @@ RUN uv venv /app \
     && export VIRTUAL_ENV=/app \
     && uv pip install --no-cache --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
-RUN adduser -u 5678 --disabled-password --gecos "" appuser
+RUN apk upgrade --no-cache \
+    && adduser -u 5678 --disabled-password --gecos "" appuser
 USER appuser
 WORKDIR /home/appuser
 
