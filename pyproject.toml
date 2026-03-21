@@ -35,7 +35,7 @@ src = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "S"]
+select = ["E", "F", "I", "S", "B"]
 ignore = [
     "E501",   # pre-existing long lines, not in scope here
     "S311",   # random is used for game mechanics (dice, character gen), not security
@@ -45,6 +45,9 @@ ignore = [
 "tests/**" = [
     "S101",   # assert is normal pytest syntax
     "S106",   # hardcoded passwords are fine in test fixtures
+]
+"packages/initbot-core/src/initbot_core/state/local.py" = [
+    "B006",   # MutableSequence default in pydantic model is safe; pydantic wraps mutable defaults
 ]
 
 [tool.black]
