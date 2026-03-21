@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import re
-from collections.abc import Iterable, MutableSequence, Sequence
-from typing import Callable, TypeVar
+from collections.abc import Callable, Iterable, MutableSequence, Sequence
+from typing import TypeVar
 
 _INT_PATTERN = re.compile(r"^-?(0|([1-9][0-9]*))$")
 

@@ -7,7 +7,7 @@ from collections.abc import Iterable, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
-from typing import Type, cast
+from typing import Any, cast
 
 from peewee import (
     BooleanField,
@@ -356,7 +356,7 @@ class SqlState(State):
         return {"sqlite"}
 
 
-def _import_from(cls: Type, items: Iterable[BaseData]) -> None:
+def _import_from(cls: type[Any], items: Iterable[BaseData]) -> None:
     cls.insert_many(i.as_dict() for i in items).execute()
 
 

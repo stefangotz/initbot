@@ -7,7 +7,6 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
 from dataclasses import dataclass
-from typing import Type
 
 _NERD_DICE_ROLL_PATTERN = re.compile(
     r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
@@ -80,7 +79,7 @@ class _DiceRoll(ABC):
         pass
 
     @classmethod
-    def is_valid_spec(cls: Type, spec: str) -> bool:
+    def is_valid_spec(cls, spec: str) -> bool:
         try:
             return cls.create(spec) is not None
         except ValueError:
@@ -173,4 +172,4 @@ class NerdDiceRoll(IntDiceRoll):
         raise ValueError(f"'{spec}' is not supported")
 
 
-_DICE_ROLL_CLASSES: Set[Type[_DiceRoll]] = frozenset((NerdDiceRoll,))
+_DICE_ROLL_CLASSES: Set[type[_DiceRoll]] = frozenset((NerdDiceRoll,))

@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from collections.abc import Mapping, Set
+from collections.abc import Callable, Mapping, Set
 from itertools import chain
-from typing import Callable, Final
+from typing import Final
 
 from initbot_core.state.local import LocalState
 from initbot_core.state.sql import SqlState
