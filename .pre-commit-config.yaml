@@ -30,6 +30,10 @@ repos:
           - packages/initbot-chat/src
           - packages/initbot-web/src
         pass_filenames: false
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0  # commit 57e1618d78fd469a92c1e584e8c9313024656623
+    hooks:
+      - id: hadolint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
     rev: v1.23.1
     hooks:
