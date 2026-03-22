@@ -46,6 +46,9 @@ jobs:
       - name: mypy
         run: |
           .venv/bin/mypy packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
+      - name: vulture
+        run: |
+          .venv/bin/vulture
       - name: reuse
         run: uv run reuse lint
       - name: pip-audit

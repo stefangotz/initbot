@@ -28,6 +28,7 @@ dev = [
     "mutmut>=2.5",
     "cyclonedx-bom>=7.2.0",
     "detect-secrets>=1.5",
+    "vulture>=2.14",
 ]
 
 [tool.ruff]
@@ -80,6 +81,14 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["initbot_core.*"]
 disallow_untyped_defs = true
+
+[tool.vulture]
+min_confidence = 80
+paths = [
+    "packages/initbot-core/src",
+    "packages/initbot-chat/src",
+    "packages/initbot-web/src",
+]
 
 [tool.coverage.report]
 fail_under = 80

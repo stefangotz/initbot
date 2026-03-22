@@ -59,6 +59,13 @@ repos:
           - packages/initbot-web
         pass_filenames: false
         always_run: true
+      - id: vulture
+        name: vulture
+        entry: uv run vulture
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
       - id: pylint
         name: pylint
         entry: uv run pylint

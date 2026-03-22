@@ -59,7 +59,7 @@ async def get_vulnerabilities() -> list[tuple[str, str, str]]:
         )
     except URLError as exc:
         _log.debug("Vulnerability check skipped (network error): %s", exc)
-    except Exception as exc:  # pylint: disable=broad-except  # noqa: BLE001
+    except Exception as exc:  # pylint: disable=broad-except
         _log.debug("Vulnerability check failed: %s", exc)
     return []
 
