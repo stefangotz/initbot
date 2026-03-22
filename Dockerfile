@@ -10,24 +10,31 @@ RUN uv build --package initbot-core --wheel \
     && uv build --package initbot-chat --wheel \
     && uv build --package initbot-web --wheel
 
-# Stage 2: install wheels into shared venv
-FROM ghcr.io/astral-sh/uv:python3.14-alpine AS base
+# Stage 2: shared OS configuration (no packages)
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-COPY --from=builder /root/dist/*.whl /tmp/
+RUN apk upgrade --no-cache \
+    && adduser -u 5678 --disabled-password --gecos "" appuser
+
+# Stage 3a: chat bot image (core + chat wheels only)
+FROM runtime-base AS chat
+COPY --from=builder /root/dist/initbot_core-*.whl /root/dist/initbot_chat-*.whl /tmp/
 RUN uv venv /app \
     && export VIRTUAL_ENV=/app \
     && uv pip install --no-cache --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
-RUN apk upgrade --no-cache \
-    && adduser -u 5678 --disabled-password --gecos "" appuser
 USER appuser
 WORKDIR /home/appuser
-
-# Stage 3a: chat bot image
-FROM base AS chat
 ENTRYPOINT ["/app/bin/initbot"]
 
-# Stage 3b: web app image
-FROM base AS web
+# Stage 3b: web app image (core + web wheels only)
+FROM runtime-base AS web
+COPY --from=builder /root/dist/initbot_core-*.whl /root/dist/initbot_web-*.whl /tmp/
+RUN uv venv /app \
+    && export VIRTUAL_ENV=/app \
+    && uv pip install --no-cache --compile-bytecode /tmp/*.whl \
+    && rm /tmp/*.whl
+USER appuser
+WORKDIR /home/appuser
 ENTRYPOINT ["/app/bin/initbot-web"]
