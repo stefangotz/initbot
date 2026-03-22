@@ -39,7 +39,7 @@ src = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "S", "B", "C4", "UP", "PERF", "RUF", "SIM"]
+select = ["E", "F", "I", "S", "B", "C4", "UP", "PERF", "RUF", "SIM", "PT"]
 ignore = [
     "E501",   # pre-existing long lines, not in scope here
     "S311",   # random is used for game mechanics (dice, character gen), not security

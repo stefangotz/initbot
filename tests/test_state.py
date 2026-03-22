@@ -3,35 +3,35 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 
-import unittest
 from pathlib import Path
 
 from initbot_core.state.factory import create_state_from_source
 
 
-class Test(unittest.TestCase):
-    def test_load_json(self):
-        state = create_state_from_source(f"json:{Path(__file__).parent / 'data'}")
-        self._test_state(state)
+def _check_state(state) -> None:
+    assert state is not None
+    assert state.abilities is not None
+    assert len(state.abilities.get_all()) == 6
+    assert len(state.abilities.get_mods()) == 16
+    assert state.augurs is not None
+    assert len(state.augurs.get_all()) == 1
+    assert state.characters is not None
+    assert len(state.characters.get_all()) == 1
+    assert state.classes is not None
+    assert len(state.classes.get_all()) == 1
+    assert state.crits is not None
+    assert len(state.crits.get_all()) == 1
+    assert state.occupations is not None
+    assert len(state.occupations.get_all()) == 1
 
-    def test_load_sqlite(self):
-        state = create_state_from_source(
-            f"sqlite:{Path(__file__).parent / 'data' / 'test.sqlite'}"
-        )
-        self._test_state(state)
 
-    def _test_state(self, state):
-        self.assertIsNotNone(state)
-        self.assertIsNotNone(state.abilities)
-        self.assertEqual(len(state.abilities.get_all()), 6)
-        self.assertEqual(len(state.abilities.get_mods()), 16)
-        self.assertIsNotNone(state.augurs)
-        self.assertEqual(len(state.augurs.get_all()), 1)
-        self.assertIsNotNone(state.characters)
-        self.assertEqual(len(state.characters.get_all()), 1)
-        self.assertIsNotNone(state.classes)
-        self.assertEqual(len(state.classes.get_all()), 1)
-        self.assertIsNotNone(state.crits)
-        self.assertEqual(len(state.crits.get_all()), 1)
-        self.assertIsNotNone(state.occupations)
-        self.assertEqual(len(state.occupations.get_all()), 1)
+def test_load_json():
+    state = create_state_from_source(f"json:{Path(__file__).parent / 'data'}")
+    _check_state(state)
+
+
+def test_load_sqlite():
+    state = create_state_from_source(
+        f"sqlite:{Path(__file__).parent / 'data' / 'test.sqlite'}"
+    )
+    _check_state(state)
