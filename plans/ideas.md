@@ -4,7 +4,6 @@
 - document the need for extra state data from a getting started perspective; also handle its absence gracefully
 - a CI job that checks that tool versions are consistent (and up-to-date?) across pre-commit, uv.lock, and GH actions; or better yet: find a mechanism to merge these tools, such as running CI locally as precommit; or alternatively: find a unified mechanism, such as a shared dev, pre-commit, CI container
 - Does sqlite support listening for events?
-- consider faster alternatives to mypy, possibly zuban
 - claude's /security-review seems to be testing for a whole bunch of typical web vulnerabilities; would be great to have these in CI
 - consider a dev container
 
