@@ -11,6 +11,7 @@ from typing import Any, Final, cast
 
 from pydantic import BaseModel, ConfigDict
 
+from initbot_core.config import CORE_CFG
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
 from initbot_core.data.character import CharacterData
@@ -133,7 +134,7 @@ class LocalCharacterData(LocalBaseModel):
     hit_die: int | None = None
     augur: int | None = None
     cls: str | None = None
-    creation_time: int | None = None
+    last_used: int | None = None
 
 
 class LocalCharactersData(LocalBaseModel):
@@ -152,6 +153,16 @@ class LocalCharacterState(CharacterState):
 
         self._characters: MutableSequence[LocalCharacterData] = chars_data.characters
 
+        # Remove this migration once we can assume that all character data has a last_used timestamp. This is needed to prevent characters from being pruned immediately after the update.
+        grace_ts = int(time.time()) - CORE_CFG.prune_threshold_days * 86400 // 2
+        migrated = False
+        for char in self._characters:
+            if char.last_used is None:
+                char.last_used = grace_ts
+                migrated = True
+        if migrated:
+            self._store()
+
     def get_all(self) -> Sequence[CharacterData]:
         return cast(Sequence[CharacterData], self._characters)
 
@@ -159,7 +170,7 @@ class LocalCharacterState(CharacterState):
         if any(char for char in self.get_all() if char.name == char_data.name):
             raise KeyError(f"Character with name '{char_data.name}' already exists")
         local_char_data = LocalCharacterData(**asdict(char_data))
-        local_char_data.creation_time = int(time.time())
+        local_char_data.last_used = int(time.time())
         self._characters.append(local_char_data)
         self._store()
         return cast(CharacterData, local_char_data)
@@ -181,6 +192,7 @@ class LocalCharacterState(CharacterState):
             raise ValueError(
                 f"Character data is not present in the data store yet; this is not supported: {char_data}"
             )
+        char_data.last_used = int(time.time())
         self._store()
 
     def _store(self) -> None:

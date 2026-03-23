@@ -4,6 +4,7 @@
 
 import logging
 import sys
+from collections import defaultdict
 from itertools import product
 
 from discord import Intents
@@ -13,6 +14,8 @@ from discord.ext.commands import Bot
 
 from initbot_chat.commands import commands
 from initbot_chat.config import CFG
+from initbot_core.config import CORE_CFG
+from initbot_core.data.character import is_eligible_for_pruning
 from initbot_core.models.roll import contains_dice_rolls, render_dice_rolls_in_text
 from initbot_core.security import get_vulnerabilities
 from initbot_core.state.factory import create_state_from_source
@@ -46,6 +49,46 @@ async def _vulnerability_check() -> None:
     await channel.send("This application needs to receive a security update.")
 
 
+async def _send_pruning_notifications(guilds, state) -> None:
+    """Send pruning reminder DMs to all players with eligible characters."""
+    threshold = CORE_CFG.prune_threshold_days
+    by_user: dict[str, list] = defaultdict(list)
+    for cdi in state.characters.get_all():
+        if is_eligible_for_pruning(cdi, threshold):
+            by_user[cdi.user].append(cdi)
+
+    for username, chars in by_user.items():
+        member = None
+        for guild in guilds:
+            member = guild.get_member_named(username)
+            if member:
+                break
+        if not member:
+            _log.warning(
+                "Could not find guild member for pruning notification: %s", username
+            )
+            continue
+        names_list = "\n".join(f"- {c.name}" for c in chars)
+        try:
+            await member.send(
+                f"Hi! The following characters you own haven't been used in over "
+                f"{threshold} days:\n{names_list}\n\n"
+                f"You have a few options:\n"
+                f"1. Do nothing — you'll get another reminder next month.\n"
+                f"2. Use `$prune` to remove all your unused characters.\n"
+                f"3. Use `$remove <character name>` to remove a character.\n"
+                f"4. Use `$touch <character name>` to mark a character as recently used "
+                f"if you'd like to keep it."
+            )
+        except Exception:  # pylint: disable=broad-except
+            _log.warning("Could not send pruning notification DM to %s", username)
+
+
+@tasks.loop(hours=24 * 30)
+async def _pruning_notification() -> None:
+    await _send_pruning_notifications(bot.guilds, bot.initbot_state)  # type: ignore
+
+
 def _print_channel_diagnostic() -> None:
     print(
         "\nERROR: 'alert_channel_id' is not configured or refers to an unknown channel.\n"
@@ -76,6 +119,9 @@ def _print_channel_diagnostic() -> None:
 async def on_ready():
     global _STARTUP_FAILED  # pylint: disable=global-statement
     print(f"Logged in as {bot.user}")
+
+    if not _pruning_notification.is_running():
+        _pruning_notification.start()
 
     if CFG.alert_channel_id == _IGNORE_SENTINEL:
         _log.warning(

@@ -21,6 +21,7 @@ from peewee import (
 )
 
 from initbot_core.base import BaseData
+from initbot_core.config import CORE_CFG
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
 from initbot_core.data.character import CharacterData
@@ -117,7 +118,7 @@ class _SqlCharacterData(Model):
     hit_die = IntegerField(null=True)
     augur = IntegerField(null=True)
     cls = CharField(null=True)
-    creation_time = IntegerField(null=True)
+    last_used = IntegerField(null=True)
 
 
 class _SqlCharacterState(CharacterState):
@@ -125,7 +126,7 @@ class _SqlCharacterState(CharacterState):
         return cast(Sequence[CharacterData], tuple(_SqlCharacterData.select()))
 
     def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
-        char_data.creation_time = int(time.time())
+        char_data.last_used = int(time.time())
         return cast(
             CharacterData,
             _SqlCharacterData.create(
@@ -144,6 +145,7 @@ class _SqlCharacterState(CharacterState):
                 f"Only character data returned by the State class can be updated: {char_data}"
             )
         obj = cast(_SqlCharacterData, char_data)
+        obj.last_used = int(time.time())
         meta = type(obj)._meta  # pylint: disable=protected-access
         pk_name = meta.primary_key.name
         fields_to_update = {
@@ -318,13 +320,24 @@ class SqlState(State):
         self._db.bind(data_classes)
         self._db.create_tables(data_classes)
 
-        # migration: add creation_time
+        # migration: rename creation_time -> last_used
         with self._db.connection_context():
             cursor = self._db.execute_sql("PRAGMA table_info(_sqlcharacterdata);")
             columns = [row[1] for row in cursor.fetchall()]
-            if "creation_time" not in columns:
+            if "creation_time" in columns and "last_used" not in columns:
                 self._db.execute_sql(
-                    "ALTER TABLE _sqlcharacterdata ADD COLUMN creation_time INTEGER DEFAULT NULL;"
+                    "ALTER TABLE _sqlcharacterdata ADD COLUMN last_used INTEGER DEFAULT NULL;"
+                )
+                half_threshold_ago = (
+                    int(time.time()) - CORE_CFG.prune_threshold_days * 86400 // 2
+                )
+                self._db.execute_sql(
+                    "UPDATE _sqlcharacterdata SET last_used = ? WHERE last_used IS NULL;",
+                    (half_threshold_ago,),
+                )
+            elif "last_used" not in columns:
+                self._db.execute_sql(
+                    "ALTER TABLE _sqlcharacterdata ADD COLUMN last_used INTEGER DEFAULT NULL;"
                 )
 
     @property

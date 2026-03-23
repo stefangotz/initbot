@@ -1,0 +1,11 @@
+{
+    "characters": [
+        {
+            "name": "OldChar",
+            "user": "alice",
+            "active": true,
+            "level": 0,
+            "creation_time": 1000000
+        }
+    ]
+}

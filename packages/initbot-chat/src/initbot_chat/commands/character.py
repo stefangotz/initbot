@@ -11,7 +11,8 @@ from typing import Any
 from discord.ext import commands
 
 from initbot_chat.commands.utils import send_in_parts
-from initbot_core.data.character import CharacterData
+from initbot_core.config import CORE_CFG
+from initbot_core.data.character import CharacterData, is_eligible_for_pruning
 from initbot_core.data.occupation import OccupationData
 from initbot_core.models.character import Character
 from initbot_core.models.roll import NerdDiceRoll
@@ -96,7 +97,9 @@ async def set_(ctx: Any, *, txt: str) -> None:
         name_tokens, ctx.author.name
     )
     attr = attr.lower()
-    char_fields = [f.name for f in dataclasses.fields(CharacterData)]
+    char_fields = [
+        f.name for f in dataclasses.fields(CharacterData) if f.name != "last_used"
+    ]
     candidates: Sequence[str] = []
     if attr in char_fields:
         candidates = [attr]
@@ -203,6 +206,75 @@ async def play(ctx: Any, *args: str) -> None:
     await ctx.send(f"{cdi.name} is now active", delete_after=3)
 
 
+@commands.command(usage="[all_players]")
+async def unused(ctx: Any, *args: str) -> None:
+    """Lists characters that haven't been used in a while and might be worth removing.
+
+    By default, this command only lists the requesting player's own characters.
+    Pass 'all_players' to list eligible characters belonging to any player."""
+    show_all = "all_players" in args
+    threshold = CORE_CFG.prune_threshold_days
+    eligible = [
+        cdi
+        for cdi in ctx.bot.initbot_state.characters.get_all()
+        if is_eligible_for_pruning(cdi, threshold)
+        and (show_all or cdi.user == ctx.author.name)
+    ]
+    if not eligible:
+        await ctx.send("You don't seem to have any unused characters.", delete_after=5)
+        return
+    parts = (f"- **{cdi.name}** (_{cdi.user}_)\n" for cdi in eligible)
+    await send_in_parts(ctx, parts)
+
+
+@commands.command(usage="[all_players]")
+async def prune(ctx: Any, *args: str) -> None:
+    """Removes all characters that haven't been used in a while.
+
+    By default, only prunes the requesting player's own characters.
+    Pass 'all_players' to prune unused characters belonging to any player.
+    Replies with the names of the pruned characters."""
+    show_all = "all_players" in args
+    threshold = CORE_CFG.prune_threshold_days
+    to_prune = [
+        cdi
+        for cdi in ctx.bot.initbot_state.characters.get_all()
+        if is_eligible_for_pruning(cdi, threshold)
+        and (show_all or cdi.user == ctx.author.name)
+    ]
+    for cdi in to_prune:
+        ctx.bot.initbot_state.characters.remove_and_store(cdi)
+    if not to_prune:
+        await ctx.send("No characters to prune.", delete_after=5)
+        return
+    await ctx.send("Pruned: " + ", ".join(cdi.name for cdi in to_prune))
+
+
+@commands.command(usage="[character name] [character name ...]")
+async def touch(ctx: Any, *args: str) -> None:
+    """Marks one or more characters as recently used, so they are not considered for pruning.
+
+    Each argument is treated as a separate character name or abbreviation.
+    If the Discord user manages only a single character, the character name is optional.
+
+    The character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
+    That's as long as no other character name starts with "Med"."""
+    tokens: tuple = args if args else ((),)
+    touched = []
+    for token in tokens:
+        name_arg = (token,) if token else ()
+        cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+            name_arg, ctx.author.name
+        )
+        ctx.bot.initbot_state.characters.update_and_store(cdi)
+        touched.append(cdi.name)
+    await ctx.send(
+        "Marked as recently used: " + ", ".join(touched),
+        delete_after=3,
+    )
+
+
 @new.error
 @set_.error
 @remove.error
@@ -210,6 +282,9 @@ async def play(ctx: Any, *args: str) -> None:
 @char.error
 @park.error
 @play.error
+@unused.error
+@prune.error
+@touch.error
 async def char_error(ctx, error):
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

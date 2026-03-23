@@ -198,5 +198,5 @@ class Character:  # pylint: disable=too-many-public-methods
         self.cdi.active = new
 
     @property
-    def creation_time(self) -> int | None:
-        return self.cdi.creation_time
+    def last_used(self) -> int | None:
+        return self.cdi.last_used

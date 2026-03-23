@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -33,4 +34,11 @@ class CharacterData(BaseData):
     hit_die: int | None = None
     augur: int | None = None
     cls: str | None = None
-    creation_time: int | None = None
+    last_used: int | None = None
+
+
+def is_eligible_for_pruning(cdi: CharacterData, threshold_days: int) -> bool:
+    """Returns True if the character has not been used recently enough."""
+    if cdi.last_used is None:
+        return True
+    return cdi.last_used < int(time.time()) - threshold_days * 86400

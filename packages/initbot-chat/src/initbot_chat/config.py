@@ -9,6 +9,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    model_config = {"extra": "ignore"}
+
     token: str = Field(
         default="",
         description="The Discord bot token. This is required to authenticate the bot with Discord. There are a lot of online resources on how to create a bot token.",

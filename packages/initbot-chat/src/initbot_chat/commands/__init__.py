@@ -7,7 +7,18 @@ from typing import Any
 
 from initbot_chat.commands.ability import abl, abls, mod, mods
 from initbot_chat.commands.augur import augur, augurs
-from initbot_chat.commands.character import char, chars, new, park, play, remove, set_
+from initbot_chat.commands.character import (
+    char,
+    chars,
+    new,
+    park,
+    play,
+    prune,
+    remove,
+    set_,
+    touch,
+    unused,
+)
 from initbot_chat.commands.cls import classes, cls
 from initbot_chat.commands.crit import crit
 from initbot_chat.commands.init import inis, init
@@ -38,9 +49,12 @@ commands: Set[Any] = frozenset(
         occupations,
         park,
         play,
+        prune,
         remove,
         roll,
         set_,
+        touch,
+        unused,
         tarot,
     )
 )
