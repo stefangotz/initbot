@@ -35,6 +35,7 @@ class CharacterData(BaseData):
     augur: int | None = None
     cls: str | None = None
     last_used: int | None = None
+    player_id: int | None = None
 
 
 def is_eligible_for_pruning(cdi: CharacterData, threshold_days: int) -> bool:

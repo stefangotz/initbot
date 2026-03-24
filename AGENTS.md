@@ -13,6 +13,7 @@ Both applications access the same central data and storage model.
 - gh CLI available
 - precommit hooks cover code formatting and code quality
 - CI/CD jobs cover additional code quality and maintenance aspects
+- do not add Co-Authored-By lines or similar attributions to commit messages
 
 ## Planning Workflow
 
@@ -28,13 +29,16 @@ Therefore, use feature branches, but do not use pull requests when implementing 
 The standard workflow has the following steps:
 
 - obtain instructions for what to change from the user
-- if you are asked to implement a plan with multiple steps or phases, follow this workflow separately (with separate feature branches) for each step or phase
 - create a feature branch
 - do not create a pull request for the feature branch
-- implement the changes
-- commit, push, and monitor CI/CD results (via `gh run watch` or `gh run list`) until they pass
-- squash all feature-branch commits unless the user's instruction say not to squash commits
+- take the following actions for each step of the instructions or the plan (there may be only one step):
+  - implement the changes
+  - commit, push, and monitor CI/CD results (via `gh run watch` or `gh run list`) until they pass
+  - if you are working off a plan file, mark the step as done in the plan file
+  - if the step required multiple commits to get right, squash them into a single commit for this step
+  - ask the user for a review before proceeding to the next step
+- once all steps are complete, squash all feature-branch commits unless the user's instruction say not to squash commits
 - rebase the feature branch onto the latest version of the main branch
-- ask the user for review
-- if the user approves of the changes, ask the user if it is OK to mark the given step or phase as complete in the plan file or to delete the plan if it is fully implemented
+- ask the user for a review
+- once the user approves of the changes, delete the plan file if you are working off a plan file
 - unless the user instructs you otherwise, the user usually takes care of merging the feature branch into the main branch

@@ -13,15 +13,17 @@ players know who owns what. Storing both ID and name redundantly on every `Chara
 row would work but is structurally wrong: if a player has five characters, their name is
 stored five times with no single update point.
 
-The right fix is a `PlayerData` entity: one record per Discord user, holding their
-snowflake ID and current display name. Characters reference it by ID. The display name is
-refreshed on every command invocation, so it stays current without any explicit sync step.
+The right fix is a `PlayerData` entity: one record per Discord user, holding an internal
+primary key (`id`), the Discord snowflake (`discord_id`), and the current display name.
+Characters reference it by the internal `id` — not by `discord_id` — so the data model
+has no structural dependency on Discord. The display name is refreshed on every command
+invocation, so it stays current without any explicit sync step.
 
 ---
 
 ## Stage 1 — `PlayerData` entity and `PlayerState` (core only)
 
-- [ ] Complete
+- [x] Complete
 
 **Goal:** Introduce the new entity and its storage layer. No behaviour change anywhere else.
 
@@ -31,29 +33,36 @@ refreshed on every command invocation, so it stays current without any explicit 
 ```python
 @dataclass
 class PlayerData(BaseData):
-    discord_id: int   # Discord snowflake — primary key
+    id: int           # Internal primary key, auto-assigned; used as FK by other entities
+    discord_id: int   # Discord snowflake, unique but not the primary key
     name: str         # Display name, refreshed on each command invocation
 ```
 
 **`state/state.py`**
 Add abstract `PlayerState`:
 - `upsert(discord_id: int, name: str) -> PlayerData`
-- `get_from_id(discord_id: int) -> PlayerData | None`
+- `get_from_id(player_id: int) -> PlayerData | None` — look up by internal ID
+- `get_from_discord_id(discord_id: int) -> PlayerData | None` — look up by Discord snowflake
 - `get_all() -> Sequence[PlayerData]`
 
 Add `players: PlayerState` property to `State`.
 
 **`state/local.py`**
-Implement `PlayerState` backed by `players.json`. Upsert by `discord_id`.
+Implement `PlayerState` backed by `players.json`. Upsert by `discord_id`; auto-increment
+`id` from the current max.
 
 **`state/sql.py`**
-Add `_SqlPlayerData` Peewee model (`discord_id` integer primary key, `name` text).
-Implement `PlayerState` against that table.
+Add `_SqlPlayerData` Peewee model (`id` AutoField primary key, `discord_id` unique integer,
+`name` text). Implement `PlayerState` against that table.
 
 ### Tests
 - `test_player_upsert_creates_record`
 - `test_player_upsert_updates_name_on_second_call`
+- `test_player_upsert_assigns_unique_ids`
+- `test_player_get_from_id_returns_record`
 - `test_player_get_from_id_returns_none_when_missing`
+- `test_player_get_from_discord_id_returns_record`
+- `test_player_get_from_discord_id_returns_none_when_missing`
 - Run against both JSON and SQL backends via the existing fixture pattern.
 
 ### Validation
@@ -63,7 +72,7 @@ Implement `PlayerState` against that table.
 
 ## Stage 2 — Add `player_id` to `CharacterData`
 
-- [ ] Complete
+- [x] Complete
 
 **Goal:** Extend the character schema with a nullable foreign key. No backfill yet.
 
@@ -94,7 +103,7 @@ column-existence check, same pattern as the existing `creation_time → last_use
 
 ## Stage 3 — `sync_player` helper, backfill, and display update (chat layer)
 
-- [ ] Complete
+- [x] Complete
 
 **Goal:** Start populating `player_id` on characters as players use commands, and switch
 character displays to show the name from `PlayerData`.
@@ -108,7 +117,7 @@ def sync_player(state: State, ctx: Context) -> PlayerData:
     player = state.players.upsert(discord_id=ctx.author.id, name=ctx.author.name)
     for cdi in state.characters.get_all():
         if cdi.player_id is None and cdi.user == ctx.author.name:
-            cdi.player_id = player.discord_id
+            cdi.player_id = player.id
             state.characters.update_and_store(cdi)
     return player
 ```
@@ -134,20 +143,21 @@ to `cdi.user`.
 
 ## Stage 4 — Access control and pruning notification
 
-- [ ] Complete
+- [x] Complete
 
 **Goal:** Use `player_id` for ownership checks and reliable Discord member lookup.
 
 ### Changes
 
 **`commands/character.py`** — access control
+`sync_player` is called at the top of each handler and returns the current `PlayerData`.
 Replace `cdi.user == ctx.author.name` with:
 ```python
-cdi.player_id == ctx.author.id if cdi.player_id is not None else cdi.user == ctx.author.name
+cdi.player_id == player.id if cdi.player_id is not None else cdi.user == ctx.author.name
 ```
 
 **`state/state.py`** — `get_from_user` / `get_from_tokens`
-Add `get_from_player_id(discord_id: int) -> CharacterData` to `CharacterState` for the
+Add `get_from_player_id(player_id: int) -> CharacterData` to `CharacterState` for the
 no-argument auto-select case; fall back to prefix-matching on `user` for legacy characters.
 
 **`bot.py`** — pruning notification

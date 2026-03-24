@@ -10,7 +10,7 @@ from typing import Any
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import send_in_parts
+from initbot_chat.commands.utils import player_name, send_in_parts, sync_player
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, is_eligible_for_pruning
 from initbot_core.data.occupation import OccupationData
@@ -38,6 +38,7 @@ async def new(ctx: Any, name: str) -> None:
     - Alignment: randomly Lawful, Neutral, or Chaotic
     - Birth augur: randomly chosen from the augur table
     """
+    sync_player(ctx.bot.initbot_state, ctx)
     occupation_roll: int = NerdDiceRoll(100).roll_one()
     occupation: OccupationData = ctx.bot.initbot_state.occupations.get_from_roll(
         occupation_roll
@@ -85,6 +86,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
     You can list all character attributes with the `char` command.
     You do not need to spell out the full attribute name as the first few unique letters are good enough (e.g., "int" for "intelligence")
     """
+    player = sync_player(ctx.bot.initbot_state, ctx)
     tokens = txt.split()
     if len(tokens) < 2:
         raise ValueError(
@@ -94,7 +96,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
     attr = tokens[-2]
     name_tokens = tokens[0:-2]
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name_tokens, ctx.author.name
+        name_tokens, ctx.author.name, player_id=player.id
     )
     attr = attr.lower()
     char_fields = [
@@ -137,8 +139,9 @@ async def remove(ctx: Any, *args: str) -> None:
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name
+        args, ctx.author.name, player_id=player.id
     )
     ctx.bot.initbot_state.characters.remove_and_store(cdi)
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
@@ -147,9 +150,11 @@ async def remove(ctx: Any, *args: str) -> None:
 @commands.command()
 async def chars(ctx: Any) -> None:
     """Displays all characters known to the bot."""
+    sync_player(ctx.bot.initbot_state, ctx)
+    state = ctx.bot.initbot_state
     parts = (
-        f"- {idx}: **{cdi.name}** (_{cdi.user}_)\n"
-        for idx, cdi in enumerate(ctx.bot.initbot_state.characters.get_all())
+        f"- {idx}: **{cdi.name}** (_{player_name(state, cdi)}_)\n"
+        for idx, cdi in enumerate(state.characters.get_all())
     )
     await send_in_parts(ctx, parts)
 
@@ -164,8 +169,9 @@ async def char(ctx: Any, *args: str) -> None:
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name
+        args, ctx.author.name, player_id=player.id
     )
     await ctx.send(str(cdi))
 
@@ -180,8 +186,9 @@ async def park(ctx: Any, *args: str) -> None:
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name
+        args, ctx.author.name, player_id=player.id
     )
     cdi.active = False
     ctx.bot.initbot_state.characters.update_and_store(cdi)
@@ -198,8 +205,9 @@ async def play(ctx: Any, *args: str) -> None:
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name
+        args, ctx.author.name, player_id=player.id
     )
     cdi.active = True
     ctx.bot.initbot_state.characters.update_and_store(cdi)
@@ -212,18 +220,27 @@ async def unused(ctx: Any, *args: str) -> None:
 
     By default, this command only lists the requesting player's own characters.
     Pass 'all_players' to list eligible characters belonging to any player."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
+    state = ctx.bot.initbot_state
     show_all = "all_players" in args
     threshold = CORE_CFG.prune_threshold_days
     eligible = [
         cdi
-        for cdi in ctx.bot.initbot_state.characters.get_all()
+        for cdi in state.characters.get_all()
         if is_eligible_for_pruning(cdi, threshold)
-        and (show_all or cdi.user == ctx.author.name)
+        and (
+            show_all
+            or (
+                cdi.player_id == player.id
+                if cdi.player_id is not None
+                else cdi.user == ctx.author.name
+            )
+        )
     ]
     if not eligible:
         await ctx.send("You don't seem to have any unused characters.", delete_after=5)
         return
-    parts = (f"- **{cdi.name}** (_{cdi.user}_)\n" for cdi in eligible)
+    parts = (f"- **{cdi.name}** (_{player_name(state, cdi)}_)\n" for cdi in eligible)
     await send_in_parts(ctx, parts)
 
 
@@ -234,13 +251,21 @@ async def prune(ctx: Any, *args: str) -> None:
     By default, only prunes the requesting player's own characters.
     Pass 'all_players' to prune unused characters belonging to any player.
     Replies with the names of the pruned characters."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
     show_all = "all_players" in args
     threshold = CORE_CFG.prune_threshold_days
     to_prune = [
         cdi
         for cdi in ctx.bot.initbot_state.characters.get_all()
         if is_eligible_for_pruning(cdi, threshold)
-        and (show_all or cdi.user == ctx.author.name)
+        and (
+            show_all
+            or (
+                cdi.player_id == player.id
+                if cdi.player_id is not None
+                else cdi.user == ctx.author.name
+            )
+        )
     ]
     for cdi in to_prune:
         ctx.bot.initbot_state.characters.remove_and_store(cdi)
@@ -260,12 +285,13 @@ async def touch(ctx: Any, *args: str) -> None:
     The character name can be an abbreviation.
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
     tokens: tuple = args if args else ((),)
     touched = []
     for token in tokens:
         name_arg = (token,) if token else ()
         cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-            name_arg, ctx.author.name
+            name_arg, ctx.author.name, player_id=player.id
         )
         ctx.bot.initbot_state.characters.update_and_store(cdi)
         touched.append(cdi.name)

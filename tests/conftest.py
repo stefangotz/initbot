@@ -39,6 +39,7 @@ def _initbot_state(request, tmp_path):
 @pytest.fixture(name="mock_ctx")
 def _mock_ctx(initbot_state):
     ctx = MagicMock()
+    ctx.author.id = 100000000000000001
     ctx.author.name = "testuser"
     ctx.author.display_name = "testuser"
     ctx.bot.initbot_state = initbot_state

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from peewee import (
+    AutoField,
     BooleanField,
     CharField,
     CompositeKey,
@@ -28,6 +29,7 @@ from initbot_core.data.character import CharacterData
 from initbot_core.data.cls import ClassData
 from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
+from initbot_core.data.player import PlayerData
 from initbot_core.state.state import (
     AbilityState,
     AugurState,
@@ -35,6 +37,7 @@ from initbot_core.state.state import (
     ClassState,
     CritState,
     OccupationState,
+    PlayerState,
     State,
 )
 
@@ -119,6 +122,7 @@ class _SqlCharacterData(Model):
     augur = IntegerField(null=True)
     cls = CharField(null=True)
     last_used = IntegerField(null=True)
+    player_id = IntegerField(null=True)
 
 
 class _SqlCharacterState(CharacterState):
@@ -160,6 +164,39 @@ class _SqlCharacterState(CharacterState):
 
     def import_from(self, src: CharacterState) -> None:
         _import_from(_SqlCharacterData, src.get_all())
+
+
+class _SqlPlayerData(Model):
+    id = AutoField()  # internal primary key, auto-increment
+    discord_id = IntegerField(unique=True)
+    name = CharField()
+
+
+class _SqlPlayerState(PlayerState):
+    def upsert(self, discord_id: int, name: str) -> PlayerData:
+        player, _ = _SqlPlayerData.get_or_create(
+            discord_id=discord_id, defaults={"name": name}
+        )
+        if player.name != name:
+            _SqlPlayerData.update(name=name).where(
+                _SqlPlayerData.discord_id == discord_id
+            ).execute()
+            player.name = name
+        return cast(PlayerData, player)
+
+    def get_from_id(self, player_id: int) -> PlayerData | None:
+        result = _SqlPlayerData.get_or_none(_SqlPlayerData.id == player_id)
+        return cast(PlayerData, result) if result is not None else None
+
+    def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
+        result = _SqlPlayerData.get_or_none(_SqlPlayerData.discord_id == discord_id)
+        return cast(PlayerData, result) if result is not None else None
+
+    def get_all(self) -> Sequence[PlayerData]:
+        return cast(Sequence[PlayerData], tuple(_SqlPlayerData.select()))
+
+    def import_from(self, src: PlayerState) -> None:
+        _import_from(_SqlPlayerData, src.get_all())
 
 
 class _IntSeqField(Field):
@@ -302,6 +339,7 @@ class SqlState(State):
         self._crits = _SqlCritState()
         self._occupations = _SqlOccupationState()
         self._classes = _SqlClassState()
+        self._players = _SqlPlayerState()
 
         state_type, state_source = source.split(":", maxsplit=1)
         if state_type == "sqlite":
@@ -340,6 +378,10 @@ class SqlState(State):
                 self._db.execute_sql(
                     "ALTER TABLE _sqlcharacterdata ADD COLUMN last_used INTEGER DEFAULT NULL;"
                 )
+            if "player_id" not in columns:
+                self._db.execute_sql(
+                    "ALTER TABLE _sqlcharacterdata ADD COLUMN player_id INTEGER DEFAULT NULL;"
+                )
 
     @property
     def abilities(self) -> AbilityState:
@@ -364,6 +406,10 @@ class SqlState(State):
     @property
     def crits(self) -> CritState:
         return self._crits
+
+    @property
+    def players(self) -> PlayerState:
+        return self._players
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:

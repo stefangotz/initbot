@@ -49,39 +49,70 @@ async def _vulnerability_check() -> None:
     await channel.send("This application needs to receive a security update.")
 
 
+async def _notify_member(member, chars, threshold: int, display: str) -> None:
+    names_list = "\n".join(f"- {c.name}" for c in chars)
+    try:
+        await member.send(
+            f"Hi! The following characters you own haven't been used in over "
+            f"{threshold} days:\n{names_list}\n\n"
+            f"You have a few options:\n"
+            f"1. Do nothing — you'll get another reminder next month.\n"
+            f"2. Use `$prune` to remove all your unused characters.\n"
+            f"3. Use `$remove <character name>` to remove a character.\n"
+            f"4. Use `$touch <character name>` to mark a character as recently used "
+            f"if you'd like to keep it."
+        )
+    except Exception:  # pylint: disable=broad-except
+        _log.warning("Could not send pruning notification DM to %s", display)
+
+
+def _find_member(guilds, discord_id: int):
+    for guild in guilds:
+        member = guild.get_member(discord_id)
+        if member:
+            return member
+    return None
+
+
+def _find_member_named(guilds, username: str):
+    for guild in guilds:
+        member = guild.get_member_named(username)
+        if member:
+            return member
+    return None
+
+
 async def _send_pruning_notifications(guilds, state) -> None:
     """Send pruning reminder DMs to all players with eligible characters."""
     threshold = CORE_CFG.prune_threshold_days
+    by_player_id: dict[int, list] = defaultdict(list)
     by_user: dict[str, list] = defaultdict(list)
     for cdi in state.characters.get_all():
         if is_eligible_for_pruning(cdi, threshold):
-            by_user[cdi.user].append(cdi)
+            if cdi.player_id is not None:
+                by_player_id[cdi.player_id].append(cdi)
+            else:
+                by_user[cdi.user].append(cdi)
+
+    for player_id, chars in by_player_id.items():
+        player = state.players.get_from_id(player_id)
+        member = _find_member(guilds, player.discord_id) if player else None
+        if not member:
+            _log.warning(
+                "Could not find guild member for pruning notification: player_id=%d",
+                player_id,
+            )
+            continue
+        await _notify_member(member, chars, threshold, display=f"player_id={player_id}")
 
     for username, chars in by_user.items():
-        member = None
-        for guild in guilds:
-            member = guild.get_member_named(username)
-            if member:
-                break
+        member = _find_member_named(guilds, username)
         if not member:
             _log.warning(
                 "Could not find guild member for pruning notification: %s", username
             )
             continue
-        names_list = "\n".join(f"- {c.name}" for c in chars)
-        try:
-            await member.send(
-                f"Hi! The following characters you own haven't been used in over "
-                f"{threshold} days:\n{names_list}\n\n"
-                f"You have a few options:\n"
-                f"1. Do nothing — you'll get another reminder next month.\n"
-                f"2. Use `$prune` to remove all your unused characters.\n"
-                f"3. Use `$remove <character name>` to remove a character.\n"
-                f"4. Use `$touch <character name>` to mark a character as recently used "
-                f"if you'd like to keep it."
-            )
-        except Exception:  # pylint: disable=broad-except
-            _log.warning("Could not send pruning notification DM to %s", username)
+        await _notify_member(member, chars, threshold, display=username)
 
 
 @tasks.loop(hours=24 * 30)

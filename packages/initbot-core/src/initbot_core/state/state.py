@@ -11,6 +11,7 @@ from initbot_core.data.character import CharacterData
 from initbot_core.data.cls import ClassData
 from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
+from initbot_core.data.player import PlayerData
 from initbot_core.utils import (
     get_exact_or_unique_prefix_match,
     get_first_set_match,
@@ -69,14 +70,40 @@ class CharacterState(PartialState, ABC):
         raise NotImplementedError()
 
     def get_from_tokens(
-        self, tokens: Iterable[str], user: str, create: bool = False
+        self,
+        tokens: Iterable[str],
+        user: str,
+        create: bool = False,
+        player_id: int | None = None,
     ) -> CharacterData:
-        return self.get_from_str(" ".join(tokens), user, create)
+        return self.get_from_str(" ".join(tokens), user, create, player_id)
 
-    def get_from_str(self, name: str, user: str, create: bool = False) -> CharacterData:
+    def get_from_str(
+        self,
+        name: str,
+        user: str,
+        create: bool = False,
+        player_id: int | None = None,
+    ) -> CharacterData:
         if name:
             return self.get_from_name(name, create, user)
+        if player_id is not None:
+            try:
+                return self.get_from_player_id(player_id)
+            except KeyError:
+                pass  # fall back to user string for legacy characters
         return self.get_from_user(user)
+
+    def get_from_player_id(self, player_id: int) -> CharacterData:
+        """Find the unique active character owned by the given player."""
+        active = [
+            cdi for cdi in self.get_all() if cdi.active and cdi.player_id == player_id
+        ]
+        if len(active) == 1:
+            return active[0]
+        raise KeyError(
+            f"Expected one active character for player_id={player_id}, found {len(active)}"
+        )
 
     def get_from_name(
         self, name: str, create: bool = False, user: str | None = None
@@ -111,6 +138,30 @@ class CharacterState(PartialState, ABC):
 
     @abstractmethod
     def import_from(self, src: "CharacterState") -> None:
+        raise NotImplementedError()
+
+
+class PlayerState(PartialState, ABC):
+    @abstractmethod
+    def upsert(self, discord_id: int, name: str) -> PlayerData:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_from_id(self, player_id: int) -> PlayerData | None:
+        """Look up by internal player ID (used as foreign key by other entities)."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
+        """Look up by Discord snowflake ID."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all(self) -> Sequence[PlayerData]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def import_from(self, src: "PlayerState") -> None:
         raise NotImplementedError()
 
 
@@ -182,6 +233,11 @@ class State(ABC):
     @property
     @abstractmethod
     def crits(self) -> CritState:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def players(self) -> PlayerState:
         raise NotImplementedError()
 
     def import_from(self, src: "State") -> None:

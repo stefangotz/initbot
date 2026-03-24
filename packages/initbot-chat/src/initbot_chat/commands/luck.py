@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from discord.ext import commands
 
 from initbot_chat.commands.character import CharacterData
+from initbot_chat.commands.utils import sync_player
 from initbot_core.models.roll import NerdDiceRoll
 
 
@@ -31,6 +32,7 @@ async def luck(ctx, *args: str):
     This follows the usual notation [dice]d{sides}[+/-mod] to say what kind of die to roll (how many sides), how many of those to roll, and how much bonus to add (or subtract).
     If the dice are omitted from the command, a d20 is assumed.
     """
+    player = sync_player(ctx.bot.initbot_state, ctx)
     name: Iterable[str] = ()
     die: str = "d20"
     if args and NerdDiceRoll.is_valid_spec(args[-1]):
@@ -39,7 +41,7 @@ async def luck(ctx, *args: str):
     else:
         name = tuple(args)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name, ctx.author.name
+        name, ctx.author.name, player_id=player.id
     )
     if cdi.luck is not None:
         roll = NerdDiceRoll.create(die).roll_one()

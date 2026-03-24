@@ -18,6 +18,7 @@ from initbot_core.data.character import CharacterData
 from initbot_core.data.cls import ClassData
 from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
+from initbot_core.data.player import PlayerData
 from initbot_core.state.state import (
     AbilityState,
     AugurState,
@@ -25,6 +26,7 @@ from initbot_core.state.state import (
     ClassState,
     CritState,
     OccupationState,
+    PlayerState,
     State,
 )
 
@@ -135,6 +137,7 @@ class LocalCharacterData(LocalBaseModel):
     augur: int | None = None
     cls: str | None = None
     last_used: int | None = None
+    player_id: int | None = None
 
 
 class LocalCharactersData(LocalBaseModel):
@@ -202,6 +205,66 @@ class LocalCharacterState(CharacterState):
             )
 
     def import_from(self, src: CharacterState) -> None:
+        raise NotImplementedError()
+
+
+class LocalPlayerData(LocalBaseModel):
+    id: int
+    discord_id: int
+    name: str
+
+
+class LocalPlayersData(LocalBaseModel):
+    players: MutableSequence[LocalPlayerData] = []
+
+
+class LocalPlayerState(PlayerState):
+    def __init__(self, source_dir: Path):
+        players_data = LocalPlayersData()
+        self._path: Final[Path] = source_dir / "players.json"
+        if self._path.exists():
+            with self._path.open() as file_desc:
+                players_data = LocalPlayersData.model_validate_json(file_desc.read())
+        else:
+            logging.info("No player data loaded from %s", self._path)
+        self._players: MutableSequence[LocalPlayerData] = players_data.players
+
+    def _next_id(self) -> int:
+        return max((p.id for p in self._players), default=0) + 1
+
+    def upsert(self, discord_id: int, name: str) -> PlayerData:
+        for player in self._players:
+            if player.discord_id == discord_id:
+                player.name = name
+                self._store()
+                return cast(PlayerData, player)
+        new_player = LocalPlayerData(
+            id=self._next_id(), discord_id=discord_id, name=name
+        )
+        self._players.append(new_player)
+        self._store()
+        return cast(PlayerData, new_player)
+
+    def get_from_id(self, player_id: int) -> PlayerData | None:
+        for player in self._players:
+            if player.id == player_id:
+                return cast(PlayerData, player)
+        return None
+
+    def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
+        for player in self._players:
+            if player.discord_id == discord_id:
+                return cast(PlayerData, player)
+        return None
+
+    def get_all(self) -> Sequence[PlayerData]:
+        return cast(Sequence[PlayerData], self._players)
+
+    def _store(self) -> None:
+        with open(self._path, "w", encoding="UTF8") as file_desc:
+            file_desc.write(LocalPlayersData(players=self._players).model_dump_json())
+
+    def import_from(self, src: PlayerState) -> None:
         raise NotImplementedError()
 
 
@@ -342,6 +405,7 @@ class LocalState(State):
         self._occupations = LocalOccupationState(source_dir)
         self._classes = LocalClassState(source_dir)
         self._crits = LocalCritState(source_dir)
+        self._players = LocalPlayerState(source_dir)
 
     @property
     def abilities(self) -> AbilityState:
@@ -366,6 +430,10 @@ class LocalState(State):
     @property
     def crits(self) -> CritState:
         return self._crits
+
+    @property
+    def players(self) -> PlayerState:
+        return self._players
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:

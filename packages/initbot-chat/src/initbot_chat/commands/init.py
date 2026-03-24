@@ -9,6 +9,7 @@ from discord import Embed
 from discord.ext import commands
 
 from initbot_chat.commands.character import Character, CharacterData, characters
+from initbot_chat.commands.utils import player_name, sync_player
 from initbot_core.models.roll import NerdDiceRoll
 from initbot_core.utils import is_int
 
@@ -36,6 +37,7 @@ async def init(ctx, *args: str) -> None:
 
     Thus, in the shortest (and most common case), one can simply use the command `$init` by itself to automatically roll and set a character's initiative.
     """
+    player = sync_player(ctx.bot.initbot_state, ctx)
     tokens = list(args)
     if len(tokens) > 4:
         raise ValueError("Too long")
@@ -52,7 +54,7 @@ async def init(ctx, *args: str) -> None:
         initiative = None
         name = tokens
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name, ctx.author.name, create=len(name) > 0
+        name, ctx.author.name, create=len(name) > 0, player_id=player.id
     )
     if initiative is None:
         char = Character(cdi, ctx.bot.initbot_state)
@@ -104,16 +106,18 @@ async def inis(ctx) -> None:
     def ini_comparator(char: Character):
         return char.initiative_comparison_value()
 
+    sync_player(ctx.bot.initbot_state, ctx)
+    state = ctx.bot.initbot_state
     sorted_characters = sorted(
         filter(
             discard_characters_with_old_initiative_times,
-            characters(ctx.bot.initbot_state),
+            characters(state),
         ),
         key=ini_comparator,
         reverse=True,
     )
     desc: str = "\n".join(
-        f"{char.initiative}: **{char.name}** (*{char.user}*)"
+        f"{char.initiative}: **{char.name}** (*{player_name(state, char.cdi)}*)"
         for char in sorted_characters
     )
     embed = Embed(title="Initiative Order", description=desc)
