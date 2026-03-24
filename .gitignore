@@ -5,7 +5,6 @@
 __pycache__
 .coverage
 .git
-.vscode
 *.env.*
 *.env
 dist

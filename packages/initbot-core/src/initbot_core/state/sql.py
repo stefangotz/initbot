@@ -146,7 +146,8 @@ class _SqlCharacterState(CharacterState):
             )
         obj = cast(_SqlCharacterData, char_data)
         obj.last_used = int(time.time())
-        meta = type(obj)._meta  # pylint: disable=protected-access
+        # pylint: disable-next=protected-access
+        meta = type(obj)._meta  # type: ignore[attr-defined]
         pk_name = meta.primary_key.name
         fields_to_update = {
             field: obj.__data__.get(name)

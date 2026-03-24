@@ -2,15 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
-
-# pylint: disable=no-name-in-module,wrong-import-position
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
@@ -26,10 +19,13 @@ from initbot_core.utils import (
 )
 
 
-class PartialState(ABC):
-    @abstractmethod
-    def import_from(self, src: Self) -> None:
-        raise NotImplementedError()
+class PartialState:
+    """Marker base class for all partial state objects.
+
+    Serves as the common base for AbilityState, AugurState, CharacterState,
+    OccupationState, ClassState, and CritState so that State.import_from can
+    discover sub-state attributes via issubclass checks at runtime.
+    """
 
 
 class AbilityState(PartialState, ABC):

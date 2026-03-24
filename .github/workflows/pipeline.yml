@@ -43,9 +43,9 @@ jobs:
       - name: Pylint
         run: |
           uv run pylint initbot_core initbot_chat initbot_web tests
-      - name: mypy
+      - name: ty
         run: |
-          .venv/bin/mypy packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
+          .venv/bin/ty check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
       - name: vulture
         run: |
           .venv/bin/vulture

@@ -1,0 +1,4 @@
+{
+    "ty.diagnosticMode": "workspace",
+    "ty.importStrategy": "fromEnvironment"
+}
