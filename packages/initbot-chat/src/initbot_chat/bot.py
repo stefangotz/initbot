@@ -7,6 +7,7 @@ import sys
 from collections import defaultdict
 from itertools import product
 
+import discord
 from discord import Intents
 from discord.abc import Messageable
 from discord.ext import tasks
@@ -66,11 +67,21 @@ async def _notify_member(member, chars, threshold: int, display: str) -> None:
         _log.warning("Could not send pruning notification DM to %s", display)
 
 
-def _find_member(guilds, discord_id: int):
+async def _fetch_member(guilds, discord_id: int):
     for guild in guilds:
-        member = guild.get_member(discord_id)
-        if member:
-            return member
+        try:
+            return await guild.fetch_member(discord_id)
+        except (  # noqa: PERF203  # try/except per guild is intentional: skip 404, warn on other errors
+            discord.NotFound
+        ):
+            continue
+        except discord.HTTPException as exc:
+            _log.warning(
+                "HTTP error fetching member %d from %s: %s",
+                discord_id,
+                guild.name,
+                exc,
+            )
     return None
 
 
@@ -96,7 +107,7 @@ async def _send_pruning_notifications(guilds, state) -> None:
 
     for player_id, chars in by_player_id.items():
         player = state.players.get_from_id(player_id)
-        member = _find_member(guilds, player.discord_id) if player else None
+        member = await _fetch_member(guilds, player.discord_id) if player else None
         if not member:
             _log.warning(
                 "Could not find guild member for pruning notification: player_id=%d",

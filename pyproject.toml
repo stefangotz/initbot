@@ -48,6 +48,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [
     "S101",   # assert is normal pytest syntax
+    "S105",   # hardcoded sentinel values are fine in test fixtures
     "S106",   # hardcoded passwords are fine in test fixtures
 ]
 "packages/initbot-core/src/initbot_core/state/local.py" = [

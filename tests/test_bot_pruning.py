@@ -7,6 +7,8 @@ import sys
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
+
 # bot.py's chat config uses _cli_parse_args=True, so importing it while pytest
 # is running would cause pydantic-settings to try to parse pytest's argv as
 # Discord bot settings and fail. Clear argv before the import and ensure a
@@ -117,14 +119,14 @@ async def test_pruning_notification_uses_discord_id():
     member.send = AsyncMock()
 
     guild = MagicMock()
-    guild.get_member.return_value = member
+    guild.fetch_member = AsyncMock(return_value=member)
     guild.get_member_named.return_value = None
 
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
         await _send_pruning_notifications([guild], mock_state)
 
-    guild.get_member.assert_called_with(999888777)
+    guild.fetch_member.assert_awaited_with(999888777)
     guild.get_member_named.assert_not_called()
     member.send.assert_awaited_once()
 
@@ -147,6 +149,37 @@ async def test_pruning_notification_falls_back_for_legacy_characters():
 
     guild.get_member_named.assert_called_with("alice")
     member.send.assert_awaited_once()
+
+
+async def test_pruning_notification_player_not_in_guild(caplog):
+    player_id = 42
+    char = _old_char("OldMel", "alice")
+    char.player_id = player_id
+
+    mock_player = MagicMock()
+    mock_player.discord_id = 999888777
+
+    mock_state = MagicMock()
+    mock_state.characters.get_all.return_value = [char]
+    mock_state.players.get_from_id.return_value = mock_player
+
+    mock_response = MagicMock()
+    mock_response.status = 404
+
+    guild = MagicMock()
+    guild.fetch_member = AsyncMock(
+        side_effect=discord.NotFound(mock_response, "Unknown Member")
+    )
+
+    with patch("initbot_core.data.character.time") as mock_t:
+        mock_t.time.return_value = _FUTURE
+        await _send_pruning_notifications([guild], mock_state)
+
+    assert any(
+        f"player_id={player_id}" in r.message
+        for r in caplog.records
+        if r.levelname == "WARNING"
+    )
 
 
 async def test_pruning_notification_skips_recent():
