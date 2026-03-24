@@ -6,6 +6,8 @@ name: Python Version Check
 
 on:
   push:
+    branches:
+      - main
 
 permissions:
   contents: read
