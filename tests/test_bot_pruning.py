@@ -8,6 +8,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
+import pytest
 
 # bot.py's chat config uses _cli_parse_args=True, so importing it while pytest
 # is running would cause pydantic-settings to try to parse pytest's argv as
@@ -32,19 +33,19 @@ from initbot_core.data.character import (  # noqa: E402
 _FUTURE = int(time.time()) + 200 * 86400
 
 
-def _old_char(name, user):
+def _old_char(name: str, user: str) -> CharacterData:
     cdi = CharacterData(name=name, user=user)
     cdi.last_used = 0
     return cdi
 
 
-def _recent_char(name, user):
+def _recent_char(name: str, user: str) -> CharacterData:
     cdi = CharacterData(name=name, user=user)
     cdi.last_used = int(time.time())
     return cdi
 
 
-async def test_pruning_notification_sends_dm():
+async def test_pruning_notification_sends_dm() -> None:
     char1 = _old_char("OldMel", "alice")
     char2 = _old_char("OldBob", "alice")
 
@@ -68,7 +69,9 @@ async def test_pruning_notification_sends_dm():
     assert "$prune" in call_text
 
 
-async def test_pruning_notification_member_not_found(caplog):
+async def test_pruning_notification_member_not_found(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     char1 = _old_char("OldMel", "alice")
 
     mock_state = MagicMock()
@@ -84,7 +87,9 @@ async def test_pruning_notification_member_not_found(caplog):
     assert any("alice" in r.message for r in caplog.records if r.levelname == "WARNING")
 
 
-async def test_pruning_notification_dm_blocked(caplog):
+async def test_pruning_notification_dm_blocked(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     char1 = _old_char("OldMel", "alice")
 
     mock_state = MagicMock()
@@ -103,7 +108,7 @@ async def test_pruning_notification_dm_blocked(caplog):
     assert any("alice" in r.message for r in caplog.records if r.levelname == "WARNING")
 
 
-async def test_pruning_notification_uses_discord_id():
+async def test_pruning_notification_uses_discord_id() -> None:
     player_id = 42
     char = _old_char("OldMel", "alice")
     char.player_id = player_id
@@ -131,7 +136,7 @@ async def test_pruning_notification_uses_discord_id():
     member.send.assert_awaited_once()
 
 
-async def test_pruning_notification_falls_back_for_legacy_characters():
+async def test_pruning_notification_falls_back_for_legacy_characters() -> None:
     char = _old_char("OldMel", "alice")  # player_id=None
 
     mock_state = MagicMock()
@@ -151,7 +156,9 @@ async def test_pruning_notification_falls_back_for_legacy_characters():
     member.send.assert_awaited_once()
 
 
-async def test_pruning_notification_player_not_in_guild(caplog):
+async def test_pruning_notification_player_not_in_guild(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     player_id = 42
     char = _old_char("OldMel", "alice")
     char.player_id = player_id
@@ -182,7 +189,7 @@ async def test_pruning_notification_player_not_in_guild(caplog):
     )
 
 
-async def test_pruning_notification_skips_recent():
+async def test_pruning_notification_skips_recent() -> None:
     char1 = _recent_char("RecentMel", "alice")
 
     mock_state = MagicMock()

@@ -40,12 +40,12 @@ _URLS: Sequence[str] = tuple(
 
 
 @commands.command()
-async def tarot(ctx):
+async def tarot(ctx: commands.Context) -> None:
     """Displays a random tarot card."""
     await ctx.send(random.choice(_URLS))
 
 
 @tarot.error
-async def tarot_error(ctx, error):
+async def tarot_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

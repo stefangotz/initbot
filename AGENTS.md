@@ -13,7 +13,12 @@ Both applications access the same central data and storage model.
 - gh CLI available
 - precommit hooks cover code formatting and code quality
 - CI/CD jobs cover additional code quality and maintenance aspects
+
+## Instructions
+
 - do not add Co-Authored-By lines or similar attributions to commit messages
+- ensure presence of type hints for function signatures where possible
+- mark constants with the type hint `Final`
 
 ## Planning Workflow
 

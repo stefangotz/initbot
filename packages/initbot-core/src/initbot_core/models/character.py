@@ -16,7 +16,7 @@ from initbot_core.utils import get_unique_prefix_match
 
 
 class Character:  # pylint: disable=too-many-public-methods
-    def __init__(self, cdi: CharacterData, state: State):
+    def __init__(self, cdi: CharacterData, state: State) -> None:
         self.cdi = cdi
         self._state = state
 

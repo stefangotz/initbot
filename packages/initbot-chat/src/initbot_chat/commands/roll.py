@@ -10,7 +10,7 @@ from initbot_core.models.roll import render_dice_rolls
 
 
 @commands.command()
-async def roll(ctx, *words):
+async def roll(ctx: commands.Context, *words: str) -> None:
     """Rolls dice and returns the result.
 
     The *dice* to roll can be, for example, d20, 2d6, or d8+2.
@@ -28,6 +28,6 @@ async def roll(ctx, *words):
 
 
 @roll.error
-async def roll_error(ctx, error):
+async def roll_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

@@ -57,7 +57,7 @@ class LocalAbilitiesData(LocalBaseModel):
 
 
 class LocalAbilityState(AbilityState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         self._abilities_data = LocalAbilitiesData()
         path: Final[Path] = source_dir / "abilities.json"
         if path.exists():
@@ -90,7 +90,7 @@ class LocalAugursData(LocalBaseModel):
 
 
 class LocalAugurState(AugurState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         augurs_data = LocalAugursData()
         path: Final[Path] = source_dir / "augurs.json"
         if path.exists():
@@ -145,7 +145,7 @@ class LocalCharactersData(LocalBaseModel):
 
 
 class LocalCharacterState(CharacterState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         chars_data = LocalCharactersData()
         self._path: Final[Path] = source_dir / "characters.json"
         if self._path.exists():
@@ -219,7 +219,7 @@ class LocalPlayersData(LocalBaseModel):
 
 
 class LocalPlayerState(PlayerState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         players_data = LocalPlayersData()
         self._path: Final[Path] = source_dir / "players.json"
         if self._path.exists():
@@ -282,7 +282,7 @@ class LocalOccupationsData(LocalBaseModel):
 
 
 class LocalOccupationState(OccupationState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         occupations_data: LocalOccupationsData = LocalOccupationsData()
         path: Final[Path] = source_dir / "occupations.json"
         if path.exists():
@@ -340,7 +340,7 @@ class LocalClassesData(LocalBaseModel):
 
 
 class LocalClassState(ClassState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         classes_data: LocalClassesData = LocalClassesData()
         path: Final[Path] = source_dir / "classes.json"
         if path.exists():
@@ -375,7 +375,7 @@ class LocalCritTablesData(LocalBaseModel):
 
 
 class LocalCritState(CritState):
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path) -> None:
         data: LocalCritTablesData = LocalCritTablesData()
         path: Final[Path] = source_dir / "crits.json"
         if path.exists():
@@ -393,7 +393,7 @@ class LocalCritState(CritState):
 
 
 class LocalState(State):
-    def __init__(self, source: str):
+    def __init__(self, source: str) -> None:
         source_dir = Path(source.split(":", maxsplit=1)[-1])
         if not source_dir.exists():
             raise ValueError(

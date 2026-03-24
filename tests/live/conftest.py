@@ -5,6 +5,7 @@
 import asyncio
 import contextlib
 import os
+from collections.abc import AsyncGenerator
 
 import discord
 import pytest
@@ -13,20 +14,20 @@ _TOKEN = os.environ.get("TOKEN", "_test_token_")
 
 
 @pytest.fixture(autouse=True)
-def require_live_token():
+def require_live_token() -> None:
     if _TOKEN == "_test_token_":
         pytest.skip("Live Discord bot token not available (set TOKEN env var)")
 
 
 @pytest.fixture
-async def live_bot():
+async def live_bot() -> AsyncGenerator[discord.Client, None]:
     intents = discord.Intents.default()
     client = discord.Client(intents=intents)
 
     ready = asyncio.Event()
 
     @client.event
-    async def on_ready():
+    async def on_ready() -> None:
         ready.set()
 
     task = asyncio.create_task(client.start(_TOKEN))

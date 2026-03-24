@@ -10,7 +10,7 @@ from initbot_chat.commands.utils import send_in_parts
 
 
 @commands.command()
-async def occupations(ctx) -> None:
+async def occupations(ctx: commands.Context) -> None:
     """Lists all character occupations, including the starting weapon and goods they confer to new characters."""
     parts = (
         f"**{occ.name}** fights with *{occ.weapon}* and has *{occ.goods}*"
@@ -20,6 +20,8 @@ async def occupations(ctx) -> None:
 
 
 @occupations.error
-async def occupations_error(ctx, error) -> None:
+async def occupations_error(
+    ctx: commands.Context, error: commands.CommandError
+) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

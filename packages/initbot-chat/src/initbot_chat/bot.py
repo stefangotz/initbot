@@ -5,6 +5,7 @@
 import logging
 import sys
 from collections import defaultdict
+from collections.abc import Sequence
 from itertools import product
 
 import discord
@@ -16,10 +17,11 @@ from discord.ext.commands import Bot
 from initbot_chat.commands import commands
 from initbot_chat.config import CFG
 from initbot_core.config import CORE_CFG
-from initbot_core.data.character import is_eligible_for_pruning
+from initbot_core.data.character import CharacterData, is_eligible_for_pruning
 from initbot_core.models.roll import contains_dice_rolls, render_dice_rolls_in_text
 from initbot_core.security import get_vulnerabilities
 from initbot_core.state.factory import create_state_from_source
+from initbot_core.state.state import State
 
 _log = logging.getLogger(__name__)
 
@@ -50,7 +52,9 @@ async def _vulnerability_check() -> None:
     await channel.send("This application needs to receive a security update.")
 
 
-async def _notify_member(member, chars, threshold: int, display: str) -> None:
+async def _notify_member(
+    member: discord.Member, chars: Sequence[CharacterData], threshold: int, display: str
+) -> None:
     names_list = "\n".join(f"- {c.name}" for c in chars)
     try:
         await member.send(
@@ -67,7 +71,9 @@ async def _notify_member(member, chars, threshold: int, display: str) -> None:
         _log.warning("Could not send pruning notification DM to %s", display)
 
 
-async def _fetch_member(guilds, discord_id: int):
+async def _fetch_member(
+    guilds: Sequence[discord.Guild], discord_id: int
+) -> discord.Member | None:
     for guild in guilds:
         try:
             return await guild.fetch_member(discord_id)
@@ -85,7 +91,9 @@ async def _fetch_member(guilds, discord_id: int):
     return None
 
 
-def _find_member_named(guilds, username: str):
+def _find_member_named(
+    guilds: Sequence[discord.Guild], username: str
+) -> discord.Member | None:
     for guild in guilds:
         member = guild.get_member_named(username)
         if member:
@@ -93,7 +101,9 @@ def _find_member_named(guilds, username: str):
     return None
 
 
-async def _send_pruning_notifications(guilds, state) -> None:
+async def _send_pruning_notifications(
+    guilds: Sequence[discord.Guild], state: State
+) -> None:
     """Send pruning reminder DMs to all players with eligible characters."""
     threshold = CORE_CFG.prune_threshold_days
     by_player_id: dict[int, list] = defaultdict(list)
@@ -158,7 +168,7 @@ def _print_channel_diagnostic() -> None:
 
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     global _STARTUP_FAILED  # pylint: disable=global-statement
     print(f"Logged in as {bot.user}")
 
@@ -185,7 +195,7 @@ async def on_ready():
 
 
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
 
@@ -216,7 +226,7 @@ async def on_message(message):
         await message.channel.send(result_text)
 
 
-def run():
+def run() -> None:
     for cmd in commands:
         bot.add_command(cmd)
     bot.initbot_state = create_state_from_source(CFG.state)  # type: ignore

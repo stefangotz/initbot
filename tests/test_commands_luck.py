@@ -4,6 +4,8 @@
 
 from unittest.mock import patch
 
+from discord.ext import commands
+
 from initbot_chat.commands.luck import handle_error, luck
 from initbot_core.data.character import CharacterData
 
@@ -15,7 +17,7 @@ async def test_luck_no_luck_attribute(mock_ctx):
     try:
         await luck.callback(mock_ctx, "Mel")
     except ValueError as exc:
-        await handle_error(mock_ctx, exc)
+        await handle_error(mock_ctx, commands.CommandError(str(exc)))  # type: ignore[missing-argument]  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
     mock_ctx.send.assert_called()
     msg = mock_ctx.send.call_args[0][0]
     # Validates the f-string fix: character name must appear in the error message

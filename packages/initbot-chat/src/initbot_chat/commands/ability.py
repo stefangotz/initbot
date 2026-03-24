@@ -11,7 +11,7 @@ from initbot_chat.commands.utils import send_in_parts
 
 
 @commands.command()
-async def abls(ctx):
+async def abls(ctx: commands.Context) -> None:
     """Lists the six character abilities and their descriptions."""
     embed = Embed(
         title="Abilities",
@@ -26,17 +26,17 @@ async def abls(ctx):
 
 @commands.command()
 async def abl(
-    ctx,
+    ctx: commands.Context,
     name: str = commands.parameter(
         description="The name of the ability to get details on. A prefix (say, 'str' instead of 'strength') is good enough."
     ),
-):
+) -> None:
     """Displays the description for the given ability."""
     await ctx.send(str(ctx.bot.initbot_state.abilities.get_from_prefix(name)))
 
 
 @commands.command()
-async def mods(ctx):
+async def mods(ctx: commands.Context) -> None:
     """Lists all ability scores, their corresponding modifiers and, for wizards, the spell count and maximum spell level implied by intelligence."""
     parts = [
         f"{m.score}: {m.mod:+d} modifier, {m.spells} spells, max spell level {m.max_spell_level}"
@@ -47,8 +47,9 @@ async def mods(ctx):
 
 @commands.command()
 async def mod(
-    ctx, score: int = commands.parameter(description="An ability score (3-18).")
-):
+    ctx: commands.Context,
+    score: int = commands.parameter(description="An ability score (3-18)."),
+) -> None:
     """Shows details for an ability score. It lists the corresponding modifier and, for wizards, the spell count and maximum spell level implied by intelligence."""
     m = ctx.bot.initbot_state.abilities.get_mod_from_score(score)
     await ctx.send(
@@ -60,6 +61,6 @@ async def mod(
 @abl.error
 @mods.error
 @mod.error
-async def handle_error(ctx, error):
+async def handle_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

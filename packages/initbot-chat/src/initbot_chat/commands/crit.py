@@ -18,15 +18,15 @@ def _match(table: CritTableData, roll: int) -> str:
 
 @commands.command()
 async def crit(
-    ctx,
+    ctx: commands.Context,
     table: int = commands.parameter(description="The number of the crit table (1-4)"),
     roll: int = commands.parameter(description="What you rolled on your crit die"),
-):
+) -> None:
     """Shows the result of a roll on a crit table."""
     await ctx.send(_match(ctx.bot.initbot_state.crits.get_one(table), roll))
 
 
 @crit.error
-async def crit_error(ctx, error):
+async def crit_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

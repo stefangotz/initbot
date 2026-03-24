@@ -4,9 +4,11 @@
 
 import re
 from asyncio import sleep
+from collections.abc import AsyncGenerator
 from datetime import datetime
 
 from datastar_py import ServerSentEventGenerator as SSE
+from datastar_py.sse import DatastarEvent
 from datastar_py.starlette import datastar_response
 from starlette.requests import Request
 from starlette.responses import Response
@@ -35,7 +37,7 @@ def make_routes(
         )
 
     @datastar_response
-    async def tracker_sse(request: Request):
+    async def tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
         last_snapshot: tuple[tuple[str, int | None], ...] = ()
         last_vuln = vuln_state.has_vulnerabilities
         while not await request.is_disconnected():

@@ -23,7 +23,7 @@ class Matcher:
 
 
 class EqMatcher(Matcher):
-    def __init__(self, val: int):
+    def __init__(self, val: int) -> None:
         self.val = val
 
     def matches(self, other: int) -> bool:
@@ -31,7 +31,7 @@ class EqMatcher(Matcher):
 
 
 class LoEMatcher(Matcher):
-    def __init__(self, val: int):
+    def __init__(self, val: int) -> None:
         self.val = val
 
     def matches(self, other: int) -> bool:
@@ -39,7 +39,7 @@ class LoEMatcher(Matcher):
 
 
 class GoEMatcher(Matcher):
-    def __init__(self, val: int):
+    def __init__(self, val: int) -> None:
         self.val = val
 
     def matches(self, other: int) -> bool:
@@ -47,7 +47,7 @@ class GoEMatcher(Matcher):
 
 
 class RangeMatcher(Matcher):
-    def __init__(self, lower: int, upper: int):
+    def __init__(self, lower: int, upper: int) -> None:
         self.lower = lower
         self.upper = upper
 

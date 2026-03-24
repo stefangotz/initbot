@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+from discord.ext import commands
+
 from initbot_chat.commands.character import char, char_error, chars, remove, set_
 from initbot_core.data.character import CharacterData
 
@@ -35,7 +37,7 @@ async def test_char_missing_sends_error(mock_ctx):
     try:
         await char.callback(mock_ctx, "Nonexistent")
     except KeyError as exc:
-        await char_error(mock_ctx, exc)
+        await char_error(mock_ctx, commands.CommandError(str(exc)))  # type: ignore[missing-argument]  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
     mock_ctx.send.assert_called()
 
 

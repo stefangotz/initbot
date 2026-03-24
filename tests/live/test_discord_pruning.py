@@ -8,6 +8,7 @@ import time
 from unittest.mock import MagicMock, patch
 
 import discord
+import pytest
 
 # bot.py's chat config uses _cli_parse_args=True, so importing it while pytest
 # is running would cause pydantic-settings to try to parse pytest's argv as
@@ -30,7 +31,7 @@ _GOTZMODES_GUILD_ID = 868111923592454195
 _FUTURE = int(time.time()) + 200 * 86400
 
 
-async def test_fetch_member_returns_gotzmode(live_bot):
+async def test_fetch_member_returns_gotzmode(live_bot: discord.Client) -> None:
     guild = discord.utils.get(live_bot.guilds, id=_GOTZMODES_GUILD_ID)
     assert guild is not None, f"Bot is not in guild {_GOTZMODES_GUILD_ID}"
     member = await guild.fetch_member(_GOTZMODE_DISCORD_ID)
@@ -38,7 +39,9 @@ async def test_fetch_member_returns_gotzmode(live_bot):
     assert member.name == "gotzmode"
 
 
-async def test_pruning_notification_dm_sent_via_fetch_member(live_bot, caplog):
+async def test_pruning_notification_dm_sent_via_fetch_member(
+    live_bot: discord.Client, caplog: pytest.LogCaptureFixture
+) -> None:
     char = CharacterData(name="TestPruneChar", user="gotzmode")
     char.last_used = 0
     char.player_id = 1

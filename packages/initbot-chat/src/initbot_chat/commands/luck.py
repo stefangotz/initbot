@@ -13,7 +13,7 @@ from initbot_core.models.roll import NerdDiceRoll
 
 
 @commands.command()
-async def luck(ctx, *args: str):
+async def luck(ctx: commands.Context, *args: str) -> None:
     """Performs a luck check.
 
     The character needs their luck attribute to be set for this command to work.
@@ -62,6 +62,6 @@ async def luck(ctx, *args: str):
 
 
 @luck.error
-async def handle_error(ctx, error):
+async def handle_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

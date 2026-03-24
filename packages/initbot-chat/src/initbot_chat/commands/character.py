@@ -6,7 +6,6 @@ import dataclasses
 import logging
 import random
 from collections.abc import Iterable, Sequence
-from typing import Any
 
 from discord.ext import commands
 
@@ -28,7 +27,7 @@ def characters(state: State) -> Iterable[Character]:
 
 
 @commands.command()
-async def new(ctx: Any, name: str) -> None:
+async def new(ctx: commands.Context, name: str) -> None:
     """Creates a new character with a given name.
 
     The core attributes of the character are rolled randomly as per standard character creation rules:
@@ -72,7 +71,7 @@ async def new(ctx: Any, name: str) -> None:
 
 
 @commands.command(name="set", usage="[character name] <attribute> <value>")
-async def set_(ctx: Any, *, txt: str) -> None:
+async def set_(ctx: commands.Context, *, txt: str) -> None:
     """Sets a character attribute.
 
     If the Discord user manages only a single character, the character name is optional and can be omitted.
@@ -130,7 +129,7 @@ async def set_(ctx: Any, *, txt: str) -> None:
 
 
 @commands.command(usage="[character name]")
-async def remove(ctx: Any, *args: str) -> None:
+async def remove(ctx: commands.Context, *args: str) -> None:
     """Removes a character from the bot.
 
     If the Discord user manages only a single character, the character name is optional and can be omitted.
@@ -148,7 +147,7 @@ async def remove(ctx: Any, *args: str) -> None:
 
 
 @commands.command()
-async def chars(ctx: Any) -> None:
+async def chars(ctx: commands.Context) -> None:
     """Displays all characters known to the bot."""
     sync_player(ctx.bot.initbot_state, ctx)
     state = ctx.bot.initbot_state
@@ -160,7 +159,7 @@ async def chars(ctx: Any) -> None:
 
 
 @commands.command()
-async def char(ctx: Any, *args: str) -> None:
+async def char(ctx: commands.Context, *args: str) -> None:
     """Displays a character.
 
     If the Discord user manages only a single character, the character name is optional and can be omitted.
@@ -177,7 +176,7 @@ async def char(ctx: Any, *args: str) -> None:
 
 
 @commands.command()
-async def park(ctx: Any, *args: str) -> None:
+async def park(ctx: commands.Context, *args: str) -> None:
     """Deactivates a character so it is no longer included in the initiative order.
 
     If the Discord user manages only a single character, the character name is optional and can be omitted.
@@ -196,7 +195,7 @@ async def park(ctx: Any, *args: str) -> None:
 
 
 @commands.command()
-async def play(ctx: Any, *args: str) -> None:
+async def play(ctx: commands.Context, *args: str) -> None:
     """Activates a character deactivated with the 'park' command so it is included in the initiative order again.
 
     If the Discord user manages only a single character, the character name is optional and can be omitted.
@@ -215,7 +214,7 @@ async def play(ctx: Any, *args: str) -> None:
 
 
 @commands.command(usage="[all_players]")
-async def unused(ctx: Any, *args: str) -> None:
+async def unused(ctx: commands.Context, *args: str) -> None:
     """Lists characters that haven't been used in a while and might be worth removing.
 
     By default, this command only lists the requesting player's own characters.
@@ -245,7 +244,7 @@ async def unused(ctx: Any, *args: str) -> None:
 
 
 @commands.command(usage="[all_players]")
-async def prune(ctx: Any, *args: str) -> None:
+async def prune(ctx: commands.Context, *args: str) -> None:
     """Removes all characters that haven't been used in a while.
 
     By default, only prunes the requesting player's own characters.
@@ -276,7 +275,7 @@ async def prune(ctx: Any, *args: str) -> None:
 
 
 @commands.command(usage="[character name] [character name ...]")
-async def touch(ctx: Any, *args: str) -> None:
+async def touch(ctx: commands.Context, *args: str) -> None:
     """Marks one or more characters as recently used, so they are not considered for pruning.
 
     Each argument is treated as a separate character name or abbreviation.
@@ -311,6 +310,6 @@ async def touch(ctx: Any, *args: str) -> None:
 @unused.error
 @prune.error
 @touch.error
-async def char_error(ctx, error):
+async def char_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
     await ctx.send(str(error), delete_after=5)

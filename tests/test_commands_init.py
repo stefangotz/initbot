@@ -4,6 +4,8 @@
 
 import time
 
+from discord.ext import commands
+
 from initbot_chat.commands.init import inis, init, init_error
 from initbot_core.data.character import CharacterData
 from initbot_core.models.character import Character
@@ -37,6 +39,7 @@ async def test_init_auto_roll(mock_ctx):
     await init.callback(mock_ctx)
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
     modifier = Character(mel, mock_ctx.bot.initbot_state).initiative_modifier
+    assert modifier is not None
     assert isinstance(mel.initiative, int)
     assert 1 + modifier <= mel.initiative <= 20 + modifier
 
@@ -48,7 +51,7 @@ async def test_init_auto_roll_no_agility(mock_ctx):
     try:
         await init.callback(mock_ctx)
     except ValueError as exc:
-        await init_error(mock_ctx, exc)
+        await init_error(mock_ctx, commands.CommandError(str(exc)))  # type: ignore[missing-argument]  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
     mock_ctx.send.assert_called()
 
 

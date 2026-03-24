@@ -332,7 +332,7 @@ class SqlState(State):
     def __init__(
         self,
         source: str,
-    ):
+    ) -> None:
         self._abilities = _SqlAbilityState()
         self._augurs = _SqlAugurState()
         self._characters = _SqlCharacterState()
