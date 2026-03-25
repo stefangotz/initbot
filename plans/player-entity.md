@@ -33,9 +33,9 @@ invocation, so it stays current without any explicit sync step.
 ```python
 @dataclass
 class PlayerData(BaseData):
-    id: int           # Internal primary key, auto-assigned; used as FK by other entities
-    discord_id: int   # Discord snowflake, unique but not the primary key
-    name: str         # Display name, refreshed on each command invocation
+    id: int  # Internal primary key, auto-assigned; used as FK by other entities
+    discord_id: int  # Discord snowflake, unique but not the primary key
+    name: str  # Display name, refreshed on each command invocation
 ```
 
 **`state/state.py`**
@@ -164,7 +164,9 @@ no-argument auto-select case; fall back to prefix-matching on `user` for legacy 
 Replace `guild.get_member_named(cdi.user)` with:
 ```python
 player = state.players.get_from_id(char.player_id)
-member = guild.get_member(player.discord_id) if player else guild.get_member_named(cdi.user)
+member = (
+    guild.get_member(player.discord_id) if player else guild.get_member_named(cdi.user)
+)
 ```
 
 ### Tests

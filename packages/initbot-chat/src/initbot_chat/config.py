@@ -41,7 +41,11 @@ class Settings(BaseSettings):
     )
 
 
-CFG = Settings(_env_file=[".env", ".env.chat"], _env_file_encoding="utf-8", _cli_parse_args=True)  # type: ignore
+CFG = Settings(
+    _env_file=[".env", ".env.chat"],  # type: ignore[unknown-argument]
+    _env_file_encoding="utf-8",  # type: ignore[unknown-argument]
+    _cli_parse_args=True,  # type: ignore[unknown-argument]
+)
 if not CFG.token:
     CFG.token = getpass(
         "Please enter your Discord bot token (you can also supply it as a command line argument, an environment variable, or through a .env file): "

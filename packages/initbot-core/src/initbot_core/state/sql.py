@@ -133,9 +133,9 @@ class _SqlCharacterState(CharacterState):
         char_data.last_used = int(time.time())
         return cast(
             CharacterData,
-            _SqlCharacterData.create(
-                **{k: v for k, v in asdict(char_data).items() if v is not None}
-            ),
+            _SqlCharacterData.create(**{
+                k: v for k, v in asdict(char_data).items() if v is not None
+            }),
         )
 
     def remove_and_store(self, char_data: CharacterData) -> None:
@@ -284,9 +284,9 @@ class _SqlClassState(ClassState):
         _SqlSpellsByLevelData.delete().execute()  # pylint: disable=no-value-for-parameter
         _SqlClassData.delete().execute()  # pylint: disable=no-value-for-parameter
         for src_class in src.get_all():
-            tgt_class = _SqlClassData.create(
-                **{k: v for k, v in src_class.as_dict().items() if k != "levels"}
-            )
+            tgt_class = _SqlClassData.create(**{
+                k: v for k, v in src_class.as_dict().items() if k != "levels"
+            })
             for src_level in src_class.levels:
                 data = {
                     k: v
@@ -297,9 +297,10 @@ class _SqlClassState(ClassState):
                 _SqlLevelData.create(**data)
                 for src_spells_by_level in src_level.spells_by_level:
                     data = dict(src_spells_by_level.as_dict())
-                    data.update(
-                        {"class_name": src_class.name, "class_level": src_level.level}
-                    )
+                    data.update({
+                        "class_name": src_class.name,
+                        "class_level": src_level.level,
+                    })
                     _SqlSpellsByLevelData.create(**data)
 
 

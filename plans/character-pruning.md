@@ -43,7 +43,9 @@ with self._db.connection_context():
         self._db.execute_sql(
             "ALTER TABLE _sqlcharacterdata ADD COLUMN last_used INTEGER DEFAULT NULL;"
         )
-        half_threshold_ago = int(time.time()) - CORE_CFG.prune_threshold_days * 86400 // 2
+        half_threshold_ago = (
+            int(time.time()) - CORE_CFG.prune_threshold_days * 86400 // 2
+        )
         self._db.execute_sql(
             "UPDATE _sqlcharacterdata SET last_used = ? WHERE last_used IS NULL;",
             (half_threshold_ago,),
@@ -83,6 +85,7 @@ with self._db.connection_context():
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+
 class CoreSettings(BaseSettings):
     model_config = {
         "env_file": ".env",
@@ -93,6 +96,7 @@ class CoreSettings(BaseSettings):
         default=90,
         description="Characters not used in this many days are eligible for pruning.",
     )
+
 
 CORE_CFG = CoreSettings()
 ```
@@ -107,6 +111,7 @@ CORE_CFG = CoreSettings()
 ```python
 import time
 from initbot_core.data.character import CharacterData
+
 
 def is_eligible_for_pruning(cdi: CharacterData, threshold_days: int) -> bool:
     """Returns True if the character has not been used recently enough."""
@@ -158,7 +163,8 @@ async def unused(ctx: Any, *args: str) -> None:
     show_all = "all_players" in args
     threshold = CORE_CFG.prune_threshold_days
     eligible = [
-        cdi for cdi in ctx.bot.initbot_state.characters.get_all()
+        cdi
+        for cdi in ctx.bot.initbot_state.characters.get_all()
         if is_eligible_for_pruning(cdi, threshold)
         and (show_all or cdi.user == ctx.author.name)
     ]
@@ -182,7 +188,8 @@ async def prune(ctx: Any, *args: str) -> None:
     show_all = "all_players" in args
     threshold = CORE_CFG.prune_threshold_days
     to_prune = [
-        cdi for cdi in ctx.bot.initbot_state.characters.get_all()
+        cdi
+        for cdi in ctx.bot.initbot_state.characters.get_all()
         if is_eligible_for_pruning(cdi, threshold)
         and (show_all or cdi.user == ctx.author.name)
     ]
@@ -280,7 +287,9 @@ async def _pruning_notification() -> None:
             if member:
                 break
         if not member:
-            _log.warning("Could not find guild member for pruning notification: %s", username)
+            _log.warning(
+                "Could not find guild member for pruning notification: %s", username
+            )
             continue
         names_list = "\n".join(f"- {c.name}" for c in chars)
         try:

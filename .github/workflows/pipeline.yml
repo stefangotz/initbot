@@ -31,12 +31,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }}
-      - name: black
-        run: |
-          .venv/bin/black --check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
       - name: ruff
         run: |
           .venv/bin/ruff check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
+      - name: ruff format
+        run: |
+          .venv/bin/ruff format --check .
       - name: zizmor
         run: |
           .venv/bin/zizmor .github/workflows/
