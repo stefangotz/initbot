@@ -19,7 +19,7 @@ from initbot_chat.config import CFG
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, is_eligible_for_pruning
 from initbot_core.models.roll import contains_dice_rolls, render_dice_rolls_in_text
-from initbot_core.security import get_vulnerabilities
+from initbot_core.security import get_vulnerabilities, is_high_severity
 from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import State
 
@@ -39,10 +39,16 @@ _STARTUP_FAILED: bool = False
 @tasks.loop(hours=24)
 async def _vulnerability_check() -> None:
     vulns = await get_vulnerabilities()
-    if not vulns:
+    for name, version, vuln_id, severity in vulns:
+        _log.warning(
+            "Security vulnerability in %s %s: %s (severity: %s)",
+            name,
+            version,
+            vuln_id,
+            severity or "unknown",
+        )
+    if not any(is_high_severity(severity) for _, _, _, severity in vulns):
         return
-    for name, version, vuln_id in vulns:
-        _log.warning("Security vulnerability in %s %s: %s", name, version, vuln_id)
     channel = bot.get_channel(int(CFG.alert_channel_id))
     if not isinstance(channel, Messageable):
         _log.warning(

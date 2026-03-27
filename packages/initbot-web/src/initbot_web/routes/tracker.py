@@ -33,13 +33,16 @@ def make_routes(
         return templates.TemplateResponse(
             request,
             "tracker.html",
-            {"secret": secret, "has_vulnerabilities": vuln_state.has_vulnerabilities},
+            {
+                "secret": secret,
+                "has_high_severity_vulnerabilities": vuln_state.has_high_severity_vulnerabilities,
+            },
         )
 
     @datastar_response
     async def tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
         last_snapshot: tuple[tuple[str, int | None], ...] = ()
-        last_vuln = vuln_state.has_vulnerabilities
+        last_vuln = vuln_state.has_high_severity_vulnerabilities
         while not await request.is_disconnected():
             now = int(datetime.now().timestamp())
             chars = [
@@ -56,7 +59,7 @@ def make_routes(
                 last_snapshot = snapshot
                 yield SSE.patch_elements(_render_rows(chars))
 
-            current_vuln = vuln_state.has_vulnerabilities
+            current_vuln = vuln_state.has_high_severity_vulnerabilities
             if current_vuln != last_vuln:
                 last_vuln = current_vuln
                 yield SSE.patch_elements(_render_alert(current_vuln))
@@ -69,10 +72,10 @@ def make_routes(
     ]
 
 
-def _render_alert(has_vulnerabilities: bool) -> str:
+def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     content = (
         "<p>This application needs to receive a security update.</p>"
-        if has_vulnerabilities
+        if has_high_severity_vulnerabilities
         else ""
     )
     return f'<div id="security-alert">{content}</div>'

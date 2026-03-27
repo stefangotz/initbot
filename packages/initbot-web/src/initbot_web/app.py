@@ -13,7 +13,11 @@ from starlette.applications import Starlette
 from starlette.templating import Jinja2Templates
 from starlette.types import ASGIApp
 
-from initbot_core.security import VulnerabilityState, get_vulnerabilities
+from initbot_core.security import (
+    VulnerabilityState,
+    get_vulnerabilities,
+    is_high_severity,
+)
 from initbot_core.state.factory import create_state_from_source
 from initbot_web.config import WebSettings
 from initbot_web.routes.tracker import make_routes
@@ -24,9 +28,17 @@ _log = logging.getLogger(__name__)
 async def _periodic_vulnerability_check(vuln_state: VulnerabilityState) -> None:
     while True:
         vulns = await get_vulnerabilities()
-        vuln_state.has_vulnerabilities = bool(vulns)
-        for name, version, vuln_id in vulns:
-            _log.warning("Security vulnerability in %s %s: %s", name, version, vuln_id)
+        for name, version, vuln_id, severity in vulns:
+            _log.warning(
+                "Security vulnerability in %s %s: %s (severity: %s)",
+                name,
+                version,
+                vuln_id,
+                severity or "unknown",
+            )
+        vuln_state.has_high_severity_vulnerabilities = any(
+            is_high_severity(severity) for _, _, _, severity in vulns
+        )
         await sleep(24 * 60 * 60)
 
 
