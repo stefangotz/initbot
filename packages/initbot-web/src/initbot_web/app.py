@@ -67,4 +67,4 @@ def create_app(settings: WebSettings | None = None) -> Starlette:
 def run() -> None:
     cfg = WebSettings(_cli_parse_args=True)  # type: ignore
     print(f"URL: http://localhost:{cfg.web_port}/s/{cfg.web_secret}/")
-    uvicorn.run(create_app(cfg), host="127.0.0.1", port=cfg.web_port)
+    uvicorn.run(create_app(cfg), host=cfg.web_host, port=cfg.web_port)

@@ -28,10 +28,27 @@ services:
         required: false
     environment:
       STATE: sqlite:/data/app.sqlite
-    ports:
-      - "8080:8080"
+      WEB_HOST: "0.0.0.0"
     volumes:
       - data:/data
 
+  caddy:
+    image: caddy:alpine
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
 volumes:
   data:
+  caddy_data:
+  caddy_config:
