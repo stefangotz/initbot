@@ -31,12 +31,9 @@ class Settings(BaseSettings):
         default="",
         description=(
             "The numeric ID of the Discord channel where security vulnerability alerts are posted. "
-            "This setting is required. Without it the bot will exit at startup and list all available "
-            "channel IDs to help you configure the correct value. "
+            "When not set, vulnerability checks run and findings are logged, but no channel alert is sent. "
             "To find a channel ID in Discord: enable Developer Mode under User Settings → Advanced, "
-            "then right-click the desired channel and select 'Copy Channel ID'. "
-            "Set this to the exact string 'ignore security vulnerabilities' only if you intentionally "
-            "want to disable security checks and accept the risk of running a bot with known vulnerabilities."
+            "then right-click the desired channel and select 'Copy Channel ID'."
         ),
     )
 
