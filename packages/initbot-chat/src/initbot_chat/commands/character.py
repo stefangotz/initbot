@@ -11,7 +11,11 @@ from discord.ext import commands
 
 from initbot_chat.commands.utils import player_name, send_in_parts, sync_player
 from initbot_core.config import CORE_CFG
-from initbot_core.data.character import CharacterData, is_eligible_for_pruning
+from initbot_core.data.character import (
+    CharacterData,
+    NewCharacterData,
+    is_eligible_for_pruning,
+)
 from initbot_core.data.occupation import OccupationData
 from initbot_core.models.character import Character
 from initbot_core.models.roll import NerdDiceRoll
@@ -43,7 +47,7 @@ async def new(ctx: commands.Context, name: str) -> None:
         occupation_roll
     )
     luck: int = NerdDiceRoll(6, 3).roll_one()
-    cdi = CharacterData(
+    cdi = NewCharacterData(
         name=name,
         user=ctx.author.name,
         strength=NerdDiceRoll(6, 3).roll_one(),
@@ -99,7 +103,7 @@ async def set_(ctx: commands.Context, *, txt: str) -> None:
     )
     attr = attr.lower()
     char_fields = [
-        f.name for f in dataclasses.fields(CharacterData) if f.name != "last_used"
+        f.name for f in dataclasses.fields(NewCharacterData) if f.name != "last_used"
     ]
     candidates: Sequence[str] = []
     if attr in char_fields:

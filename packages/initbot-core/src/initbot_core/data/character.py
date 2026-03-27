@@ -5,13 +5,14 @@
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
-
-from initbot_core.base import BaseData
+from typing import Protocol, runtime_checkable
 
 
 # pylint: disable=R0801
 @dataclass
-class CharacterData(BaseData):
+class NewCharacterData:
+    """Creation input — passed into add_store_and_get."""
+
     name: str
     user: str
     active: bool = True
@@ -36,6 +37,40 @@ class CharacterData(BaseData):
     cls: str | None = None
     last_used: int | None = None
     player_id: int | None = None
+
+
+# Implementations (LocalCharacterData, _SqlCharacterData) satisfy this Protocol structurally.
+# Explicit inheritance is not possible: _ProtocolMeta (typing.Protocol), Pydantic's
+# ModelMetaclass, and Peewee's ModelBase are all ABCMeta subclasses but none is a subclass
+# of another, so Python raises TypeError: metaclass conflict at class definition time.
+@runtime_checkable
+class CharacterData(Protocol):
+    """Data handle — the storage-native object returned by get_all() and mutated in place."""
+
+    name: str
+    user: str
+    active: bool
+    level: int
+    strength: int | None
+    agility: int | None
+    stamina: int | None
+    personality: int | None
+    intelligence: int | None
+    luck: int | None
+    initial_luck: int | None
+    hit_points: int | None
+    equipment: Sequence[str] | None
+    occupation: int | None
+    exp: int | None
+    alignment: str | None
+    initiative: int | None
+    initiative_time: int | None
+    initiative_modifier: int | None
+    hit_die: int | None
+    augur: int | None
+    cls: str | None
+    last_used: int | None
+    player_id: int | None
 
 
 def is_eligible_for_pruning(cdi: CharacterData, threshold_days: int) -> bool:

@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import dataclasses
 import time
-from collections.abc import Iterable, Sequence, Set
+from collections.abc import Iterable, Mapping, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
@@ -21,11 +22,10 @@ from peewee import (
     SqliteDatabase,
 )
 
-from initbot_core.base import BaseData
 from initbot_core.config import CORE_CFG
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.cls import ClassData
 from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
@@ -56,16 +56,14 @@ class _SqlAbilityModifierData(Model):
 
 class _SqlAbilityState(AbilityState):
     def get_all(self) -> Sequence[AbilityData]:
-        return cast(Sequence[AbilityData], tuple(_SqlAbilityData.select()))
+        return tuple(_SqlAbilityData.select())
 
     def get_mods(self) -> Sequence[AbilityModifierData]:
-        return cast(
-            Sequence[AbilityModifierData], tuple(_SqlAbilityModifierData.select())
-        )
+        return tuple(_SqlAbilityModifierData.select())
 
     def import_from(self, src: AbilityState) -> None:
-        _import_from(_SqlAbilityData, src.get_all())
-        _import_from(_SqlAbilityModifierData, src.get_mods())
+        _import_from(_SqlAbilityData, (i.as_dict() for i in src.get_all()))  # type: ignore[attr-defined]
+        _import_from(_SqlAbilityModifierData, (i.as_dict() for i in src.get_mods()))  # type: ignore[attr-defined]
 
 
 class _SqlAugurData(Model):
@@ -75,13 +73,10 @@ class _SqlAugurData(Model):
 
 class _SqlAugurState(AugurState):
     def get_all(self) -> Sequence[AugurData]:
-        return cast(Sequence[AugurData], tuple(_SqlAugurData.select()))
-
-    def get_from_roll(self, roll: int) -> AugurData:
-        return cast(AugurData, _SqlAugurData.select().where(_SqlAugurData.roll == roll))
+        return tuple(_SqlAugurData.select())
 
     def import_from(self, src: AugurState) -> None:
-        _import_from(_SqlAugurData, src.get_all())
+        _import_from(_SqlAugurData, (i.as_dict() for i in src.get_all()))  # type: ignore[attr-defined]
 
 
 class _StrSeqField(Field):
@@ -127,15 +122,12 @@ class _SqlCharacterData(Model):
 
 class _SqlCharacterState(CharacterState):
     def get_all(self) -> Sequence[CharacterData]:
-        return cast(Sequence[CharacterData], tuple(_SqlCharacterData.select()))
+        return tuple(_SqlCharacterData.select())
 
-    def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
+    def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         char_data.last_used = int(time.time())
-        return cast(
-            CharacterData,
-            _SqlCharacterData.create(**{
-                k: v for k, v in asdict(char_data).items() if v is not None
-            }),
+        return _SqlCharacterData.create(  # type: ignore[return-value]
+            **{k: v for k, v in asdict(char_data).items() if v is not None}
         )
 
     def remove_and_store(self, char_data: CharacterData) -> None:
@@ -148,22 +140,29 @@ class _SqlCharacterState(CharacterState):
             raise TypeError(
                 f"Only character data returned by the State class can be updated: {char_data}"
             )
-        obj = cast(_SqlCharacterData, char_data)
-        obj.last_used = int(time.time())
+        char_data.last_used = int(time.time())
         # pylint: disable-next=protected-access
-        meta = type(obj)._meta  # type: ignore[attr-defined]
+        meta = type(char_data)._meta
         pk_name = meta.primary_key.name
         fields_to_update = {
-            field: obj.__data__.get(name)
+            field: char_data.__data__.get(name)
             for name, field in meta.fields.items()
             if name != pk_name
         }
         _SqlCharacterData.update(fields_to_update).where(
-            _SqlCharacterData.name == obj.name
+            _SqlCharacterData.name == char_data.name
         ).execute()
 
     def import_from(self, src: CharacterState) -> None:
-        _import_from(_SqlCharacterData, src.get_all())
+        for cdi in src.get_all():
+            _SqlCharacterData.create(**{
+                k: v
+                for k, v in (
+                    (f.name, getattr(cdi, f.name))
+                    for f in dataclasses.fields(NewCharacterData)
+                )
+                if v is not None
+            })
 
 
 class _SqlPlayerData(Model):
@@ -182,21 +181,22 @@ class _SqlPlayerState(PlayerState):
                 _SqlPlayerData.discord_id == discord_id
             ).execute()
             player.name = name
-        return cast(PlayerData, player)
+        return player
 
     def get_from_id(self, player_id: int) -> PlayerData | None:
         result = _SqlPlayerData.get_or_none(_SqlPlayerData.id == player_id)
-        return cast(PlayerData, result) if result is not None else None
+        return result
 
     def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
         result = _SqlPlayerData.get_or_none(_SqlPlayerData.discord_id == discord_id)
-        return cast(PlayerData, result) if result is not None else None
+        return result
 
     def get_all(self) -> Sequence[PlayerData]:
-        return cast(Sequence[PlayerData], tuple(_SqlPlayerData.select()))
+        return tuple(_SqlPlayerData.select())
 
     def import_from(self, src: PlayerState) -> None:
-        _import_from(_SqlPlayerData, src.get_all())
+        for p in src.get_all():
+            _SqlPlayerData.create(id=p.id, discord_id=p.discord_id, name=p.name)
 
 
 class _IntSeqField(Field):
@@ -218,10 +218,10 @@ class _SqlOccupationData(Model):
 
 class _SqlOccupationState(OccupationState):
     def get_all(self) -> Sequence[OccupationData]:
-        return cast(Sequence[OccupationData], tuple(_SqlOccupationData.select()))
+        return tuple(_SqlOccupationData.select())
 
     def import_from(self, src: OccupationState) -> None:
-        _import_from(_SqlOccupationData, src.get_all())
+        _import_from(_SqlOccupationData, (i.as_dict() for i in src.get_all()))  # type: ignore[attr-defined]
 
 
 class _SqlClassData(Model):
@@ -277,26 +277,26 @@ class _SqlLevelData(Model):
 
 class _SqlClassState(ClassState):
     def get_all(self) -> Sequence[ClassData]:
-        return cast(Sequence[ClassData], tuple(_SqlClassData.select()))
+        return tuple(_SqlClassData.select())
 
     def import_from(self, src: ClassState) -> None:
         _SqlLevelData.delete().execute()  # pylint: disable=no-value-for-parameter
         _SqlSpellsByLevelData.delete().execute()  # pylint: disable=no-value-for-parameter
         _SqlClassData.delete().execute()  # pylint: disable=no-value-for-parameter
         for src_class in src.get_all():
-            tgt_class = _SqlClassData.create(**{
-                k: v for k, v in src_class.as_dict().items() if k != "levels"
-            })
+            tgt_class = _SqlClassData.create(
+                **{k: v for k, v in src_class.as_dict().items() if k != "levels"}  # type: ignore[attr-defined]
+            )
             for src_level in src_class.levels:
                 data = {
                     k: v
-                    for k, v in src_level.as_dict().items()
+                    for k, v in src_level.as_dict().items()  # type: ignore[attr-defined]
                     if k != "spells_by_level"
                 }
                 data.update({"class_data": tgt_class})
                 _SqlLevelData.create(**data)
                 for src_spells_by_level in src_level.spells_by_level:
-                    data = dict(src_spells_by_level.as_dict())
+                    data = dict(src_spells_by_level.as_dict())  # type: ignore[attr-defined]
                     data.update({
                         "class_name": src_class.name,
                         "class_level": src_level.level,
@@ -316,7 +316,7 @@ class _SqlCritData(Model):
 
 class _SqlCritState(CritState):
     def get_all(self) -> Sequence[CritTableData]:
-        return cast(Sequence[CritTableData], tuple(_SqlCritTableData.select()))
+        return tuple(_SqlCritTableData.select())
 
     def import_from(self, src: CritState) -> None:
         _SqlCritData.delete().execute()  # pylint: disable=no-value-for-parameter
@@ -417,8 +417,8 @@ class SqlState(State):
         return {"sqlite"}
 
 
-def _import_from(cls: type[Any], items: Iterable[BaseData]) -> None:
-    cls.insert_many(i.as_dict() for i in items).execute()
+def _import_from(cls: type[Any], dicts: Iterable[Mapping[str, Any]]) -> None:
+    cls.insert_many(dicts).execute()
 
 
 def _get_data_classes() -> Sequence[type[Model]]:

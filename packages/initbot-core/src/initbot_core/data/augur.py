@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from dataclasses import dataclass
-
-from initbot_core.base import BaseData
+from typing import Protocol
 
 
-@dataclass(frozen=True)
-class AugurData(BaseData):
+# Implementations (LocalAugurData, _SqlAugurData) satisfy this Protocol structurally.
+# Explicit inheritance is not possible: _ProtocolMeta (typing.Protocol), Pydantic's
+# ModelMetaclass, and Peewee's ModelBase are all ABCMeta subclasses but none is a subclass
+# of another, so Python raises TypeError: metaclass conflict at class definition time.
+class AugurData(Protocol):
     description: str
     roll: int

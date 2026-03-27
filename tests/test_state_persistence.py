@@ -9,14 +9,14 @@ import time
 import pytest
 
 from initbot_core.config import CORE_CFG
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import NewCharacterData
 from initbot_core.state.factory import create_state_from_source
 from tests.helpers import DATA_DIR, REFERENCE_FILES
 
 
 def test_add_character_and_retrieve(initbot_state):
     cdi = initbot_state.characters.add_store_and_get(
-        CharacterData(name="Bob", user="alice")
+        NewCharacterData(name="Bob", user="alice")
     )
     assert cdi.name == "Bob"
     assert cdi.user == "alice"
@@ -28,7 +28,7 @@ def test_add_character_persists_on_reload(tmp_path):
     for f in REFERENCE_FILES:
         shutil.copy(DATA_DIR / f, tmp_path / f)
     state1 = create_state_from_source(f"json:{tmp_path}")
-    state1.characters.add_store_and_get(CharacterData(name="Bob", user="alice"))
+    state1.characters.add_store_and_get(NewCharacterData(name="Bob", user="alice"))
 
     state2 = create_state_from_source(f"json:{tmp_path}")
     bobs = [c for c in state2.characters.get_all() if c.name == "Bob"]
@@ -37,7 +37,7 @@ def test_add_character_persists_on_reload(tmp_path):
 
 def test_update_character_persists(initbot_state):
     cdi = initbot_state.characters.add_store_and_get(
-        CharacterData(name="Bob", user="alice", strength=10)
+        NewCharacterData(name="Bob", user="alice", strength=10)
     )
     cdi.strength = 14
     initbot_state.characters.update_and_store(cdi)
@@ -47,7 +47,7 @@ def test_update_character_persists(initbot_state):
 
 def test_remove_character(initbot_state):
     cdi = initbot_state.characters.add_store_and_get(
-        CharacterData(name="Bob", user="alice")
+        NewCharacterData(name="Bob", user="alice")
     )
     initbot_state.characters.remove_and_store(cdi)
     remaining = [c for c in initbot_state.characters.get_all() if c.name == "Bob"]
@@ -56,7 +56,7 @@ def test_remove_character(initbot_state):
 
 def test_lookup_by_prefix(initbot_state):
     initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mediocre Mel", user="alice")
+        NewCharacterData(name="Mediocre Mel", user="alice")
     )
     found = initbot_state.characters.get_from_name("Med")
     assert found.name == "Mediocre Mel"
@@ -66,7 +66,7 @@ def test_lookup_by_prefix(initbot_state):
 
 def test_lookup_by_user(initbot_state):
     initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mediocre Mel", user="alice", active=True)
+        NewCharacterData(name="Mediocre Mel", user="alice", active=True)
     )
     found = initbot_state.characters.get_from_user("alice")
     assert found.name == "Mediocre Mel"
@@ -91,7 +91,7 @@ def test_occupation_lookup(initbot_state):
 def test_update_sets_last_used(initbot_state):
     before = int(time.time())
     cdi = initbot_state.characters.add_store_and_get(
-        CharacterData(name="TimestampChar", user="alice")
+        NewCharacterData(name="TimestampChar", user="alice")
     )
     cdi.strength = 10
     initbot_state.characters.update_and_store(cdi)
@@ -103,7 +103,7 @@ def test_update_sets_last_used(initbot_state):
 def test_add_sets_last_used(initbot_state):
     before = int(time.time())
     cdi = initbot_state.characters.add_store_and_get(
-        CharacterData(name="NewChar", user="alice")
+        NewCharacterData(name="NewChar", user="alice")
     )
     after = int(time.time())
     assert cdi.last_used is not None

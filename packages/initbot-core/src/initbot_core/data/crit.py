@@ -3,18 +3,21 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 from collections.abc import Sequence
-from dataclasses import dataclass
-
-from initbot_core.base import BaseData
+from typing import Protocol
 
 
-@dataclass(frozen=True)
-class CritData(BaseData):
+# Implementations (LocalCritData/LocalCritTableData, _SqlCritData/_SqlCritTableData) satisfy
+# these Protocols structurally. Explicit inheritance is not possible: _ProtocolMeta
+# (typing.Protocol), Pydantic's ModelMetaclass, and Peewee's ModelBase are all ABCMeta
+# subclasses but none is a subclass of another, so Python raises TypeError: metaclass
+# conflict at class definition time. As a consequence, ty cannot verify that
+# Sequence[LocalCritTableData] satisfies Sequence[CritTableData] without nominal subtyping,
+# so LocalCritState.get_all() suppresses the resulting return-value error with a type: ignore.
+class CritData(Protocol):
     rolls: Sequence[int]
     effect: str
 
 
-@dataclass(frozen=True)
-class CritTableData(BaseData):
+class CritTableData(Protocol):
     number: int
     crits: Sequence[CritData]

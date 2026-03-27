@@ -22,7 +22,7 @@ from initbot_chat.bot import _send_pruning_notifications  # noqa: E402
 
 sys.argv = _argv
 
-from initbot_core.data.character import CharacterData  # noqa: E402
+from initbot_core.data.character import NewCharacterData  # noqa: E402
 
 # pylint: enable=wrong-import-position
 
@@ -42,7 +42,7 @@ async def test_fetch_member_returns_gotzmode(live_bot: discord.Client) -> None:
 async def test_pruning_notification_dm_sent_via_fetch_member(
     live_bot: discord.Client, caplog: pytest.LogCaptureFixture
 ) -> None:
-    char = CharacterData(name="TestPruneChar", user="gotzmode")
+    char = NewCharacterData(name="TestPruneChar", user="gotzmode")
     char.last_used = 0
     char.player_id = 1
 

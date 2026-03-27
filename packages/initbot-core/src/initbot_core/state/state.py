@@ -7,7 +7,7 @@ from collections.abc import Iterable, Sequence, Set
 
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.cls import ClassData
 from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
@@ -114,7 +114,7 @@ class CharacterState(PartialState, ABC):
             )
         except KeyError as err:
             if create and user:
-                return self.add_store_and_get(CharacterData(name=name, user=user))
+                return self.add_store_and_get(NewCharacterData(name=name, user=user))
             raise KeyError(f"Unable to find character with name '{name}'") from err
 
     def get_from_user(self, user: str) -> CharacterData:
@@ -125,7 +125,7 @@ class CharacterState(PartialState, ABC):
         )
 
     @abstractmethod
-    def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
+    def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         raise NotImplementedError()
 
     @abstractmethod

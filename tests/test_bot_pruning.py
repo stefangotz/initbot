@@ -24,23 +24,21 @@ from initbot_chat.bot import (  # noqa: E402
 
 sys.argv = _argv
 
-from initbot_core.data.character import (  # noqa: E402
-    CharacterData,
-)
+from initbot_core.data.character import NewCharacterData  # noqa: E402
 
 # pylint: enable=wrong-import-position
 
 _FUTURE = int(time.time()) + 200 * 86400
 
 
-def _old_char(name: str, user: str) -> CharacterData:
-    cdi = CharacterData(name=name, user=user)
+def _old_char(name: str, user: str) -> NewCharacterData:
+    cdi = NewCharacterData(name=name, user=user)
     cdi.last_used = 0
     return cdi
 
 
-def _recent_char(name: str, user: str) -> CharacterData:
-    cdi = CharacterData(name=name, user=user)
+def _recent_char(name: str, user: str) -> NewCharacterData:
+    cdi = NewCharacterData(name=name, user=user)
     cdi.last_used = int(time.time())
     return cdi
 

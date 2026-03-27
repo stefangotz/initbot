@@ -7,12 +7,12 @@ from unittest.mock import patch
 from discord.ext import commands
 
 from initbot_chat.commands.luck import handle_error, luck
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import NewCharacterData
 
 
 async def test_luck_no_luck_attribute(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser", luck=None)
+        NewCharacterData(name="Mel", user="testuser", luck=None)
     )
     try:
         await luck.callback(mock_ctx, "Mel")
@@ -26,7 +26,7 @@ async def test_luck_no_luck_attribute(mock_ctx):
 
 async def test_luck_guaranteed_pass(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser", luck=18)
+        NewCharacterData(name="Mel", user="testuser", luck=18)
     )
     with patch("initbot_core.models.roll.NerdDiceRoll.roll_one", return_value=10):
         await luck.callback(mock_ctx, "Mel")
@@ -38,7 +38,7 @@ async def test_luck_guaranteed_pass(mock_ctx):
 
 async def test_luck_guaranteed_fail(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser", luck=5)
+        NewCharacterData(name="Mel", user="testuser", luck=5)
     )
     with patch("initbot_core.models.roll.NerdDiceRoll.roll_one", return_value=15):
         await luck.callback(mock_ctx, "Mel")
@@ -50,7 +50,7 @@ async def test_luck_guaranteed_fail(mock_ctx):
 
 async def test_luck_custom_die(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser", luck=18)
+        NewCharacterData(name="Mel", user="testuser", luck=18)
     )
     with patch("initbot_core.models.roll.NerdDiceRoll.roll_one", return_value=3):
         await luck.callback(mock_ctx, "Mel", "d6")

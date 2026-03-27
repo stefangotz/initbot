@@ -7,14 +7,14 @@ import time
 from collections.abc import Mapping, MutableSequence, Sequence, Set
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from pydantic import BaseModel, ConfigDict
 
 from initbot_core.config import CORE_CFG
 from initbot_core.data.ability import AbilityData, AbilityModifierData
 from initbot_core.data.augur import AugurData
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.cls import ClassData
 from initbot_core.data.crit import CritTableData
 from initbot_core.data.occupation import OccupationData
@@ -69,10 +69,10 @@ class LocalAbilityState(AbilityState):
             logging.info("No ability data loaded from %s", path)
 
     def get_all(self) -> Sequence[AbilityData]:
-        return cast(Sequence[AbilityData], self._abilities_data.abilities)
+        return self._abilities_data.abilities
 
     def get_mods(self) -> Sequence[AbilityModifierData]:
-        return cast(Sequence[AbilityModifierData], self._abilities_data.modifiers)
+        return self._abilities_data.modifiers
 
     def import_from(self, src: AbilityState) -> None:
         raise NotImplementedError()
@@ -104,10 +104,10 @@ class LocalAugurState(AugurState):
         }
 
     def get_all(self) -> Sequence[AugurData]:
-        return cast(Sequence[AugurData], tuple(self._augurs_dict.values()))
+        return tuple(self._augurs_dict.values())
 
     def get_from_roll(self, roll: int) -> AugurData:
-        return cast(AugurData, self._augurs_dict[roll])
+        return self._augurs_dict[roll]
 
     def import_from(self, src: AugurState) -> None:
         raise NotImplementedError()
@@ -167,23 +167,23 @@ class LocalCharacterState(CharacterState):
             self._store()
 
     def get_all(self) -> Sequence[CharacterData]:
-        return cast(Sequence[CharacterData], self._characters)
+        return self._characters
 
-    def add_store_and_get(self, char_data: CharacterData) -> CharacterData:
+    def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         if any(char for char in self.get_all() if char.name == char_data.name):
             raise KeyError(f"Character with name '{char_data.name}' already exists")
         local_char_data = LocalCharacterData(**asdict(char_data))
         local_char_data.last_used = int(time.time())
         self._characters.append(local_char_data)
         self._store()
-        return cast(CharacterData, local_char_data)
+        return local_char_data
 
     def remove_and_store(self, char_data: CharacterData) -> None:
         if not isinstance(char_data, LocalCharacterData):
             raise TypeError(
                 f"Only character data returned by the State class can be removed: {char_data}"
             )
-        self._characters.remove(cast(LocalCharacterData, char_data))
+        self._characters.remove(char_data)
         self._store()
 
     def update_and_store(self, char_data: CharacterData) -> None:
@@ -237,28 +237,28 @@ class LocalPlayerState(PlayerState):
             if player.discord_id == discord_id:
                 player.name = name
                 self._store()
-                return cast(PlayerData, player)
+                return player
         new_player = LocalPlayerData(
             id=self._next_id(), discord_id=discord_id, name=name
         )
         self._players.append(new_player)
         self._store()
-        return cast(PlayerData, new_player)
+        return new_player
 
     def get_from_id(self, player_id: int) -> PlayerData | None:
         for player in self._players:
             if player.id == player_id:
-                return cast(PlayerData, player)
+                return player
         return None
 
     def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
         for player in self._players:
             if player.discord_id == discord_id:
-                return cast(PlayerData, player)
+                return player
         return None
 
     def get_all(self) -> Sequence[PlayerData]:
-        return cast(Sequence[PlayerData], self._players)
+        return self._players
 
     def _store(self) -> None:
         with open(self._path, "w", encoding="UTF8") as file_desc:
@@ -295,7 +295,7 @@ class LocalOccupationState(OccupationState):
         self._occupations: Sequence[LocalOccupationData] = occupations_data.occupations
 
     def get_all(self) -> Sequence[OccupationData]:
-        return cast(Sequence[OccupationData], self._occupations)
+        return self._occupations  # type: ignore[return-value]
 
     def import_from(self, src: OccupationState) -> None:
         raise NotImplementedError()
@@ -351,7 +351,7 @@ class LocalClassState(ClassState):
         self._classes: Sequence[LocalClassData] = classes_data.classes
 
     def get_all(self) -> Sequence[ClassData]:
-        return cast(Sequence[ClassData], tuple(self._classes))
+        return tuple(self._classes)  # type: ignore[return-value]
 
     def import_from(self, src: ClassState) -> None:
         raise NotImplementedError()
@@ -386,7 +386,7 @@ class LocalCritState(CritState):
         self._data: Sequence[LocalCritTableData] = data.crit_tables
 
     def get_all(self) -> Sequence[CritTableData]:
-        return cast(Sequence[CritTableData], self._data)
+        return self._data  # type: ignore[return-value]
 
     def import_from(self, src: CritState) -> None:
         raise NotImplementedError()

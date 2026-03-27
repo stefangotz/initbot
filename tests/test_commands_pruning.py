@@ -6,7 +6,7 @@ import time
 from unittest.mock import patch
 
 from initbot_chat.commands.character import prune, touch, unused
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import NewCharacterData
 
 # Shift "now" 200 days into the future so every recently-added character
 # looks old enough to be eligible for pruning.
@@ -21,7 +21,9 @@ def _add_old(state, name, user):
     ):
         m_local.time.return_value = 0
         m_sql.time.return_value = 0
-        return state.characters.add_store_and_get(CharacterData(name=name, user=user))
+        return state.characters.add_store_and_get(
+            NewCharacterData(name=name, user=user)
+        )
 
 
 async def test_unused_own(mock_ctx):
@@ -79,7 +81,7 @@ async def test_prune_removes(mock_ctx):
 
 async def test_prune_spares_recent(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="RecentMel", user="testuser")
+        NewCharacterData(name="RecentMel", user="testuser")
     )
     # No time patch — character was just created so last_used ≈ now → not eligible
     await prune.callback(mock_ctx)
@@ -122,7 +124,7 @@ async def test_touch_multiple(mock_ctx):
 
 async def test_touch_no_args(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="OnlyChar", user="testuser")
+        NewCharacterData(name="OnlyChar", user="testuser")
     )
     before = int(time.time())
     await touch.callback(mock_ctx)

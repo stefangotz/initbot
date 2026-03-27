@@ -3,19 +3,23 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 from collections.abc import Sequence
-from dataclasses import dataclass
-
-from initbot_core.base import BaseData
+from typing import Protocol
 
 
-@dataclass(frozen=True)
-class SpellsByLevelData(BaseData):
+# Implementations (LocalSpellsByLevelData/LocalLevelData/LocalClassData, and their _Sql*
+# counterparts) satisfy these Protocols structurally. Explicit inheritance is not possible:
+# _ProtocolMeta (typing.Protocol), Pydantic's ModelMetaclass, and Peewee's ModelBase are all
+# ABCMeta subclasses but none is a subclass of another, so Python raises TypeError: metaclass
+# conflict at class definition time. As a consequence, ty cannot verify that
+# Sequence[LocalClassData] satisfies Sequence[ClassData] without nominal subtyping, so
+# LocalClassState.get_all() suppresses the resulting return-value error with a type: ignore.
+class SpellsByLevelData(Protocol):
     level: int
     spells: int
 
 
-@dataclass(frozen=True)
-class LevelData(BaseData):
+# pylint: disable=R0801
+class LevelData(Protocol):
     level: int
     attack_die: str
     crit_die: str
@@ -32,8 +36,7 @@ class LevelData(BaseData):
     sneak_hide: int
 
 
-@dataclass(frozen=True)
-class ClassData(BaseData):
+class ClassData(Protocol):
     name: str
     hit_die: int
     weapons: Sequence[str]

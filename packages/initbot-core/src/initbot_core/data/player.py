@@ -2,13 +2,15 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from dataclasses import dataclass
-
-from initbot_core.base import BaseData
+from typing import Protocol, runtime_checkable
 
 
-@dataclass
-class PlayerData(BaseData):
+# Implementations (LocalPlayerData, _SqlPlayerData) satisfy this Protocol structurally.
+# Explicit inheritance is not possible: _ProtocolMeta (typing.Protocol), Pydantic's
+# ModelMetaclass, and Peewee's ModelBase are all ABCMeta subclasses but none is a subclass
+# of another, so Python raises TypeError: metaclass conflict at class definition time.
+@runtime_checkable
+class PlayerData(Protocol):
     id: int  # Internal primary key, auto-assigned, used as foreign key by other entities
     discord_id: int  # Discord snowflake, unique but not the primary key
     name: str  # Display name, refreshed on each command invocation

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 from initbot_chat.commands.character import new, park, play
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import NewCharacterData
 
 
 async def test_new_creates_character(mock_ctx):
@@ -23,7 +23,7 @@ async def test_new_creates_character(mock_ctx):
 
 async def test_park_deactivates_character(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser")
+        NewCharacterData(name="Mel", user="testuser")
     )
     await park.callback(mock_ctx, "Mel")
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
@@ -31,7 +31,7 @@ async def test_park_deactivates_character(mock_ctx):
 
 
 async def test_play_reactivates_character(mock_ctx):
-    cdi = CharacterData(name="Mel", user="testuser")
+    cdi = NewCharacterData(name="Mel", user="testuser")
     mock_ctx.bot.initbot_state.characters.add_store_and_get(cdi)
     await park.callback(mock_ctx, "Mel")
     await play.callback(mock_ctx, "Mel")
@@ -41,7 +41,7 @@ async def test_play_reactivates_character(mock_ctx):
 
 async def test_park_play_round_trip(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser")
+        NewCharacterData(name="Mel", user="testuser")
     )
     assert mock_ctx.bot.initbot_state.characters.get_from_name("Mel").active is True
 

@@ -5,7 +5,7 @@
 from discord.ext import commands
 
 from initbot_chat.commands.character import char, char_error, chars, remove, set_
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import NewCharacterData
 
 
 async def test_chars_empty_state(mock_ctx):
@@ -15,7 +15,7 @@ async def test_chars_empty_state(mock_ctx):
 
 async def test_chars_with_character(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser")
+        NewCharacterData(name="Mel", user="testuser")
     )
     await chars.callback(mock_ctx)
     mock_ctx.send.assert_called()
@@ -25,7 +25,7 @@ async def test_chars_with_character(mock_ctx):
 
 async def test_char_by_prefix(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mediocre Mel", user="testuser")
+        NewCharacterData(name="Mediocre Mel", user="testuser")
     )
     await char.callback(mock_ctx, "Med")
     mock_ctx.send.assert_called()
@@ -43,7 +43,7 @@ async def test_char_missing_sends_error(mock_ctx):
 
 async def test_remove_character(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser")
+        NewCharacterData(name="Mel", user="testuser")
     )
     await remove.callback(mock_ctx, "Mel")
     mock_ctx.send.assert_called()
@@ -57,7 +57,7 @@ async def test_remove_character(mock_ctx):
 
 async def test_set_attribute(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        CharacterData(name="Mel", user="testuser")
+        NewCharacterData(name="Mel", user="testuser")
     )
     await set_.callback(mock_ctx, txt="Mel strength 14")
     mock_ctx.send.assert_called()
