@@ -26,6 +26,36 @@ The file plans/ideas.md contains unelaborated ideas for improvements and feature
 The user may occasionally ask you to elaborate one of those ideas into a full implementation plan.
 Once the user approves of such a plan, store it as a separate markdown file with a short memorable name in the plans/ directory and remove the corresponding idea from the ideas.md file.
 
+## Web Frontend
+
+The web app package is at `packages/initbot-web/`. The single current page is the initiative tracker (`tracker.html`), served via Starlette with Datastar SSE.
+
+### Tools for visual design work
+
+- **Playwright MCP** is configured and connected. Use it to navigate to the running app, take screenshots, and verify visual changes after editing templates.
+- **`/frontend-design` skill** is installed. Invoke it at the start of design work to establish a visual direction before writing code.
+
+### Dev server
+
+Start with:
+```
+tools/run_web_dev.sh
+```
+
+This generates 5 sample characters with fresh initiative timestamps, exports them to `dev-state/dev.sqlite`, and starts the server at:
+```
+http://localhost:8080/s/dev/
+```
+
+The state is regenerated on each run (timestamps stay fresh). `dev-state/` is gitignored.
+
+### Design iteration workflow
+
+1. Start the dev server (`tools/run_web_dev.sh`)
+2. Use Playwright MCP to navigate to `http://localhost:8080/s/dev/` and take a screenshot
+3. Edit `packages/initbot-web/src/initbot_web/templates/tracker.html`
+4. Use Playwright MCP to verify the result visually before committing
+
 ## Implementation Workflow
 
 The initbot project is currently maintained by only one person.

@@ -7,10 +7,173 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Initiative Tracker</title>
   <script type="module"
     src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js">
   </script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='6' y='6' width='20' height='4' fill='%23b8860b'/><rect x='13' y='10' width='6' height='12' fill='%23b8860b'/><rect x='6' y='22' width='20' height='4' fill='%23b8860b'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Palette ──────────────────────────────────────────────── */
+    :root {
+      --color-bg:      #f5f0e8;   /* creamy marble white           */
+      --color-offset:  #8f8b87;   /* light warm grey               */
+      --color-ink:     #1a1209;   /* warm near-black               */
+      --color-gold:    #b8860b;   /* antique gold, ~4:1 on bg      */
+      --color-row-alt: #f0ede8;   /* barely-there warm grey        */
+      --font-main:     'Cinzel', Georgia, serif;
+    }
+
+    /* ── Reset / base ─────────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-ink);
+      font-family: var(--font-main);
+      font-weight: 400;
+      font-size: 1rem;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Security alert (full-width banner) ───────────────────── */
+    #security-alert:not(:empty) {
+      width: 100%;
+      background: var(--color-offset);
+      color: var(--color-bg);
+      border-left: 6px solid var(--color-gold);
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+
+    #security-alert p {
+      padding: 0.75rem 1.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    #security-alert p::before {
+      content: '\26A0\00A0\00A0';
+    }
+
+    /* ── Page wrapper ─────────────────────────────────────────── */
+    body > div[data-init] {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 1.5rem 3rem;
+    }
+
+    /* ── Heading ──────────────────────────────────────────────── */
+    h1 {
+      font-family: var(--font-main);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--color-ink);
+      text-align: center;
+      width: fit-content;
+      margin: 1.5rem auto;
+      border-bottom: 2px solid var(--color-gold);
+      padding-bottom: 0.4rem;
+    }
+
+    /* ── Table ────────────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background-color: var(--color-offset);
+      color: var(--color-bg);
+    }
+
+    thead th {
+      padding: 0.6rem 1rem;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    thead th:first-child {
+      text-align: center;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(74, 71, 66, 0.25);
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: var(--color-row-alt);
+    }
+
+    tbody td {
+      padding: 0.6rem 1rem;
+      vertical-align: middle;
+    }
+
+    /* Rank — muted, centered */
+    tbody td:first-child {
+      text-align: center;
+      color: rgba(26, 18, 9, 0.45);
+      font-size: 0.85rem;
+    }
+
+    /* Initiative value — gold, bold, primary scan target */
+    tbody td:nth-child(2) {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--color-gold);
+    }
+
+    /* Character name — bold */
+    tbody td:nth-child(3) {
+      font-weight: 700;
+    }
+
+    /* Player name — muted */
+    tbody td:nth-child(4) {
+      color: rgba(26, 18, 9, 0.65);
+      font-size: 0.9rem;
+    }
+
+    /* Top-ranked combatant: gold left-accent */
+    tbody tr#r0 {
+      border-left: 4px solid var(--color-gold);
+    }
+
+    /* Placeholder row */
+    tbody tr td[colspan] {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--color-gold);
+      font-style: italic;
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      body {
+        font-size: 0.875rem;
+      }
+
+      thead th,
+      tbody td {
+        padding: 0.4rem 0.6rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <div id="security-alert">{% if has_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
@@ -21,7 +184,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th></tr>
       </thead>
       <tbody id="initiative-rows">
-        <tr><td colspan="4">Waiting for data…</td></tr>
+        <tr><td colspan="4">Alea iacta est…</td></tr>
       </tbody>
     </table>
   </div>

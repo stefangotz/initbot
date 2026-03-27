@@ -14,3 +14,5 @@ initbot.egg-info
 TODO
 .mutmut-cache
 mutants/
+dev-state/
+.playwright-mcp/
