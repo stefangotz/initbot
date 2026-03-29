@@ -58,9 +58,8 @@ The state is regenerated on each run (timestamps stay fresh). `dev-state/` is gi
 
 ## Implementation Workflow
 
-The initbot project is currently maintained by only one person.
-There are no other contributors available for code review.
-Therefore, use feature branches, but do not use pull requests when implementing changes.
+Use feature branches and pull requests.
+Never commit to or push the main branh directly.
 The standard workflow has the following steps:
 
 - obtain instructions for what to change from the user
