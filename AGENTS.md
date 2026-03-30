@@ -59,20 +59,19 @@ The state is regenerated on each run (timestamps stay fresh). `dev-state/` is gi
 ## Implementation Workflow
 
 Use feature branches and pull requests.
-Never commit to or push the main branh directly.
+Never commit to or push the main branch directly.
 The standard workflow has the following steps:
 
 - obtain instructions for what to change from the user
 - create a feature branch
-- do not create a pull request for the feature branch
 - take the following actions for each step of the instructions or the plan (there may be only one step):
   - implement the changes
   - commit, push, and monitor CI/CD results (via `gh run watch` or `gh run list`) until they pass
   - if you are working off a plan file, mark the step as done in the plan file
   - if the step required multiple commits to get right, squash them into a single commit for this step
   - ask the user for a review before proceeding to the next step
-- once all steps are complete, squash all feature-branch commits unless the user's instruction say not to squash commits
+- once all steps are complete, delete the plan file if you are working off a plan file in the repository
+- squash all feature-branch commits unless the user's instruction say not to squash commits
 - rebase the feature branch onto the latest version of the main branch
-- ask the user for a review
-- once the user approves of the changes, delete the plan file if you are working off a plan file
-- unless the user instructs you otherwise, the user usually takes care of merging the feature branch into the main branch
+- create a pull request
+- once the pull request is merged, delete the local feature branch and switch back to the main branch
