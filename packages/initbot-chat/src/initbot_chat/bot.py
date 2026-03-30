@@ -3,12 +3,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import logging
-import re
 import sys
 from collections import defaultdict
 from collections.abc import Sequence
 from itertools import product
-from pathlib import Path
 
 import discord
 from discord import Intents
@@ -26,10 +24,6 @@ from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import State
 
 _log = logging.getLogger(__name__)
-
-_IGNORE_SENTINEL = "ignore security vulnerabilities"
-_ENV_FILES: tuple[Path, ...] = (Path(".env"), Path(".env.chat"))
-_ALERT_CHANNEL_KEY = re.compile(r"^\s*alert_channel_id\s*=", re.IGNORECASE)
 
 intents = Intents.default()
 intents.message_content = True
@@ -151,17 +145,6 @@ async def _pruning_notification() -> None:
     await _send_pruning_notifications(bot.guilds, bot.initbot_state)  # type: ignore
 
 
-def _remove_alert_channel_from_env_files() -> None:
-    for path in _ENV_FILES:
-        if not path.exists():
-            continue
-        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-        cleaned = [line for line in lines if not _ALERT_CHANNEL_KEY.match(line)]
-        if len(cleaned) < len(lines):
-            path.write_text("".join(cleaned), encoding="utf-8")
-            _log.info("Removed obsolete alert_channel_id from %s", path)
-
-
 def _print_channel_diagnostic() -> None:
     print(
         "\nERROR: 'alert_channel_id' refers to an unknown channel.\n"
@@ -192,9 +175,7 @@ async def on_ready() -> None:
     if not _pruning_notification.is_running():
         _pruning_notification.start()
 
-    if not CFG.alert_channel_id or CFG.alert_channel_id == _IGNORE_SENTINEL:
-        if CFG.alert_channel_id == _IGNORE_SENTINEL:
-            _remove_alert_channel_from_env_files()
+    if not CFG.alert_channel_id:
         _log.warning(
             "Security vulnerability checks are disabled. "
             "The bot will not alert users to known vulnerabilities."
