@@ -24,3 +24,5 @@
 - Voice processing
   - With speaker identification and STT, the bot could take audio commands
   - With LLM embedding, could summarise campaign progress and do recaps
+- better support for removing characters with ambiguous names (differences in case)
+- prevent creation of characters whose names only differ in case; fall-back to existing character for init command
