@@ -29,6 +29,7 @@ from initbot_core.state.state import (
     PlayerState,
     State,
 )
+from initbot_core.state.validation import check_state_directory
 
 
 class LocalBaseModel(BaseModel):
@@ -395,10 +396,7 @@ class LocalCritState(CritState):
 class LocalState(State):
     def __init__(self, source: str) -> None:
         source_dir = Path(source.split(":", maxsplit=1)[-1])
-        if not source_dir.exists():
-            raise ValueError(
-                f"Source directory {source_dir} does not exist. Please provide a valid path for bot state."
-            )
+        check_state_directory(source, source_dir)
         self._abilities = LocalAbilityState(source_dir)
         self._augurs = LocalAugurState(source_dir)
         self._characters = LocalCharacterState(source_dir)
