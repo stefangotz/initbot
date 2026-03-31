@@ -15,7 +15,8 @@ FROM ghcr.io/astral-sh/uv:python3.14-alpine AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN apk upgrade --no-cache \
-    && adduser -u 5678 --disabled-password --gecos "" appuser
+    && adduser -u 5678 --disabled-password --gecos "" appuser \
+    && mkdir /data && chown appuser /data
 
 # Stage 3a: chat bot image (core + chat wheels only)
 FROM runtime-base AS chat

@@ -40,6 +40,7 @@ from initbot_core.state.state import (
     PlayerState,
     State,
 )
+from initbot_core.state.validation import check_state_directory
 
 
 class _SqlAbilityData(Model):
@@ -345,8 +346,8 @@ class SqlState(State):
         state_type, state_source = source.split(":", maxsplit=1)
         if state_type == "sqlite":
             path = Path(state_source)
+            check_state_directory(source, path.parent)
             if not path.exists():
-                path.parent.mkdir(parents=True, exist_ok=True)
                 path.touch(exist_ok=True)
             self._db = SqliteDatabase(
                 path,

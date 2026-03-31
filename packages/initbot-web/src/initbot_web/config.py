@@ -31,3 +31,7 @@ class WebSettings(BaseSettings):
         default_factory=lambda: secrets.token_urlsafe(32),
         description="The secret path component that protects the web app URL. Defaults to a random token generated at startup.",
     )
+    domain: str = Field(
+        default="",
+        description="Public domain name when running behind a reverse proxy (e.g. 'example.com'). Note that your environment variables or .env file need to use the uppercase key DOMAIN for the reverse proxy caddy to pick up this value correctly.",
+    )
