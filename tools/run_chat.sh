@@ -7,5 +7,4 @@
 set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
-
-uv run initbot "$@"
+exec sh ./tools/run.sh initbot "$@"

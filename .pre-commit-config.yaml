@@ -4,14 +4,14 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # v6.0.0  # pragma: allowlist secret
     hooks:
       - id: check-yaml
       - id: debug-statements
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.6
+    rev: 4924b0e01e032fea073ad04a1c5cfa7e4add0afb  # v0.15.6  # pragma: allowlist secret
     hooks:
       - id: ruff
       - id: ruff-format
@@ -29,20 +29,25 @@ repos:
           - packages/initbot-web/src
         pass_filenames: false
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0  # commit 01886c8a910c64595c47f186ca1ffc0b77fa5458
+    rev: 01886c8a910c64595c47f186ca1ffc0b77fa5458  # v1.5.0  # pragma: allowlist secret
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: 745eface02aef23e168a8afb6b5737818efbea95  # v0.11.0.1  # pragma: allowlist secret
+    hooks:
+      - id: shellcheck
+        args: ["-x"]
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.14.0  # commit 57e1618d78fd469a92c1e584e8c9313024656623
+    rev: 57e1618d78fd469a92c1e584e8c9313024656623  # v2.14.0  # pragma: allowlist secret
     hooks:
       - id: hadolint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.23.1
+    rev: ea2eb407b4cbce87cf0d502f36578950494f5ac9  # v1.23.1  # pragma: allowlist secret
     hooks:
       - id: zizmor
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v6.2.0
+    rev: a1bb792acda6fd0724936b4ebbdbc8eceb9c0459  # v6.2.0  # pragma: allowlist secret
     hooks:
       - id: reuse
   - repo: local

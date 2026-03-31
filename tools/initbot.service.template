@@ -1,0 +1,20 @@
+# TODO: For production hardening, consider creating a dedicated system user
+# (e.g. useradd -r -s /usr/sbin/nologin initbot) and moving the application
+# to a fixed install path (e.g. /opt/initbot) rather than running from the
+# cloned repository directory.
+
+[Unit]
+Description=${SERVICE_DESCRIPTION}
+After=network.target
+
+[Service]
+Type=simple
+User=${SERVICE_USER}
+WorkingDirectory=${REPO_DIR}
+ExecStart=/bin/sh ${REPO_DIR}/tools/${RUN_SCRIPT}
+Restart=on-failure
+EnvironmentFile=-${REPO_DIR}/.env
+EnvironmentFile=-${REPO_DIR}/.env.${APP_ENV_SUFFIX}
+
+[Install]
+WantedBy=multi-user.target

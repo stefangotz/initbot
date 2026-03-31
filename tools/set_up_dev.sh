@@ -7,4 +7,7 @@
 set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
-exec sh ./tools/run.sh initbot-web "$@"
+
+sh ./tools/set_up_uv.sh
+uv sync
+./.venv/bin/pre-commit install

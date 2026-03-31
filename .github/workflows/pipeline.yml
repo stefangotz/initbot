@@ -60,6 +60,29 @@ jobs:
           api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src,packages/initbot-web/src pytest tests
           .venv/bin/coverage report
 
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          version: "0.10.10"
+          checksum: "3e1027f26ce8c7e4c32e2277a7fed2cb410f2f1f9320d3df97653d40e21f415b"
+          python-version: "3.14"
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: shellcheck
+        run: shellcheck -x tools/*.sh
+      - name: run_chat.sh smoke test
+        run: sh ./tools/run_chat.sh --help
+      - name: run_web.sh smoke test
+        run: sh ./tools/run_web.sh --help
+      - name: set_up_systemd.sh dry-run
+        run: sh ./tools/set_up_systemd.sh --dry-run freestanding
+
   sbom:
     runs-on: ubuntu-latest
     steps:
