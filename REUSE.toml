@@ -5,6 +5,7 @@ path = [
     "**.md",
     "**.json",
     "**.sqlite",
+    "**.template",
     "uv.lock",
     ".secrets.baseline",
     ".python-version",

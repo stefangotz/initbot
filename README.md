@@ -29,35 +29,34 @@ Get more information on any of the commands with `$help`, e.g., `$help init`.
 The web app reflects some of the same information as the chat bot, just in a browser.
 It can access the same data source as the chat bot, so both applications can interact.
 
-## Development
+## Application Setup & Execution
 
-To get started on Linux or MacOS and set up everything you need for development, run `./tools/setup.sh`.
-That script boils down to:
+To run the chat bot application, you first need to [create a Discord bot token](https://duckduckgo.com/?q=how+to+create+a+discord+bot+token).
 
-- setting up `uv`
-- setting up a Python virtual environment
-- setting up pre-commit hooks
+### Test / One-Off
 
-On Windows, the script won't run as such, but the commands it contains should translate quite easily.
+1. Clone git repository or download repository contents
+1. Run chat bot: `sh ./tools/run_chat.sh`
+1. Run web app: `sh ./tools/run_web.sh`
 
-## Running the applications
+### Systemd Services
 
-### Chat bot
-
-To run the chat bot straight from the repository:
-
-- create a Discord bot token (see Google)
-- run `./tools/setup.sh` (or make sure you have `uv` and run `uv sync`)
-- run `./tools/run_chat.sh` (or the commands that script contains)
-
-### Web app
-
-- run `./tools/run_web.sh` (or the commands that script contains)
+1. Clone git repository or download repository contents
+1. Configure applications: `sh ./tools/configure.sh freestanding`
+1. Set up systemd services for free-standing execution: `sh ./tools/set_up_systemd.sh freestanding`
+   The script installs the service unit files and prompts whether to enable and start each service.
 
 ### Configuration
 
-Configuration is loaded from layered `.env` files. Each app reads the shared
-`.env` first, then its own app-specific file (which takes precedence):
+First off, you can run the initbot applications without configuring them ahead of time.
+They will simply prompt for required configuration data.
+
+You can run that configuration mode explicitly at any time with the command `sh ./tools/configure.sh`
+
+The initbot applications accept their configuration parameters in any combination of command-line options, environment variables, and `.env` files.
+
+Configuration parameters are loaded from layered `.env` files.
+Each app reads the shared `.env` first, then its own app-specific file (which takes precedence):
 
 | File | Used by | Typical contents |
 | --- | --- | --- |
@@ -71,14 +70,16 @@ In addition to `.env` files, parameters can be supplied via:
 - environment variables: `export token=123; ./tools/run_chat.sh`
 
 Supported parameters are listed in
-[`packages/initbot-chat/src/initbot_chat/config.py`](packages/initbot-chat/src/initbot_chat/config.py)
-and
-[`packages/initbot-web/src/initbot_web/config.py`](packages/initbot-web/src/initbot_web/config.py).
+
+- [`packages/initbot-core/src/initbot_core/config.py`](packages/initbot-core/src/initbot_core/config.py)
+- [`packages/initbot-chat/src/initbot_chat/config.py`](packages/initbot-chat/src/initbot_chat/config.py)
+- [`packages/initbot-web/src/initbot_web/config.py`](packages/initbot-web/src/initbot_web/config.py).
+
 You can also run `./tools/run_chat.sh --help` or `./tools/run_web.sh --help`.
 
 ### Containers
 
-The repository ships two Docker images built from the same `Dockerfile`:
+The repository defines two Docker images built from the same `Dockerfile`:
 
 | Target | Image | Entrypoint |
 | --- | --- | --- |
@@ -100,7 +101,7 @@ docker compose up --build
 
 The compose file mounts a named volume `data` at `/data` in both containers and sets `STATE=sqlite:/data/app.sqlite` so they share the same database.
 App-specific configuration goes in `.env.chat` (token, prefixes) and `.env.web` (secret, port).
-Shared configuration goes in `.env`.
+Shared configuration goes in `.env*` files.
 None of these files are required — the compose file won't error if they're absent.
 
 To run a single image manually:
@@ -118,3 +119,14 @@ docker run initbot-chat --token 123 -e STATE=sqlite:/data/app.sqlite -v mydata:/
 # Web app — with an sqlite datastore in a named docker volume
 docker run -e STATE=sqlite:/data/app.sqlite -v mydata:/data initbot-web
 ```
+
+## Development
+
+To get started on Linux or MacOS and set up everything you need for development, run `./tools/set_up_dev.sh`.
+That script boils down to:
+
+- setting up `uv`
+- setting up a Python virtual environment with the Python dependencies
+- setting up pre-commit hooks
+
+On Windows, the script won't run as such, but the commands it contains should translate quite easily.
