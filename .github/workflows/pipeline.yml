@@ -52,8 +52,7 @@ jobs:
       - name: reuse
         run: uv run reuse lint
       - name: pip-audit
-        # CVE-2026-4539: no fix released for pygments yet; re-evaluate when pygments > 2.19.2 ships
-        run: uv run pip-audit --ignore-vuln CVE-2026-4539
+        run: uv run pip-audit
       - name: detect-secrets
         run: git ls-files -z | xargs -0 .venv/bin/detect-secrets-hook --baseline .secrets.baseline
       - name: test
