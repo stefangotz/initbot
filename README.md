@@ -39,12 +39,26 @@ To run the chat bot application, you first need to [create a Discord bot token](
 1. Run chat bot: `sh ./tools/run_chat.sh`
 1. Run web app: `sh ./tools/run_web.sh`
 
-### Systemd Services
+### Docker Compose Services
+
+This setup always runs both applications together with a Caddy reverse proxy that serves the web app over HTTPS.
+
+Required configuration:
+
+| File | Setting | Description |
+| --- | --- | --- |
+| `.env` | `DOMAIN=<your-domain>` | Domain name Caddy uses for TLS and routing |
+| `.env.chat` | `token=<discord-bot-token>` | Discord bot token |
+
+Setup steps:
 
 1. Clone git repository or download repository contents
-1. Configure applications: `sh ./tools/configure.sh freestanding`
-1. Set up systemd services for free-standing execution: `sh ./tools/set_up_systemd.sh freestanding`
-   The script installs the service unit files and prompts whether to enable and start each service.
+1. Create `.env` with `DOMAIN=<your-domain>` and `.env.chat` with `token=<discord-bot-token>` in the repository
+1. Set up a systemd service: `sh ./tools/set_up_systemd.sh compose`
+   The script installs the service unit file and prompts whether to enable and start it.
+
+`web_secret` is auto-generated if not set.
+The web app is reachable at `https://<DOMAIN>/s/<web_secret>/`.
 
 ### Configuration
 
@@ -93,7 +107,7 @@ docker build --target chat -t initbot-chat .
 docker build --target web  -t initbot-web  .
 ```
 
-Or use Docker Compose to build and run both together with a shared SQLite volume:
+Or use Docker Compose to build and run both together with a shared volume for state:
 
 ```sh
 docker compose up --build
