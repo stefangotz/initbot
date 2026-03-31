@@ -1,20 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # TODO: For production hardening, consider creating a dedicated system user
 # (e.g. useradd -r -s /usr/sbin/nologin initbot) and moving the application
 # to a fixed install path (e.g. /opt/initbot) rather than running from the
 # cloned repository directory.
 
 [Unit]
-Description=${SERVICE_DESCRIPTION}
-After=network.target
+Description=Initbot (Docker Compose)
+After=network.target docker.service
+Requires=docker.service
 
 [Service]
 Type=simple
 User=${SERVICE_USER}
 WorkingDirectory=${REPO_DIR}
-ExecStart=/bin/sh ${REPO_DIR}/tools/${RUN_SCRIPT}
+ExecStart=/bin/sh ${REPO_DIR}/tools/run_compose.sh
+ExecStop=/usr/bin/docker compose down
 Restart=on-failure
-EnvironmentFile=-${REPO_DIR}/.env
-EnvironmentFile=-${REPO_DIR}/.env.${APP_ENV_SUFFIX}
 
 [Install]
 WantedBy=multi-user.target

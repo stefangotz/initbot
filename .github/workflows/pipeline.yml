@@ -81,7 +81,7 @@ jobs:
       - name: run_web.sh smoke test
         run: sh ./tools/run_web.sh --help
       - name: set_up_systemd.sh dry-run
-        run: sh ./tools/set_up_systemd.sh --dry-run freestanding
+        run: sh ./tools/set_up_systemd.sh --dry-run
 
   sbom:
     runs-on: ubuntu-latest

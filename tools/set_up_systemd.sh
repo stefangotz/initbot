@@ -12,29 +12,22 @@ export REPO_DIR SERVICE_USER
 TEMPLATE="$REPO_DIR/tools/initbot.service.template"
 ENVSUBST_VARS="\${SERVICE_DESCRIPTION} \${SERVICE_USER} \${REPO_DIR} \${RUN_SCRIPT} \${APP_ENV_SUFFIX}"
 DRY_RUN=0
-MODE=""
 
 for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=1 ;;
-        freestanding) MODE="freestanding" ;;
         *)
-            printf 'Usage: %s [--dry-run] freestanding\n' "$0" >&2
+            printf 'Usage: %s [--dry-run]\n' "$0" >&2
             exit 1
             ;;
     esac
 done
 
-if [ "$MODE" != "freestanding" ]; then
-    printf 'Usage: %s [--dry-run] freestanding\n' "$0" >&2
-    exit 1
-fi
-
-printf 'Note: the systemd services will run directly from the cloned repository:\n'
+printf 'Note: the systemd service will run directly from the cloned repository:\n'
 printf '\n'
 printf '  %s\n' "$REPO_DIR"
 printf '\n'
-printf 'Running server-side Python applications from a source tree is convenient\n'
+printf 'Running server-side applications from a source tree is convenient\n'
 printf 'but is not the recommended approach for production deployments. For a\n'
 printf 'more robust setup, consider installing the application to a fixed path\n'
 printf '(e.g. /opt/initbot) and running it under a dedicated system user account.\n'
@@ -69,16 +62,10 @@ prompt_systemctl() {
 }
 
 write_unit \
-    /etc/systemd/system/initbot_chat.service \
-    "Initbot Discord chat bot" \
-    run_chat.sh \
-    chat
-
-write_unit \
-    /etc/systemd/system/initbot_web.service \
-    "Initbot companion web app" \
-    run_web.sh \
-    web
+    /etc/systemd/system/initbot.service \
+    "" \
+    "" \
+    ""
 
 if [ "$DRY_RUN" = "1" ]; then
     printf 'Would run: sudo systemctl daemon-reload\n'
@@ -86,7 +73,5 @@ else
     sudo systemctl daemon-reload
 fi
 
-prompt_systemctl enable initbot_chat
-prompt_systemctl start initbot_chat
-prompt_systemctl enable initbot_web
-prompt_systemctl start initbot_web
+prompt_systemctl enable initbot
+prompt_systemctl start initbot
