@@ -17,6 +17,7 @@ from initbot_core.utils import (
     get_first_set_match,
     get_first_set_match_or_over_under_flow,
     get_unique_prefix_match,
+    normalize_str,
 )
 
 
@@ -124,8 +125,18 @@ class CharacterState(PartialState, ABC):
             lambda cdi: cdi.user,
         )
 
-    @abstractmethod
     def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
+        normalized = normalize_str(char_data.name)
+        for existing in self.get_all():
+            if normalize_str(existing.name) == normalized:
+                raise ValueError(
+                    f"A character named '{existing.name}' already exists "
+                    f"(character names must be unique ignoring case)"
+                )
+        return self._add_store_and_get(char_data)
+
+    @abstractmethod
+    def _add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         raise NotImplementedError()
 
     @abstractmethod

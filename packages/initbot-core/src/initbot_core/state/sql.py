@@ -125,7 +125,7 @@ class _SqlCharacterState(CharacterState):
     def get_all(self) -> Sequence[CharacterData]:
         return tuple(_SqlCharacterData.select())
 
-    def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
+    def _add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         char_data.last_used = int(time.time())
         return _SqlCharacterData.create(  # type: ignore[return-value]
             **{k: v for k, v in asdict(char_data).items() if v is not None}

@@ -55,6 +55,17 @@ async def test_init_auto_roll_no_agility(mock_ctx):
     mock_ctx.send.assert_called()
 
 
+async def test_init_ci_name_finds_existing_character(mock_ctx):
+    """$init with a case-variant name finds the existing character rather than creating one."""
+    mock_ctx.bot.initbot_state.characters.add_store_and_get(
+        NewCharacterData(name="Foo", user="testuser")
+    )
+    await init.callback(mock_ctx, "foo", "7")
+    char = mock_ctx.bot.initbot_state.characters.get_from_name("Foo")
+    assert char.initiative == 7
+    assert len(mock_ctx.bot.initbot_state.characters.get_all()) == 1
+
+
 async def test_inis_shows_initiative_order(mock_ctx):
     now = int(time.time())
     alpha = NewCharacterData(

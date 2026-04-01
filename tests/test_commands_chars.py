@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import pytest
 from discord.ext import commands
 
 from initbot_chat.commands.character import char, char_error, chars, remove, set_
@@ -53,6 +54,26 @@ async def test_remove_character(mock_ctx):
         c for c in mock_ctx.bot.initbot_state.characters.get_all() if c.name == "Mel"
     ]
     assert len(remaining) == 0
+
+
+async def test_duplicate_name_case_insensitive_rejected(mock_ctx):
+    mock_ctx.bot.initbot_state.characters.add_store_and_get(
+        NewCharacterData(name="Foo", user="testuser")
+    )
+    with pytest.raises(ValueError, match="Foo"):
+        mock_ctx.bot.initbot_state.characters.add_store_and_get(
+            NewCharacterData(name="foo", user="testuser")
+        )
+
+
+async def test_duplicate_name_exact_rejected(mock_ctx):
+    mock_ctx.bot.initbot_state.characters.add_store_and_get(
+        NewCharacterData(name="Foo", user="testuser")
+    )
+    with pytest.raises(ValueError, match="Foo"):
+        mock_ctx.bot.initbot_state.characters.add_store_and_get(
+            NewCharacterData(name="Foo", user="testuser")
+        )
 
 
 async def test_set_attribute(mock_ctx):
