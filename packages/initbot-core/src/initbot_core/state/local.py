@@ -170,9 +170,7 @@ class LocalCharacterState(CharacterState):
     def get_all(self) -> Sequence[CharacterData]:
         return self._characters
 
-    def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
-        if any(char for char in self.get_all() if char.name == char_data.name):
-            raise KeyError(f"Character with name '{char_data.name}' already exists")
+    def _add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         local_char_data = LocalCharacterData(**asdict(char_data))
         local_char_data.last_used = int(time.time())
         self._characters.append(local_char_data)

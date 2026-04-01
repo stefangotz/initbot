@@ -128,6 +128,12 @@ def get_exact_or_unique_prefix_match(
     exact_matches = [i for i in candidates if get_str_from_candidate(i) == str_to_match]
     if len(exact_matches) == 1:
         return exact_matches[0]
+    normalized = normalize_str(str_to_match)
+    ci_exact = [
+        i for i in candidates if normalize_str(get_str_from_candidate(i)) == normalized
+    ]
+    if len(ci_exact) == 1:
+        return ci_exact[0]
     return get_unique_prefix_match(str_to_match, candidates, get_str_from_candidate)
 
 
