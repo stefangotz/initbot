@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import secrets
-
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -26,12 +24,4 @@ class WebSettings(BaseSettings):
     web_port: int = Field(
         default=8080,
         description="The port the web app listens on.",
-    )
-    web_secret: str = Field(
-        default_factory=lambda: secrets.token_urlsafe(32),
-        description="The secret path component that protects the web app URL. Defaults to a random token generated at startup.",
-    )
-    domain: str = Field(
-        default="",
-        description="Public domain name when running behind a reverse proxy (e.g. 'example.com'). Note that your environment variables or .env file need to use the uppercase key DOMAIN for the reverse proxy caddy to pick up this value correctly.",
     )

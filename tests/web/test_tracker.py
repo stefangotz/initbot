@@ -11,11 +11,10 @@ from initbot_web.config import WebSettings
 def test_tracker_page(tmp_path):
     settings = WebSettings(
         state=f"sqlite:{tmp_path / 'test.db'}",
-        web_secret="testsecret",
     )
-    app = create_app(settings)
+    app = create_app(settings, web_token="testsecret")
     with TestClient(app) as client:
-        resp = client.get("/s/testsecret/")
+        resp = client.get("/testsecret/")
         assert resp.status_code == 200
         assert "Initiative Order" in resp.text
         assert "testsecret" in resp.text
@@ -24,8 +23,7 @@ def test_tracker_page(tmp_path):
 def test_wrong_secret_returns_404(tmp_path):
     settings = WebSettings(
         state=f"sqlite:{tmp_path / 'test.db'}",
-        web_secret="testsecret",
     )
-    app = create_app(settings)
+    app = create_app(settings, web_token="testsecret")
     with TestClient(app) as client:
-        assert client.get("/s/wrongsecret/").status_code == 404
+        assert client.get("/wrongsecret/").status_code == 404

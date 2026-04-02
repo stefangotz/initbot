@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import logging
+import secrets
 from asyncio import CancelledError, create_task, sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
@@ -13,6 +14,7 @@ from starlette.applications import Starlette
 from starlette.templating import Jinja2Templates
 from starlette.types import ASGIApp
 
+from initbot_core.config import CORE_CFG
 from initbot_core.security import (
     VulnerabilityState,
     get_vulnerabilities,
@@ -42,13 +44,16 @@ async def _periodic_vulnerability_check(vuln_state: VulnerabilityState) -> None:
         await sleep(24 * 60 * 60)
 
 
-def create_app(settings: WebSettings | None = None) -> Starlette:
+def create_app(
+    settings: WebSettings | None = None, web_token: str | None = None
+) -> Starlette:
     cfg = settings or WebSettings()
     if not cfg.state.startswith("sqlite:"):
         raise SystemExit(f"initbot-web requires a SQLite state URI. Got: {cfg.state!r}")
     state = create_state_from_source(cfg.state)
     templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
     vuln_state = VulnerabilityState()
+    secret = web_token or CORE_CFG.web_token or secrets.token_urlsafe(32)
 
     @asynccontextmanager
     async def lifespan(_app: ASGIApp) -> AsyncGenerator[None, None]:
@@ -59,14 +64,15 @@ def create_app(settings: WebSettings | None = None) -> Starlette:
             await task
 
     return Starlette(
-        routes=make_routes(state, templates, cfg.web_secret, vuln_state),
+        routes=make_routes(state, templates, secret, vuln_state),
         lifespan=lifespan,
     )
 
 
 def run() -> None:
     cfg = WebSettings(_cli_parse_args=True)  # type: ignore
-    print(f"URL: http://localhost:{cfg.web_port}/s/{cfg.web_secret}/")
-    if cfg.domain:
-        print(f"External URL: https://{cfg.domain}/s/{cfg.web_secret}/")
-    uvicorn.run(create_app(cfg), host=cfg.web_host, port=cfg.web_port)
+    token = CORE_CFG.web_token or secrets.token_urlsafe(32)
+    print(f"URL: http://localhost:{cfg.web_port}/{token}/")
+    if CORE_CFG.domain:
+        print(f"External URL: https://{CORE_CFG.domain}/{token}/")
+    uvicorn.run(create_app(cfg, web_token=token), host=cfg.web_host, port=cfg.web_port)

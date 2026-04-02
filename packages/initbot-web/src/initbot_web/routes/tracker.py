@@ -67,8 +67,8 @@ def make_routes(
             await sleep(POLL_INTERVAL)
 
     return [
-        Route(f"/s/{secret}/", tracker_page),
-        Route(f"/s/{secret}/sse", tracker_sse),
+        Route(f"/{secret}/", tracker_page),
+        Route(f"/{secret}/sse", tracker_sse),
     ]
 
 
