@@ -52,6 +52,20 @@ repos:
       - id: reuse
   - repo: local
     hooks:
+      # Prevent tag-based pre-commit pins slipping in via manual edits or
+      # automated updates. Local repo blocks never have a rev: field, so every
+      # rev: line in this file belongs to an external repo and must be a
+      # 40-char hex commit SHA.
+      #
+      # First grep extracts all rev: lines; second grep -v filters out those
+      # that contain a 40-hex-char SHA. If anything survives, a tag-based pin
+      # was found and ! flips the exit code to signal failure.
+      - id: check-precommit-pins
+        name: check pre-commit SHA pins
+        entry: sh -c 'if grep -E "^\s+rev:" .pre-commit-config.yaml | grep -qvE "[0-9a-f]{40}"; then echo "pre-commit pins must use 40-char commit SHAs, not tags -- fix with pre-commit autoupdate --freeze"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: check-python-versions
         name: check-python-versions
         entry: uv run check-python-versions
