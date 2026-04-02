@@ -51,8 +51,11 @@ jobs:
           .venv/bin/vulture
       - name: reuse
         run: uv run reuse lint
-      - name: pip-audit
-        run: uv run pip-audit
+      - name: uv audit
+        run: |
+          output=$(uv audit --frozen --preview-features audit 2>&1)
+          echo "$output"
+          echo "$output" | grep -qF "Found no known vulnerabilities"
       - name: detect-secrets
         run: git ls-files -z | xargs -0 .venv/bin/detect-secrets-hook --baseline .secrets.baseline
       - name: test
