@@ -7,7 +7,6 @@
 - rename LocalState store to JsonState store or similar, update URI as well
 - enforce pinning pre-commit dependencies to commit SHAs
 - an interactive configuration mode in each application for a convenient way to set and persist configuration settings; user interaction to be based on metadata of config options; auto-activate on first run; persisting optional
-- minimize impact on public infrastructure (such as pypi or dockerhub.io) when building containers and running CI/CD
 
 ## web app
 
