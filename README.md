@@ -57,8 +57,8 @@ Setup steps:
 1. Set up a systemd service: `sh ./tools/set_up_systemd.sh compose`
    The script installs the service unit file and prompts whether to enable and start it.
 
-`web_secret` is auto-generated if not set.
-The web app is reachable at `https://<DOMAIN>/s/<web_secret>/`.
+`web_token` is auto-generated if not set.
+The web app is reachable at `https://<DOMAIN>/<web_token>/`.
 
 ### Configuration
 
@@ -76,7 +76,7 @@ Each app reads the shared `.env` first, then its own app-specific file (which ta
 | --- | --- | --- |
 | `.env` | both | `state=` (SQLite URI) |
 | `.env.chat` | initbot-chat | `token=`, `command_prefixes=` |
-| `.env.web` | initbot-web | `web_secret=`, `web_port=` |
+| `.env.web` | initbot-web | `web_token=`, `web_port=` |
 
 In addition to `.env` files, parameters can be supplied via:
 
