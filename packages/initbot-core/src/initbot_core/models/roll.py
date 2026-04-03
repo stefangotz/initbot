@@ -7,6 +7,9 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
 from dataclasses import dataclass
+from typing import Final
+
+_CRITICAL_FAILURE_EMOJIS: Final = ("😭", "😱", "💩", "🚽", "💔")
 
 _NERD_DICE_ROLL_PATTERN = re.compile(
     r"^(([0-9]+)x)?([0-9]*)d([0-9]+)([+-][0-9]+)?$", re.IGNORECASE
@@ -139,7 +142,7 @@ class NerdDiceRoll(IntDiceRoll):
     def _format_die_value(self, value: int) -> str:
         if self.dice == 1:
             if value == self.dice + self.modifier:
-                return f"**{value}** \U0001f480"
+                return f"**{value}** {random.choice(_CRITICAL_FAILURE_EMOJIS)}"
             if value == self.dice * self.sides + self.modifier:
                 return f"**{value}** \U0001f3af"
         return str(value)
