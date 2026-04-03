@@ -215,6 +215,33 @@ class CritState(PartialState, ABC):
         raise NotImplementedError()
 
 
+class WebLoginTokenState(ABC):
+    """Stores short-lived, single-use tokens that authenticate a player via the web app."""
+
+    @abstractmethod
+    def create(self, discord_id: int) -> str:
+        """Generate a token for the given Discord user ID, persist it, and return it."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def find_valid(self, token: str) -> int | None:
+        """Return the discord_id for a token that exists, has not been used, and has not expired.
+
+        Returns None if the token is unknown, already used, or expired.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def mark_used(self, token: str) -> None:
+        """Invalidate a token after a successful login (single-use enforcement)."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def prune_expired(self) -> None:
+        """Delete tokens whose expiry timestamp is in the past."""
+        raise NotImplementedError()
+
+
 class State(ABC):
     @property
     @abstractmethod
@@ -249,6 +276,11 @@ class State(ABC):
     @property
     @abstractmethod
     def players(self) -> PlayerState:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def web_login_tokens(self) -> WebLoginTokenState:
         raise NotImplementedError()
 
     def import_from(self, src: "State") -> None:

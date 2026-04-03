@@ -3,16 +3,18 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import re
+import time
 from asyncio import sleep
 from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import Final
 
 from datastar_py import ServerSentEventGenerator as SSE
 from datastar_py.sse import DatastarEvent
 from datastar_py.starlette import datastar_response
 from starlette.requests import Request
-from starlette.responses import Response
-from starlette.routing import Route
+from starlette.responses import RedirectResponse, Response
+from starlette.routing import Mount, Route
 from starlette.templating import Jinja2Templates
 
 from initbot_core.models.character import Character
@@ -21,26 +23,67 @@ from initbot_core.state.state import State
 
 POLL_INTERVAL = 1.5
 STALE_SECONDS = 24 * 3600
+SESSION_TTL: Final[int] = 8 * 3600
 
 
 def make_routes(
     state: State,
     templates: Jinja2Templates,
-    secret: str,
+    url_path_prefix: str,
     vuln_state: VulnerabilityState,
-) -> list[Route]:
+) -> list[Mount]:
+    tracker_url = f"/{url_path_prefix}/tracker/"
+    sse_url = f"/{url_path_prefix}/tracker/sse"
+
+    def _require_auth(request: Request) -> Response | None:
+        """Return a 403 Response if the session is missing or expired, else None."""
+        if not request.session.get("authenticated"):
+            return Response(status_code=403)
+        expires_at = request.session.get("expires_at")
+        if expires_at is None or time.time() > expires_at:
+            request.session.clear()
+            return Response(status_code=403)
+        return None
+
+    def _write_session(
+        request: Request, discord_id: int | None, player_name: str | None
+    ) -> None:
+        request.session["authenticated"] = True
+        request.session["discord_id"] = discord_id
+        request.session["player_name"] = player_name
+        request.session["expires_at"] = int(time.time()) + SESSION_TTL
+
+    async def login_redirect(request: Request) -> Response:
+        token = request.path_params["token"]
+        discord_id = state.web_login_tokens.find_valid(token)
+        if discord_id is not None:
+            state.web_login_tokens.mark_used(token)
+            player = state.players.get_from_discord_id(discord_id)
+            _write_session(
+                request, discord_id, player.name if player is not None else None
+            )
+            return RedirectResponse(tracker_url, status_code=302)
+        if url_path_prefix and token == url_path_prefix:
+            _write_session(request, None, None)
+            return RedirectResponse(tracker_url, status_code=302)
+        return Response(status_code=403)
+
     async def tracker_page(request: Request) -> Response:
+        if (err := _require_auth(request)) is not None:
+            return err
+        player_name: str | None = request.session.get("player_name")
         return templates.TemplateResponse(
             request,
             "tracker.html",
             {
-                "secret": secret,
+                "player_name": player_name,
+                "sse_url": sse_url,
                 "has_high_severity_vulnerabilities": vuln_state.has_high_severity_vulnerabilities,
             },
         )
 
     @datastar_response
-    async def tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
+    async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
         last_snapshot: tuple[tuple[str, int | None], ...] = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
         while not await request.is_disconnected():
@@ -66,9 +109,25 @@ def make_routes(
 
             await sleep(POLL_INTERVAL)
 
+    async def tracker_sse(request: Request) -> Response:
+        if (err := _require_auth(request)) is not None:
+            return err
+        return await _tracker_sse(request)
+
+    async def logout(request: Request) -> Response:
+        request.session.clear()
+        return Response(status_code=200)
+
     return [
-        Route(f"/{secret}/", tracker_page),
-        Route(f"/{secret}/sse", tracker_sse),
+        Mount(
+            f"/{url_path_prefix}",
+            routes=[
+                Route("/tracker/", tracker_page),
+                Route("/tracker/sse", tracker_sse),
+                Route("/logout", logout),
+                Route("/{token}/", login_redirect),
+            ],
+        )
     ]
 
 

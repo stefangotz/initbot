@@ -44,6 +44,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       min-height: 100vh;
     }
 
+    /* ── Player identity bar ─────────────────────────────────── */
+    #player-bar {
+      text-align: right;
+      font-size: 0.8rem;
+      color: rgba(26, 18, 9, 0.55);
+      padding: 0.4rem 1.5rem 0;
+      letter-spacing: 0.04em;
+    }
+
     /* ── Security alert (full-width banner) ───────────────────── */
     #security-alert:not(:empty) {
       width: 100%;
@@ -176,9 +185,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   </style>
 </head>
 <body>
+  {% if player_name %}<div id="player-bar">{{ player_name }}</div>{% endif %}
   <div id="security-alert">{% if has_high_severity_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
-  <div data-init="@get('/{{ secret }}/sse')">
+  <div data-init="@get('{{ sse_url }}')">
     <table>
       <thead>
         <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th></tr>

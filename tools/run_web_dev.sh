@@ -29,4 +29,4 @@ mkdir -p dev-state
 rm -f dev-state/dev.sqlite
 uv run python -m initbot_core.state.export_json_to_sql_state "${DEV_JSON_DIR}" dev-state/dev.sqlite
 
-exec uv run initbot-web --web_token dev --web_port 8080 --state "sqlite:dev-state/dev.sqlite" "$@"
+exec uv run initbot-web --web_url_path_prefix dev --web_port 8080 --state "sqlite:dev-state/dev.sqlite" "$@"

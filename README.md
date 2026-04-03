@@ -26,8 +26,84 @@ Get more information on any of the commands with `$help`, e.g., `$help init`.
 
 ### initbot-web — companion web app
 
-The web app reflects some of the same information as the chat bot, just in a browser.
-It can access the same data source as the chat bot, so both applications can interact.
+The web app shows the current initiative order in a live-updating browser view — useful for
+displaying on a shared screen or a second monitor during play.
+
+#### Logging in
+
+The web app has no public login page. Players authenticate via a personal, single-use link
+delivered by the chat bot:
+
+1. In any channel the bot is in, or in a DM to the bot, type `$web`.
+2. The bot sends a private DM with a personal login link. The link expires in one minute and
+   can only be used once.
+3. Click the link. The browser opens the initiative tracker and stays logged in for eight hours.
+   After that, type `$web` again to get a fresh link.
+
+If you type `$web` in a channel rather than in a DM, the bot posts a brief "check your DMs"
+notice in the channel that disappears after a few seconds — the actual login link is always
+delivered privately.
+
+### Chat bot and web app integration
+
+#### How they are connected
+
+The two applications share a single SQLite database file. They do not communicate directly
+with each other over a network. The chat bot writes initiative data and login tokens to the
+database; the web app reads from the same database. This keeps the architecture simple and
+avoids the need for any additional infrastructure between the two processes.
+
+#### Login flow in detail
+
+When a player runs `$web`:
+
+1. The bot generates a random, single-use token and writes it to the shared database with a
+   60-second expiry.
+2. The bot constructs a personal login URL — `https://<DOMAIN>/<token>/` — and sends it to
+   the player via Discord DM.
+3. The player opens the link. The web app looks up the token in the database, verifies it has
+   not been used and has not expired, then invalidates it and creates a signed browser session.
+4. Subsequent requests carry the session cookie. The session expires after eight hours.
+
+#### Why Discord is the identity provider
+
+The bot already knows who sent the `$web` command — Discord provides the sender's identity
+cryptographically. The DM channel is a private channel that only the player and the bot can
+see. Together these mean no separate account system, password storage, or OAuth integration
+is needed. Discord itself acts as the trusted authentication channel.
+
+#### Security design
+
+All web app endpoints sit under a hard-to-guess URL prefix (`web_url_path_prefix`). This
+means the application is invisible to port scanners and opportunistic probes: without knowing
+the prefix, there is nothing to attack. Login tokens are single-use and expire in 60 seconds,
+so an intercepted link cannot be replayed. Sessions are signed cookies; the signing key is
+generated in memory at startup and never written to disk, so there is nothing to steal from
+the filesystem.
+
+#### Prerequisites for the web app
+
+For the web app and its login flow to work, operators must ensure:
+
+1. **Shared state.** Both applications must be configured with the same SQLite URI:
+   `state=sqlite:/path/to/app.sqlite`. In the Docker Compose setup this is handled
+   automatically via a shared named volume.
+
+2. **Public domain.** The `DOMAIN` setting must be set to the publicly reachable domain name
+   of the web app (e.g. `example.com`). The bot uses this to construct the login URL it sends
+   to players. Without it the `$web` command is not registered and no login links are issued.
+
+3. **URL path prefix.** The `web_url_path_prefix` setting must be set to a stable,
+   hard-to-guess value in `.env` or `.env.web` (e.g. a long random string). If it is left
+   unset the web app generates a random prefix at startup, but the `$web` command will not be
+   registered — the bot only registers the command when both `DOMAIN` and
+   `web_url_path_prefix` are explicitly configured. A prefix that changes on every restart
+   would also invalidate any bookmarks players have saved.
+
+4. **Discord DM permissions.** The bot must be able to send DMs to players. Some Discord
+   server privacy settings allow members to block DMs from other server members, which also
+   blocks bot DMs. Players who do not receive the login link should check their Discord
+   privacy settings under *Server Privacy Defaults* or *Privacy & Safety*.
 
 ## Application Setup & Execution
 
@@ -57,8 +133,8 @@ Setup steps:
 1. Set up a systemd service: `sh ./tools/set_up_systemd.sh compose`
    The script installs the service unit file and prompts whether to enable and start it.
 
-`web_token` is auto-generated if not set.
-The web app is reachable at `https://<DOMAIN>/<web_token>/`.
+`web_url_path_prefix` is auto-generated if not set.
+The web app is reachable at `https://<DOMAIN>/<web_url_path_prefix>/`.
 
 ### Configuration
 
@@ -76,7 +152,7 @@ Each app reads the shared `.env` first, then its own app-specific file (which ta
 | --- | --- | --- |
 | `.env` | both | `state=` (SQLite URI) |
 | `.env.chat` | initbot-chat | `token=`, `command_prefixes=` |
-| `.env.web` | initbot-web | `web_token=`, `web_port=` |
+| `.env.web` | initbot-web | `web_url_path_prefix=`, `web_port=` |
 
 In addition to `.env` files, parameters can be supplied via:
 

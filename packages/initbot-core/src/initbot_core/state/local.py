@@ -28,6 +28,7 @@ from initbot_core.state.state import (
     OccupationState,
     PlayerState,
     State,
+    WebLoginTokenState,
 )
 from initbot_core.state.validation import check_state_directory
 
@@ -391,6 +392,20 @@ class LocalCritState(CritState):
         raise NotImplementedError()
 
 
+class _LocalWebLoginTokenState(WebLoginTokenState):
+    def create(self, discord_id: int) -> str:
+        raise NotImplementedError("Web login tokens require SQLite state")
+
+    def find_valid(self, token: str) -> int | None:
+        raise NotImplementedError("Web login tokens require SQLite state")
+
+    def mark_used(self, token: str) -> None:
+        raise NotImplementedError("Web login tokens require SQLite state")
+
+    def prune_expired(self) -> None:
+        raise NotImplementedError("Web login tokens require SQLite state")
+
+
 class LocalState(State):
     def __init__(self, source: str) -> None:
         source_dir = Path(source.split(":", maxsplit=1)[-1])
@@ -402,6 +417,7 @@ class LocalState(State):
         self._classes = LocalClassState(source_dir)
         self._crits = LocalCritState(source_dir)
         self._players = LocalPlayerState(source_dir)
+        self._web_login_tokens = _LocalWebLoginTokenState()
 
     @property
     def abilities(self) -> AbilityState:
@@ -430,6 +446,10 @@ class LocalState(State):
     @property
     def players(self) -> PlayerState:
         return self._players
+
+    @property
+    def web_login_tokens(self) -> WebLoginTokenState:
+        return self._web_login_tokens
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:
