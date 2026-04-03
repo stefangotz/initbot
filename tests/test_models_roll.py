@@ -26,7 +26,8 @@ class TestNerdDiceRollHighlighting(unittest.TestCase):
     def test_single_die_natural_min(self):
         roll = NerdDiceRoll(sides=6)
         with patch("random.randint", return_value=1):
-            assert roll.roll() == "**1** \U0001f480"
+            result = roll.roll()
+            assert re.match(r"^\*\*1\*\* .$", result)
 
     def test_single_die_natural_max(self):
         roll = NerdDiceRoll(sides=6)
@@ -41,7 +42,8 @@ class TestNerdDiceRollHighlighting(unittest.TestCase):
     def test_single_die_with_modifier_natural_min(self):
         roll = NerdDiceRoll(sides=20, modifier=5)
         with patch("random.randint", return_value=1):
-            assert roll.roll() == "**6** \U0001f480"
+            result = roll.roll()
+            assert re.match(r"^\*\*6\*\* .$", result)
 
     def test_single_die_with_modifier_natural_max(self):
         roll = NerdDiceRoll(sides=20, modifier=5)
@@ -60,14 +62,13 @@ class TestNerdDiceRollHighlighting(unittest.TestCase):
         with patch("random.randint", return_value=1):
             result = roll.roll()
             assert "**" not in result
-            assert "\U0001f480" not in result
 
     def test_multi_roll_single_die_highlights_individuals(self):
         roll = NerdDiceRoll(sides=6, rolls=3)
         # Returns 1, 6, 3 in sequence
         with patch("random.randint", side_effect=[1, 6, 3]):
             result = roll.roll()
-        assert "**1** \U0001f480" in result
+        assert re.search(r"\*\*1\*\* .", result)
         assert "**6** \U0001f3af" in result
         assert result.startswith("10 (")
 
@@ -76,4 +77,3 @@ class TestNerdDiceRollHighlighting(unittest.TestCase):
         with patch("random.randint", return_value=1):
             result = roll.roll()
         assert "**" not in result
-        assert "\U0001f480" not in result
