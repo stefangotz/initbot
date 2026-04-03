@@ -228,7 +228,7 @@ async def on_message(message: discord.Message) -> None:
 def run() -> None:
     for cmd in commands:
         bot.add_command(cmd)
-    if CORE_CFG.domain and CORE_CFG.web_token:
+    if CORE_CFG.domain and CORE_CFG.web_url_path_prefix:
         bot.add_command(web_cmd)
     bot.initbot_state = create_state_from_source(CFG.state)  # type: ignore
     bot.run(CFG.token)

@@ -16,9 +16,9 @@ class CoreSettings(BaseSettings):
         default=90,
         description="Characters not used in this many days are eligible for pruning.",
     )
-    web_token: str = Field(
+    web_url_path_prefix: str = Field(
         default="",
-        description="Secret path component protecting the web app URL. The web app generates a random secret when this is unset. Set WEB_TOKEN in .env for a stable, shareable URL across restarts.",
+        description="URL path prefix for the web app. Acts as a hard-to-guess component that obscures well-known endpoints. Auto-generated at startup when unset. Set WEB_URL_PATH_PREFIX in .env for a stable, shareable URL across restarts.",
     )
     domain: str = Field(
         default="",

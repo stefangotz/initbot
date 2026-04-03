@@ -6,13 +6,24 @@ import logging
 
 from discord.ext import commands
 
+from initbot_chat.commands.utils import sync_player
 from initbot_core.config import CORE_CFG
 
 
 @commands.command()
 async def web(ctx: commands.Context) -> None:
-    """Replies with the URL of the web application."""
-    await ctx.send(f"https://{CORE_CFG.domain}/{CORE_CFG.web_token}/")
+    """Sends a personal, single-use web app login link via DM."""
+    player = sync_player(ctx.bot.initbot_state, ctx)
+    token = ctx.bot.initbot_state.web_login_tokens.create(discord_id=player.discord_id)
+    if CORE_CFG.domain:
+        url = f"https://{CORE_CFG.domain}/{token}/"
+    else:
+        url = f"http://localhost:8080/{token}/"
+    await ctx.author.send(
+        f"Your personal initiative tracker link (expires in 1 minute): {url}"
+    )
+    if ctx.guild is not None:
+        await ctx.send("Check your DMs for your login link.", delete_after=5)
 
 
 @web.error

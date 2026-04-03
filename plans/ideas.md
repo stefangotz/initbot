@@ -11,7 +11,6 @@
 ## web app
 
 - front-end design
-- notion of user personas or accounts; possible tie in with Discord accounts
 - ini updates via web app
 
 ## chat
@@ -20,7 +19,6 @@
 - support advantage / don't total 2xd20
 - relax command parsing
 - protect discord.py token
-- Chat bot should be able to emit web app URL - how?
 - Can chat display dynamic content such as embedding the web app? Doesn't look like
 - Voice processing
   - With speaker identification and STT, the bot could take audio commands

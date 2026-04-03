@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import dataclasses
+import secrets
 import time
 from collections.abc import Iterable, Mapping, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Final, cast
 
 from peewee import (
     AutoField,
@@ -39,6 +40,7 @@ from initbot_core.state.state import (
     OccupationState,
     PlayerState,
     State,
+    WebLoginTokenState,
 )
 from initbot_core.state.validation import check_state_directory
 
@@ -330,6 +332,46 @@ class _SqlCritState(CritState):
                 )
 
 
+_WEB_LOGIN_TOKEN_TTL: Final[int] = 60  # seconds
+
+
+class _SqlWebLoginToken(Model):
+    token = CharField(primary_key=True)
+    discord_id = IntegerField()
+    expires_at = IntegerField()
+    used = BooleanField(default=False)
+
+
+class _SqlWebLoginTokenState(WebLoginTokenState):
+    def create(self, discord_id: int) -> str:
+        token = secrets.token_urlsafe(32)
+        now = int(time.time())
+        _SqlWebLoginToken.create(
+            token=token,
+            discord_id=discord_id,
+            expires_at=now + _WEB_LOGIN_TOKEN_TTL,
+        )
+        return token
+
+    def find_valid(self, token: str) -> int | None:
+        now = int(time.time())
+        row = _SqlWebLoginToken.get_or_none(
+            (_SqlWebLoginToken.token == token)
+            & ~_SqlWebLoginToken.used
+            & (_SqlWebLoginToken.expires_at > now)
+        )
+        return row.discord_id if row is not None else None
+
+    def mark_used(self, token: str) -> None:
+        _SqlWebLoginToken.update(used=True).where(
+            _SqlWebLoginToken.token == token
+        ).execute()
+
+    def prune_expired(self) -> None:
+        now = int(time.time())
+        _SqlWebLoginToken.delete().where(_SqlWebLoginToken.expires_at <= now).execute()
+
+
 class SqlState(State):
     def __init__(
         self,
@@ -342,6 +384,7 @@ class SqlState(State):
         self._occupations = _SqlOccupationState()
         self._classes = _SqlClassState()
         self._players = _SqlPlayerState()
+        self._web_login_tokens = _SqlWebLoginTokenState()
 
         state_type, state_source = source.split(":", maxsplit=1)
         if state_type == "sqlite":
@@ -412,6 +455,10 @@ class SqlState(State):
     @property
     def players(self) -> PlayerState:
         return self._players
+
+    @property
+    def web_login_tokens(self) -> WebLoginTokenState:
+        return self._web_login_tokens
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:
