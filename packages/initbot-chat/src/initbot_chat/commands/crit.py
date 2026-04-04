@@ -6,6 +6,7 @@ import logging
 
 from discord.ext import commands
 
+from initbot_chat.commands.utils import crits_required
 from initbot_core.data.crit import CritTableData
 from initbot_core.utils import get_first_set_match_or_over_under_flow
 
@@ -17,6 +18,7 @@ def _match(table: CritTableData, roll: int) -> str:
 
 
 @commands.command()
+@crits_required
 async def crit(
     ctx: commands.Context,
     table: int = commands.parameter(description="The number of the crit table (1-4)"),

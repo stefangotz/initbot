@@ -6,14 +6,18 @@ import logging
 
 from discord.ext import commands
 
+from initbot_chat.commands.utils import classes_required
+
 
 @commands.command()
+@classes_required
 async def classes(ctx: commands.Context) -> None:
     """Lists the names of all character classes."""
     await ctx.send(str([cls.name for cls in ctx.bot.initbot_state.classes.get_all()]))
 
 
 @commands.command()
+@classes_required
 async def cls(
     ctx: commands.Context,
     name: str = commands.parameter(

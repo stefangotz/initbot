@@ -6,10 +6,11 @@ import logging
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import send_in_parts
+from initbot_chat.commands.utils import occupations_required, send_in_parts
 
 
 @commands.command()
+@occupations_required
 async def occupations(ctx: commands.Context) -> None:
     """Lists all character occupations, including the starting weapon and goods they confer to new characters."""
     parts = (

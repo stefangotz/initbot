@@ -7,10 +7,11 @@ import logging
 from discord import Embed
 from discord.ext import commands
 
-from initbot_chat.commands.utils import send_in_parts
+from initbot_chat.commands.utils import abilities_required, send_in_parts
 
 
 @commands.command()
+@abilities_required
 async def abls(ctx: commands.Context) -> None:
     """Lists the six character abilities and their descriptions."""
     embed = Embed(
@@ -25,6 +26,7 @@ async def abls(ctx: commands.Context) -> None:
 
 
 @commands.command()
+@abilities_required
 async def abl(
     ctx: commands.Context,
     name: str = commands.parameter(
@@ -36,6 +38,7 @@ async def abl(
 
 
 @commands.command()
+@abilities_required
 async def mods(ctx: commands.Context) -> None:
     """Lists all ability scores, their corresponding modifiers and, for wizards, the spell count and maximum spell level implied by intelligence."""
     parts = [
@@ -46,6 +49,7 @@ async def mods(ctx: commands.Context) -> None:
 
 
 @commands.command()
+@abilities_required
 async def mod(
     ctx: commands.Context,
     score: int = commands.parameter(description="An ability score (3-18)."),

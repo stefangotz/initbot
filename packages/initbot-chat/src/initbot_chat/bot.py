@@ -15,7 +15,6 @@ from discord.ext import tasks
 from discord.ext.commands import Bot
 
 from initbot_chat.commands import commands
-from initbot_chat.commands.web import web as web_cmd
 from initbot_chat.config import CFG
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, is_eligible_for_pruning
@@ -228,8 +227,6 @@ async def on_message(message: discord.Message) -> None:
 def run() -> None:
     for cmd in commands:
         bot.add_command(cmd)
-    if CORE_CFG.domain and CORE_CFG.web_url_path_prefix:
-        bot.add_command(web_cmd)
     bot.initbot_state = create_state_from_source(CFG.state)  # type: ignore
     bot.run(CFG.token)
     if _STARTUP_FAILED:

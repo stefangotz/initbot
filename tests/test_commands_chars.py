@@ -38,7 +38,9 @@ async def test_char_missing_sends_error(mock_ctx):
     try:
         await char.callback(mock_ctx, "Nonexistent")
     except KeyError as exc:
-        await char_error(mock_ctx, commands.CommandError(str(exc)))  # type: ignore[missing-argument]  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
+        await char_error(
+            mock_ctx, commands.CommandError(str(exc))
+        )  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
     mock_ctx.send.assert_called()
 
 
