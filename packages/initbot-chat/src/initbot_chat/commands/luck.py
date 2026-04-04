@@ -8,11 +8,12 @@ from collections.abc import Iterable
 from discord.ext import commands
 
 from initbot_chat.commands.character import CharacterData
-from initbot_chat.commands.utils import sync_player
+from initbot_chat.commands.utils import abilities_required, sync_player
 from initbot_core.models.roll import NerdDiceRoll
 
 
 @commands.command()
+@abilities_required
 async def luck(ctx: commands.Context, *args: str) -> None:
     """Performs a luck check.
 

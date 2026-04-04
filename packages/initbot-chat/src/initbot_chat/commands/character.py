@@ -9,7 +9,13 @@ from collections.abc import Iterable, Sequence
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import player_name, send_in_parts, sync_player
+from initbot_chat.commands.utils import (
+    augurs_required,
+    occupations_required,
+    player_name,
+    send_in_parts,
+    sync_player,
+)
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import (
     CharacterData,
@@ -31,6 +37,8 @@ def characters(state: State) -> Iterable[Character]:
 
 
 @commands.command()
+@augurs_required
+@occupations_required
 async def new(ctx: commands.Context, name: str) -> None:
     """Creates a new character with a given name.
 

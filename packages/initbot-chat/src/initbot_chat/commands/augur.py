@@ -7,10 +7,11 @@ import random
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import send_in_parts
+from initbot_chat.commands.utils import augurs_required, send_in_parts
 
 
 @commands.command()
+@augurs_required
 async def augurs(ctx: commands.Context) -> None:
     """List all birth augurs that a 0-level character may start out with."""
     parts: list[str] = [
@@ -23,6 +24,7 @@ async def augurs(ctx: commands.Context) -> None:
 
 
 @commands.command()
+@augurs_required
 async def augur(ctx: commands.Context) -> None:
     """Display a randomly chosen birth augur."""
     await ctx.send(str(random.choice(ctx.bot.initbot_state.augurs.get_all())))

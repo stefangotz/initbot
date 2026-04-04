@@ -2,13 +2,55 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import Any, Final
 
+from discord.ext import commands
 from discord.ext.commands import Context
 
+from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import State
+
+
+def _require_state(
+    get_collection: Callable[[State], Any], label: str
+) -> Callable[..., Any]:
+    def predicate(ctx: commands.Context) -> bool:
+        if not get_collection(ctx.bot.initbot_state).get_all():
+            raise commands.CheckFailure(
+                f"This command requires {label} data, which has not been loaded."
+            )
+        return True
+
+    return commands.check(predicate)
+
+
+abilities_required: Final[Callable[..., Any]] = _require_state(
+    lambda s: s.abilities, "ability"
+)
+augurs_required: Final[Callable[..., Any]] = _require_state(lambda s: s.augurs, "augur")
+classes_required: Final[Callable[..., Any]] = _require_state(
+    lambda s: s.classes, "class"
+)
+occupations_required: Final[Callable[..., Any]] = _require_state(
+    lambda s: s.occupations, "occupation"
+)
+crits_required: Final[Callable[..., Any]] = _require_state(
+    lambda s: s.crits, "crit table"
+)
+
+
+def _web_configured(_ctx: commands.Context) -> bool:
+    if not (CORE_CFG.domain and CORE_CFG.web_url_path_prefix):
+        raise commands.CheckFailure(
+            "The web command is not available (DOMAIN or WEB_URL_PATH_PREFIX not configured)."
+        )
+    return True
+
+
+web_configured: Final[Callable[..., Any]] = commands.check(_web_configured)
 
 
 def sync_player(state: State, ctx: Context) -> PlayerData:

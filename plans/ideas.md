@@ -1,6 +1,6 @@
 # Ideas
 
-- document the need for extra state data from a getting started perspective; also handle its absence gracefully
+- document the need for extra state data from a getting started perspective
 - Does sqlite support listening for events?
 - claude's /security-review seems to be testing for a whole bunch of typical web vulnerabilities; would be great to have these in CI
 - consider a dev container

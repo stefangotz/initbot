@@ -27,6 +27,7 @@ from initbot_chat.commands.luck import luck
 from initbot_chat.commands.occupation import occupations
 from initbot_chat.commands.roll import roll
 from initbot_chat.commands.tarot import tarot
+from initbot_chat.commands.web import web
 
 commands: Set[Any] = frozenset((
     abl,
@@ -55,4 +56,5 @@ commands: Set[Any] = frozenset((
     touch,
     unused,
     tarot,
+    web,
 ))

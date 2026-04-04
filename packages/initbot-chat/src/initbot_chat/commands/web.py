@@ -6,11 +6,12 @@ import logging
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import sync_player
+from initbot_chat.commands.utils import sync_player, web_configured
 from initbot_core.config import CORE_CFG
 
 
 @commands.command()
+@web_configured
 async def web(ctx: commands.Context) -> None:
     """Sends a personal, single-use web app login link via DM."""
     player = sync_player(ctx.bot.initbot_state, ctx)
