@@ -5,17 +5,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
 
-from initbot_core.data.ability import AbilityData, AbilityModifierData
-from initbot_core.data.augur import AugurData
 from initbot_core.data.character import CharacterData, NewCharacterData
-from initbot_core.data.cls import ClassData
-from initbot_core.data.crit import CritTableData
-from initbot_core.data.occupation import OccupationData
 from initbot_core.data.player import PlayerData
 from initbot_core.utils import (
     get_exact_or_unique_prefix_match,
-    get_first_set_match,
-    get_first_set_match_or_over_under_flow,
     get_unique_prefix_match,
     normalize_str,
 )
@@ -24,45 +17,10 @@ from initbot_core.utils import (
 class PartialState:
     """Marker base class for all partial state objects.
 
-    Serves as the common base for AbilityState, AugurState, CharacterState,
-    OccupationState, ClassState, and CritState so that State.import_from can
-    discover sub-state attributes via issubclass checks at runtime.
+    Serves as the common base for CharacterState and PlayerState so that
+    State.import_from can discover sub-state attributes via issubclass checks
+    at runtime.
     """
-
-
-class AbilityState(PartialState, ABC):
-    @abstractmethod
-    def get_all(self) -> Sequence[AbilityData]:
-        raise NotImplementedError()
-
-    def get_from_prefix(self, prefix: str) -> AbilityData:
-        return get_unique_prefix_match(prefix, self.get_all(), lambda a: a.name)
-
-    @abstractmethod
-    def get_mods(self) -> Sequence[AbilityModifierData]:
-        raise NotImplementedError()
-
-    def get_mod_from_score(self, score: int) -> AbilityModifierData:
-        return get_first_set_match_or_over_under_flow(
-            score, self.get_mods(), lambda mod: [mod.score]
-        )
-
-    @abstractmethod
-    def import_from(self, src: "AbilityState") -> None:
-        raise NotImplementedError()
-
-
-class AugurState(PartialState, ABC):
-    @abstractmethod
-    def get_all(self) -> Sequence[AugurData]:
-        raise NotImplementedError()
-
-    def get_from_roll(self, roll: int) -> AugurData:
-        return next(filter(lambda i: i.roll == roll, self.get_all()))
-
-    @abstractmethod
-    def import_from(self, src: "AugurState") -> None:
-        raise NotImplementedError()
 
 
 class CharacterState(PartialState, ABC):
@@ -96,14 +54,12 @@ class CharacterState(PartialState, ABC):
         return self.get_from_user(user)
 
     def get_from_player_id(self, player_id: int) -> CharacterData:
-        """Find the unique active character owned by the given player."""
-        active = [
-            cdi for cdi in self.get_all() if cdi.active and cdi.player_id == player_id
-        ]
-        if len(active) == 1:
-            return active[0]
+        """Find the unique character owned by the given player."""
+        chars = [cdi for cdi in self.get_all() if cdi.player_id == player_id]
+        if len(chars) == 1:
+            return chars[0]
         raise KeyError(
-            f"Expected one active character for player_id={player_id}, found {len(active)}"
+            f"Expected one character for player_id={player_id}, found {len(chars)}"
         )
 
     def get_from_name(
@@ -121,7 +77,7 @@ class CharacterState(PartialState, ABC):
     def get_from_user(self, user: str) -> CharacterData:
         return get_unique_prefix_match(
             user,
-            tuple(filter(lambda char_data: char_data.active, self.get_all())),
+            self.get_all(),
             lambda cdi: cdi.user,
         )
 
@@ -176,45 +132,6 @@ class PlayerState(PartialState, ABC):
         raise NotImplementedError()
 
 
-class OccupationState(PartialState, ABC):
-    @abstractmethod
-    def get_all(self) -> Sequence[OccupationData]:
-        raise NotImplementedError()
-
-    def get_from_roll(self, roll: int) -> OccupationData:
-        return get_first_set_match(roll, self.get_all(), lambda o: o.rolls)
-
-    @abstractmethod
-    def import_from(self, src: "OccupationState") -> None:
-        raise NotImplementedError()
-
-
-class ClassState(PartialState, ABC):
-    @abstractmethod
-    def get_all(self) -> Sequence[ClassData]:
-        raise NotImplementedError()
-
-    def get_from_name(self, name: str) -> ClassData:
-        return next(filter(lambda cd: cd.name == name, self.get_all()))
-
-    @abstractmethod
-    def import_from(self, src: "ClassState") -> None:
-        raise NotImplementedError()
-
-
-class CritState(PartialState, ABC):
-    @abstractmethod
-    def get_all(self) -> Sequence[CritTableData]:
-        raise NotImplementedError()
-
-    def get_one(self, table: int) -> CritTableData:
-        return next(filter(lambda tbl: tbl.number == table, self.get_all()))
-
-    @abstractmethod
-    def import_from(self, src: "CritState") -> None:
-        raise NotImplementedError()
-
-
 class WebLoginTokenState(ABC):
     """Stores short-lived, single-use tokens that authenticate a player via the web app."""
 
@@ -245,32 +162,7 @@ class WebLoginTokenState(ABC):
 class State(ABC):
     @property
     @abstractmethod
-    def abilities(self) -> AbilityState:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def augurs(self) -> AugurState:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
     def characters(self) -> CharacterState:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def occupations(self) -> OccupationState:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def classes(self) -> ClassState:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def crits(self) -> CritState:
         raise NotImplementedError()
 
     @property
@@ -299,10 +191,4 @@ class State(ABC):
     @classmethod
     @abstractmethod
     def get_supported_state_types(cls) -> Set[str]:
-        """Return the types of state that this state class supports.
-
-        The returned values are matched against the first part of the "state" setting (see config.py).
-        For example, this function may return {"foo", "bar"} to declare that it can handle any state setting starting with "foo:" or "bar:".
-        If Settings.state is "foo:sqlite:/bot.db", the factory will attempt to create an instance of the given State subclass by passing "foo:sqlite:/bot.db" to its constructor.
-        """
         raise NotImplementedError()

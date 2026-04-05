@@ -7,13 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 DATA_DIR = pathlib.Path(__file__).parent / "data"
-REFERENCE_FILES = [
-    "abilities.json",
-    "augurs.json",
-    "occupations.json",
-    "classes.json",
-    "crits.json",
-]
+REFERENCE_FILES: list[str] = []
 
 
 def predicate_from(check_decorator: Callable[..., Any]) -> Callable[..., Any]:

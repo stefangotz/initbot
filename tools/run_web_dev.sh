@@ -15,11 +15,11 @@ python3 - "${DEV_JSON_DIR}" <<'PYEOF'
 import json, sys, time
 now = int(time.time())
 characters = [
-    {"name": "Aldric",       "user": "Stefan", "active": True, "initiative": 18, "initiative_time": now, "last_used": now},
-    {"name": "Mira",         "user": "Anna",   "active": True, "initiative": 15, "initiative_time": now, "last_used": now},
-    {"name": "Brother Thog", "user": "Bob",    "active": True, "initiative": 15, "initiative_time": now, "last_used": now},
-    {"name": "Elara",        "user": "Carol",  "active": True, "initiative":  9, "initiative_time": now, "last_used": now},
-    {"name": "Zyx",          "user": "Dave",   "active": True, "initiative":  3, "initiative_time": now, "last_used": now},
+    {"name": "Aldric",       "user": "Stefan", "initiative": 18, "initiative_dice": "d20+2", "last_used": now},
+    {"name": "Mira",         "user": "Anna",   "initiative": 15, "initiative_dice": "d20+1", "last_used": now},
+    {"name": "Brother Thog", "user": "Bob",    "initiative": 15, "initiative_dice": "d20",   "last_used": now},
+    {"name": "Elara",        "user": "Carol",  "initiative":  9, "initiative_dice": "d20-1", "last_used": now},
+    {"name": "Zyx",          "user": "Dave",   "initiative":  3, "initiative_dice": "d20-2", "last_used": now},
 ]
 with open(f"{sys.argv[1]}/characters.json", "w") as f:
     json.dump({"characters": characters}, f)

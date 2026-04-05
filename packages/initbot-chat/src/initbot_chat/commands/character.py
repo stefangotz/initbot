@@ -2,142 +2,72 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import dataclasses
 import logging
-import random
-from collections.abc import Iterable, Sequence
+import time
+from collections.abc import Iterable
+from datetime import datetime
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import (
-    augurs_required,
-    occupations_required,
-    player_name,
-    send_in_parts,
-    sync_player,
-)
+from initbot_chat.commands.utils import player_name, send_in_parts, sync_player
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import (
     CharacterData,
-    NewCharacterData,
     is_eligible_for_pruning,
 )
-from initbot_core.data.occupation import OccupationData
-from initbot_core.models.character import Character
 from initbot_core.models.roll import NerdDiceRoll
 from initbot_core.state.state import State
 
 
-def characters(state: State) -> Iterable[Character]:
-    return (
-        Character(char_data, state)
-        for char_data in state.characters.get_all()
-        if char_data.active
-    )
+def characters(state: State) -> Iterable[CharacterData]:
+    return state.characters.get_all()
 
 
-@commands.command()
-@augurs_required
-@occupations_required
-async def new(ctx: commands.Context, name: str) -> None:
-    """Creates a new character with a given name.
+@commands.command(usage="[character name] <dice spec>")
+async def init_dice(ctx: commands.Context, *args: str) -> None:
+    """Sets the initiative dice specification for a character.
 
-    The core attributes of the character are rolled randomly as per standard character creation rules:
-    - Ability scores (strength, agility, stamina, personality, intelligence, luck): 3d6 each
-    - Hit points: 1d4
-    - Occupation: d100 on the occupation table
-    - Alignment: randomly Lawful, Neutral, or Chaotic
-    - Birth augur: randomly chosen from the augur table
-    """
-    sync_player(ctx.bot.initbot_state, ctx)
-    occupation_roll: int = NerdDiceRoll(100).roll_one()
-    occupation: OccupationData = ctx.bot.initbot_state.occupations.get_from_roll(
-        occupation_roll
-    )
-    luck: int = NerdDiceRoll(6, 3).roll_one()
-    cdi = NewCharacterData(
-        name=name,
-        user=ctx.author.name,
-        strength=NerdDiceRoll(6, 3).roll_one(),
-        agility=NerdDiceRoll(6, 3).roll_one(),
-        stamina=NerdDiceRoll(6, 3).roll_one(),
-        personality=NerdDiceRoll(6, 3).roll_one(),
-        intelligence=NerdDiceRoll(6, 3).roll_one(),
-        luck=luck,
-        initial_luck=luck,
-        hit_points=NerdDiceRoll(4, 1).roll_one(),
-        equipment=(
-            f"{NerdDiceRoll(12, 5).roll_one()}cp",
-            # TO DO random.choice(EQUIPMENT),
-            occupation.goods,
-        ),
-        occupation=occupation_roll,
-        exp=0,
-        alignment=random.choice(("Lawful", "Neutral", "Chaotic")),
-        augur=random.choice(ctx.bot.initbot_state.augurs.get_all()).roll,
-    )
-    cdi = ctx.bot.initbot_state.characters.add_store_and_get(cdi)
-    txt: str = str(cdi)
-    for idx in range(0, len(txt), 1000):
-        await ctx.send(txt[idx : idx + 1000])
+    The dice spec defines how initiative is rolled for this character when the
+    *init* command is used without an explicit value.
 
+    Examples:
+    - `$init_dice d20` — roll a plain d20
+    - `$init_dice d20+3` — roll d20 and add 3
+    - `$init_dice Alfalfa d20+3` — set spec for the named character
 
-@commands.command(name="set", usage="[character name] <attribute> <value>")
-async def set_(ctx: commands.Context, *, txt: str) -> None:
-    """Sets a character attribute.
+    Setting the dice spec clears any previously rolled initiative value.
 
-    If the Discord user manages only a single character, the character name is optional and can be omitted.
-    If the Discord user manages more than one character, the character name is required.
+    If the Discord user manages only a single character, the character name is
+    optional and can be omitted.  If there is no character with the given name,
+    a new character with that name is created.
 
     The character name can be an abbreviation.
-    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
-    That's as long as no other character name starts with "Med".
-
-    The same rule applies to the character attribute.
-    You can list all character attributes with the `char` command.
-    You do not need to spell out the full attribute name as the first few unique letters are good enough (e.g., "int" for "intelligence")
     """
     player = sync_player(ctx.bot.initbot_state, ctx)
-    tokens = txt.split()
-    if len(tokens) < 2:
+    tokens = list(args)
+    if not tokens:
         raise ValueError(
-            "You need to provide at least a character attribute and a value to set it to"
+            "Please provide a dice spec, e.g. `$init_dice d20+3` or `$init_dice Alfalfa d20+3`"
         )
-    val = tokens[-1]
-    attr = tokens[-2]
-    name_tokens = tokens[0:-2]
+
+    spec = tokens[-1]
+    name = tokens[:-1]
+
+    try:
+        NerdDiceRoll.create(spec)
+    except ValueError as exc:
+        raise ValueError(
+            f"'{spec}' is not a valid dice spec. Use a format like d20, d20+3, or 2d6-1."
+        ) from exc
+
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name_tokens, ctx.author.name, player_id=player.id
+        name, ctx.author.name, create=len(name) > 0, player_id=player.id
     )
-    attr = attr.lower()
-    char_fields = [
-        f.name for f in dataclasses.fields(NewCharacterData) if f.name != "last_used"
-    ]
-    candidates: Sequence[str] = []
-    if attr in char_fields:
-        candidates = [attr]
-    else:
-        candidates = [key for key in char_fields if key.lower().startswith(attr)]
-    if len(candidates) == 1:
-        try:
-            setattr(cdi, candidates[0], int(val))
-        except ValueError:
-            setattr(cdi, candidates[0], val)
-        ctx.bot.initbot_state.characters.update_and_store(cdi)
-        await ctx.send(
-            f"{cdi.name}'s {candidates[0]} is now {getattr(cdi, candidates[0])}",
-            delete_after=3,
-        )
-    elif not candidates:
-        await ctx.send(
-            f"Character attribute {attr} isn't supported. Pick one of the following: {', '.join(char_fields)}",
-            delete_after=5,
-        )
-    else:
-        await ctx.send(
-            f"Character attribute {attr} is ambiguous. Pick one of the following: {', '.join(char_fields)}",
-            delete_after=5,
-        )
+    cdi.initiative_dice = spec
+    cdi.initiative = None
+    cdi.last_used = int(time.time())
+    ctx.bot.initbot_state.characters.update_and_store(cdi)
+    await ctx.send(f"{cdi.name}'s initiative dice is now {spec}", delete_after=3)
 
 
 @commands.command(usage="[character name]")
@@ -181,48 +111,22 @@ async def char(ctx: commands.Context, *args: str) -> None:
     For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
     That's as long as no other character name starts with "Med"."""
     player = sync_player(ctx.bot.initbot_state, ctx)
-    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+    state = ctx.bot.initbot_state
+    cdi: CharacterData = state.characters.get_from_tokens(
         args, ctx.author.name, player_id=player.id
     )
-    await ctx.send(str(cdi))
-
-
-@commands.command()
-async def park(ctx: commands.Context, *args: str) -> None:
-    """Deactivates a character so it is no longer included in the initiative order.
-
-    If the Discord user manages only a single character, the character name is optional and can be omitted.
-    If the Discord user manages more than one character, the character name is required.
-
-    The character name can be an abbreviation.
-    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
-    That's as long as no other character name starts with "Med"."""
-    player = sync_player(ctx.bot.initbot_state, ctx)
-    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name, player_id=player.id
+    last_used_str = (
+        datetime.fromtimestamp(cdi.last_used).strftime("%Y-%m-%d %H:%M")
+        if cdi.last_used is not None
+        else "never"
     )
-    cdi.active = False
-    ctx.bot.initbot_state.characters.update_and_store(cdi)
-    await ctx.send(f"{cdi.name} is now inactive", delete_after=3)
-
-
-@commands.command()
-async def play(ctx: commands.Context, *args: str) -> None:
-    """Activates a character deactivated with the 'park' command so it is included in the initiative order again.
-
-    If the Discord user manages only a single character, the character name is optional and can be omitted.
-    If the Discord user manages more than one character, the character name is required.
-
-    The character name can be an abbreviation.
-    For example, if the full name of a character is "Mediocre Mel", then typing "Med" is sufficient.
-    That's as long as no other character name starts with "Med"."""
-    player = sync_player(ctx.bot.initbot_state, ctx)
-    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name, player_id=player.id
-    )
-    cdi.active = True
-    ctx.bot.initbot_state.characters.update_and_store(cdi)
-    await ctx.send(f"{cdi.name} is now active", delete_after=3)
+    lines = [
+        f"**{cdi.name}** ({player_name(state, cdi)})",
+        f"Initiative dice: {cdi.initiative_dice or '(not set)'}",
+        f"Initiative: {cdi.initiative if cdi.initiative is not None else '(not rolled)'}",
+        f"Last used: {last_used_str}",
+    ]
+    await ctx.send("\n".join(lines))
 
 
 @commands.command(usage="[all_players]")
@@ -304,6 +208,7 @@ async def touch(ctx: commands.Context, *args: str) -> None:
         cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
             name_arg, ctx.author.name, player_id=player.id
         )
+        cdi.last_used = int(time.time())
         ctx.bot.initbot_state.characters.update_and_store(cdi)
         touched.append(cdi.name)
     await ctx.send(
@@ -312,13 +217,10 @@ async def touch(ctx: commands.Context, *args: str) -> None:
     )
 
 
-@new.error
-@set_.error
+@init_dice.error
 @remove.error
 @chars.error
 @char.error
-@park.error
-@play.error
 @unused.error
 @prune.error
 @touch.error

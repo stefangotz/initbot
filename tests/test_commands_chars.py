@@ -5,7 +5,7 @@
 import pytest
 from discord.ext import commands
 
-from initbot_chat.commands.character import char, char_error, chars, remove, set_
+from initbot_chat.commands.character import char, char_error, chars, remove
 from initbot_core.data.character import NewCharacterData
 
 
@@ -76,16 +76,3 @@ async def test_duplicate_name_exact_rejected(mock_ctx):
         mock_ctx.bot.initbot_state.characters.add_store_and_get(
             NewCharacterData(name="Foo", user="testuser")
         )
-
-
-async def test_set_attribute(mock_ctx):
-    mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Mel", user="testuser")
-    )
-    await set_.callback(mock_ctx, txt="Mel strength 14")
-    mock_ctx.send.assert_called()
-    msg = mock_ctx.send.call_args[0][0]
-    assert "strength" in msg
-    assert "14" in msg
-    mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
-    assert mel.strength == 14

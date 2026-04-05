@@ -8,7 +8,6 @@ from discord.ext import commands
 
 from initbot_chat.commands.init import inis, init, init_error
 from initbot_core.data.character import NewCharacterData
-from initbot_core.models.character import Character
 
 
 async def test_init_explicit_value(mock_ctx):
@@ -34,17 +33,15 @@ async def test_init_value_first(mock_ctx):
 
 async def test_init_auto_roll(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Mel", user="testuser", agility=14)
+        NewCharacterData(name="Mel", user="testuser", initiative_dice="d20+3")
     )
     await init.callback(mock_ctx)
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
-    modifier = Character(mel, mock_ctx.bot.initbot_state).initiative_modifier
-    assert modifier is not None
     assert isinstance(mel.initiative, int)
-    assert 1 + modifier <= mel.initiative <= 20 + modifier
+    assert 4 <= mel.initiative <= 23
 
 
-async def test_init_auto_roll_no_agility(mock_ctx):
+async def test_init_auto_roll_no_dice(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Mel", user="testuser")
     )
@@ -69,11 +66,9 @@ async def test_init_ci_name_finds_existing_character(mock_ctx):
 async def test_inis_shows_initiative_order(mock_ctx):
     now = int(time.time())
     alpha = NewCharacterData(
-        name="Alpha", user="testuser", initiative=10, initiative_time=now
+        name="Alpha", user="testuser", initiative=10, last_used=now
     )
-    beta = NewCharacterData(
-        name="Beta", user="testuser", initiative=5, initiative_time=now
-    )
+    beta = NewCharacterData(name="Beta", user="testuser", initiative=5, last_used=now)
     mock_ctx.bot.initbot_state.characters.add_store_and_get(alpha)
     mock_ctx.bot.initbot_state.characters.add_store_and_get(beta)
 
@@ -88,10 +83,10 @@ async def test_inis_shows_initiative_order(mock_ctx):
 
 
 async def test_inis_filters_old_initiative(mock_ctx):
-    # initiative_time set far in the past → should be filtered out
+    # last_used set far in the past → should be filtered out
     old_time = int(time.time()) - 25 * 3600
     old = NewCharacterData(
-        name="Old", user="testuser", initiative=15, initiative_time=old_time
+        name="Old", user="testuser", initiative=15, last_used=old_time
     )
     mock_ctx.bot.initbot_state.characters.add_store_and_get(old)
 
@@ -102,15 +97,13 @@ async def test_inis_filters_old_initiative(mock_ctx):
     assert "Old" not in (embed.description or "")
 
 
-async def test_inis_excludes_parked_characters(mock_ctx):
+async def test_inis_excludes_characters_without_initiative(mock_ctx):
     now = int(time.time())
-    parked = NewCharacterData(
-        name="Parked", user="testuser", initiative=20, initiative_time=now, active=False
-    )
-    mock_ctx.bot.initbot_state.characters.add_store_and_get(parked)
+    no_init = NewCharacterData(name="NoInit", user="testuser", last_used=now)
+    mock_ctx.bot.initbot_state.characters.add_store_and_get(no_init)
 
     await inis.callback(mock_ctx)
     mock_ctx.send.assert_called_once()
 
     embed = mock_ctx.send.call_args.kwargs["embed"]
-    assert "Parked" not in (embed.description or "")
+    assert "NoInit" not in (embed.description or "")

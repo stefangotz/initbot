@@ -17,7 +17,7 @@ from starlette.responses import RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.templating import Jinja2Templates
 
-from initbot_core.models.character import Character
+from initbot_core.data.character import CharacterData
 from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
 
@@ -89,13 +89,13 @@ def make_routes(
         while not await request.is_disconnected():
             now = int(datetime.now().timestamp())
             chars = [
-                Character(c, state)
+                c
                 for c in state.characters.get_all()
-                if c.active
-                and c.initiative_time is not None
-                and c.initiative_time > now - STALE_SECONDS
+                if c.initiative is not None
+                and c.last_used is not None
+                and c.last_used > now - STALE_SECONDS
             ]
-            chars.sort(key=lambda c: c.initiative_comparison_value(), reverse=True)
+            chars.sort(key=lambda c: c.initiative or 0, reverse=True)
 
             snapshot = tuple((c.name, c.initiative) for c in chars)
             if snapshot != last_snapshot:
@@ -140,7 +140,7 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     return f'<div id="security-alert">{content}</div>'
 
 
-def _render_rows(chars: list[Character]) -> str:
+def _render_rows(chars: list[CharacterData]) -> str:
     rows = "".join(
         f'<tr id="r{i}"><td>{i + 1}</td><td>{_safe_int(c.initiative)}</td>'
         f"<td>{_safe_str(c.name)}</td><td>{_safe_str(c.user)}</td></tr>"
