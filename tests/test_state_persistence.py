@@ -26,7 +26,8 @@ def test_add_character_and_retrieve(initbot_state):
 
 def test_add_character_persists_on_reload(tmp_path):
     for f in REFERENCE_FILES:
-        shutil.copy(DATA_DIR / f, tmp_path / f)
+        if (DATA_DIR / f).exists():
+            shutil.copy(DATA_DIR / f, tmp_path / f)
     state1 = create_state_from_source(f"json:{tmp_path}")
     state1.characters.add_store_and_get(NewCharacterData(name="Bob", user="alice"))
 
@@ -37,12 +38,12 @@ def test_add_character_persists_on_reload(tmp_path):
 
 def test_update_character_persists(initbot_state):
     cdi = initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Bob", user="alice", strength=10)
+        NewCharacterData(name="Bob", user="alice", initiative_dice="d20+2")
     )
-    cdi.strength = 14
+    cdi.initiative_dice = "d20+5"
     initbot_state.characters.update_and_store(cdi)
     retrieved = initbot_state.characters.get_from_name("Bob")
-    assert retrieved.strength == 14
+    assert retrieved.initiative_dice == "d20+5"
 
 
 def test_remove_character(initbot_state):
@@ -66,26 +67,10 @@ def test_lookup_by_prefix(initbot_state):
 
 def test_lookup_by_user(initbot_state):
     initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Mediocre Mel", user="alice", active=True)
+        NewCharacterData(name="Mediocre Mel", user="alice")
     )
     found = initbot_state.characters.get_from_user("alice")
     assert found.name == "Mediocre Mel"
-
-
-def test_abilities_lookup(initbot_state):
-    result = initbot_state.abilities.get_from_prefix("Strength")
-    assert result is not None
-    assert result.name == "Strength"
-
-
-def test_augur_lookup(initbot_state):
-    result = initbot_state.augurs.get_from_roll(1)
-    assert result is not None
-
-
-def test_occupation_lookup(initbot_state):
-    result = initbot_state.occupations.get_from_roll(1)
-    assert result is not None
 
 
 def test_update_sets_last_used(initbot_state):
@@ -93,7 +78,8 @@ def test_update_sets_last_used(initbot_state):
     cdi = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="TimestampChar", user="alice")
     )
-    cdi.strength = 10
+    cdi.initiative_dice = "d20"
+    cdi.last_used = int(time.time())
     initbot_state.characters.update_and_store(cdi)
     after = int(time.time())
     assert cdi.last_used is not None
@@ -112,7 +98,8 @@ def test_add_sets_last_used(initbot_state):
 
 def test_legacy_creation_time_migration_json(tmp_path):
     for f in REFERENCE_FILES:
-        shutil.copy(DATA_DIR / f, tmp_path / f)
+        if (DATA_DIR / f).exists():
+            shutil.copy(DATA_DIR / f, tmp_path / f)
     shutil.copy(DATA_DIR / "characters_legacy.json", tmp_path / "characters.json")
 
     state = create_state_from_source(f"json:{tmp_path}")

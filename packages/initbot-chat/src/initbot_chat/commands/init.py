@@ -8,7 +8,7 @@ from datetime import datetime
 from discord import Embed
 from discord.ext import commands
 
-from initbot_chat.commands.character import Character, CharacterData, characters
+from initbot_chat.commands.character import CharacterData, characters
 from initbot_chat.commands.utils import player_name, sync_player
 from initbot_core.models.roll import NerdDiceRoll
 from initbot_core.utils import is_int
@@ -30,9 +30,7 @@ async def init(ctx: commands.Context, *args: str) -> None:
     If there is no character with the given name, a new character with that name is created.
 
     The bot can roll initiative itself with this command.
-    To make that work, the character needs to be set up with all the attributes that impact initiative.
-    In most cases, one only needs to set their agility: `$set Mediocre Mel agility 10`.
-    But the class, birth augur, and other attributes may influence initiative as well.
+    To make that work, set the character's initiative dice first with `$init_dice`.
     With that set up, make the bot automatically roll initiative simply by omitting the initiative value: `$init Mediocre Mel`
 
     Thus, in the shortest (and most common case), one can simply use the command `$init` by itself to automatically roll and set a character's initiative.
@@ -57,28 +55,18 @@ async def init(ctx: commands.Context, *args: str) -> None:
         name, ctx.author.name, create=len(name) > 0, player_id=player.id
     )
     if initiative is None:
-        char = Character(cdi, ctx.bot.initbot_state)
-        if char.initiative_modifier is not None:
-            initiative = NerdDiceRoll(20, modifier=char.initiative_modifier).roll_one()
+        if cdi.initiative_dice is not None:
+            initiative = NerdDiceRoll.create(cdi.initiative_dice).roll_one()
         else:
             raise ValueError(
-                "Character has no initiative modifier. Set their agility and other character attributes that affect initiative with the $set command."
+                f"No initiative dice set for {cdi.name}. Use `$init_dice {cdi.name} d20+3` first."
             )
 
     cdi.initiative = initiative
-    cdi.initiative_time = int(datetime.now().timestamp())
-
+    cdi.last_used = int(datetime.now().timestamp())
     ctx.bot.initbot_state.characters.update_and_store(cdi)
 
-    suffix = ""
-    if not cdi.active:
-        suffix = (
-            " (note that this character is not currently active; you may want to activate this character with the 'play' command or maybe you meant a"
-            " different character?)"
-        )
-    await ctx.send(
-        f"{cdi.name}'s initiative is now {cdi.initiative}" + suffix, delete_after=3
-    )
+    await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}", delete_after=3)
 
 
 @commands.command()
@@ -89,36 +77,25 @@ async def inis(ctx: commands.Context) -> None:
     Use the *remove* command to remove a character.
 
     Only characters whose initiative was set within the last 24 hours are shown.
-    Parked (inactive) characters are excluded. Use the *play* command to reactivate them.
-
-    Initiative order is evaluated as per the rules.
-    However, this works only as far as the necessary information is available for a character.
-    For example, if two characters have the same initiative value and their Agility scores are known, the tie is broken based on that.
-    However, if their Agility scores are not set, the tie on the initiative value is broken randomly.
     """
 
-    def discard_characters_with_old_initiative_times(char: Character) -> bool:
+    def has_recent_initiative(cdi: CharacterData) -> bool:
         return (
-            char.initiative_time is not None
-            and char.initiative_time > int(datetime.now().timestamp()) - 24 * 3600
+            cdi.initiative is not None
+            and cdi.last_used is not None
+            and cdi.last_used > int(datetime.now().timestamp()) - 24 * 3600
         )
-
-    def ini_comparator(char: Character) -> int:
-        return char.initiative_comparison_value()
 
     sync_player(ctx.bot.initbot_state, ctx)
     state = ctx.bot.initbot_state
     sorted_characters = sorted(
-        filter(
-            discard_characters_with_old_initiative_times,
-            characters(state),
-        ),
-        key=ini_comparator,
+        filter(has_recent_initiative, characters(state)),
+        key=lambda c: c.initiative or 0,
         reverse=True,
     )
     desc: str = "\n".join(
-        f"{char.initiative}: **{char.name}** (*{player_name(state, char.cdi)}*)"
-        for char in sorted_characters
+        f"{cdi.initiative}: **{cdi.name}** (*{player_name(state, cdi)}*)"
+        for cdi in sorted_characters
     )
     embed = Embed(title="Initiative Order", description=desc)
     await ctx.send(embed=embed)
