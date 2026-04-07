@@ -133,8 +133,6 @@ def make_routes(
 
 
 def _resolve_player_name(state: State, cdi: CharacterData) -> str:
-    if cdi.player_id is None:
-        raise ValueError(f"Character {cdi.name!r} has no player_id")
     return state.players.get_from_id(cdi.player_id).name
 
 

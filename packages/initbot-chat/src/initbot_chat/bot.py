@@ -103,17 +103,10 @@ async def _send_pruning_notifications(
     by_player_id: dict[int, list] = defaultdict(list)
     for cdi in state.characters.get_all():
         if is_eligible_for_pruning(cdi, threshold):
-            if cdi.player_id is None:
-                raise ValueError(f"Character {cdi.name!r} has no player_id")
             by_player_id[cdi.player_id].append(cdi)
 
     for player_id, chars in by_player_id.items():
         player = state.players.get_from_id(player_id)
-        if player.discord_id is None:
-            _log.warning(
-                "Skipping pruning DM: no Discord ID for player_id=%d", player_id
-            )
-            continue
         member = await _fetch_member(guilds, player.discord_id)
         if not member:
             _log.warning(

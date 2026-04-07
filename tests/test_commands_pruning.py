@@ -90,7 +90,9 @@ async def test_prune_removes(mock_ctx):
 
 async def test_prune_spares_recent(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="RecentMel", user="testuser")
+        NewCharacterData(
+            name="RecentMel", user="testuser", player_id=mock_ctx.author.player_id
+        )
     )
     # No time patch — character was just created so last_used ≈ now → not eligible
     await prune.callback(mock_ctx)
@@ -133,7 +135,9 @@ async def test_touch_multiple(mock_ctx):
 
 async def test_touch_no_args(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="OnlyChar", user="testuser")
+        NewCharacterData(
+            name="OnlyChar", user="testuser", player_id=mock_ctx.author.player_id
+        )
     )
     before = int(time.time())
     await touch.callback(mock_ctx)

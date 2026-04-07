@@ -13,10 +13,10 @@ class NewCharacterData:
 
     name: str
     user: str
+    player_id: int
     initiative: int | None = None
     initiative_dice: str | None = None
     last_used: int | None = None
-    player_id: int | None = None
 
 
 @runtime_checkable
@@ -28,7 +28,7 @@ class CharacterData(Protocol):
     initiative: int | None
     initiative_dice: str | None
     last_used: int | None
-    player_id: int | None
+    player_id: int
 
 
 def is_eligible_for_pruning(cdi: CharacterData, threshold_days: int) -> bool:
