@@ -5,6 +5,7 @@
 import dataclasses
 import secrets
 import time
+from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
@@ -48,6 +49,12 @@ class _SqlCharacterState(CharacterState):
     def _add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         if char_data.last_used is None:
             char_data.last_used = int(time.time())
+        if char_data.player_id is None and char_data.user:
+            player, _ = _SqlPlayerData.get_or_create(
+                name=char_data.user,
+                defaults={"discord_id": None},
+            )
+            char_data.player_id = player.id
         return _SqlCharacterData.create(  # type: ignore[return-value]
             **{k: v for k, v in asdict(char_data).items() if v is not None}
         )
@@ -88,24 +95,38 @@ class _SqlCharacterState(CharacterState):
 
 class _SqlPlayerData(Model):
     id = AutoField()  # internal primary key, auto-increment
-    discord_id = IntegerField(unique=True)
+    discord_id = IntegerField(null=True, unique=True)
     name = CharField()
 
 
 class _SqlPlayerState(PlayerState):
     def upsert(self, discord_id: int, name: str) -> PlayerData:
-        player, _ = _SqlPlayerData.get_or_create(
-            discord_id=discord_id, defaults={"name": name}
+        # 1. Find by discord_id (existing real player)
+        player = _SqlPlayerData.get_or_none(_SqlPlayerData.discord_id == discord_id)
+        if player is not None:
+            if player.name != name:
+                _SqlPlayerData.update(name=name).where(
+                    _SqlPlayerData.id == player.id
+                ).execute()
+                player.name = name
+            return player
+        # 2. Promote placeholder with matching name
+        placeholder = _SqlPlayerData.get_or_none(
+            _SqlPlayerData.discord_id.is_null() & (_SqlPlayerData.name == name)
         )
-        if player.name != name:
-            _SqlPlayerData.update(name=name).where(
-                _SqlPlayerData.discord_id == discord_id
+        if placeholder is not None:
+            _SqlPlayerData.update(discord_id=discord_id).where(
+                _SqlPlayerData.id == placeholder.id
             ).execute()
-            player.name = name
-        return player
+            placeholder.discord_id = discord_id
+            return placeholder
+        # 3. New player
+        return _SqlPlayerData.create(discord_id=discord_id, name=name)  # type: ignore[return-value]
 
-    def get_from_id(self, player_id: int) -> PlayerData | None:
+    def get_from_id(self, player_id: int) -> PlayerData:
         result = _SqlPlayerData.get_or_none(_SqlPlayerData.id == player_id)
+        if result is None:
+            raise KeyError(f"No player with id={player_id}")
         return result
 
     def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
@@ -188,11 +209,13 @@ class SqlState(State):
         self._db.create_tables(data_classes)
 
         self._migrate(self._db)
+        self._associate_orphan_characters(self._db)
 
     @staticmethod
     def _migrate(db: SqliteDatabase) -> None:
-        """Apply schema migrations to _sqlcharacterdata."""
+        """Apply schema migrations."""
         with db.connection_context():
+            # --- _sqlcharacterdata ---
             cursor = db.execute_sql("PRAGMA table_info(_sqlcharacterdata);")
             columns = [row[1] for row in cursor.fetchall()]
 
@@ -263,6 +286,49 @@ class SqlState(State):
                 "UPDATE _sqlcharacterdata SET last_used = ? WHERE last_used IS NULL;",
                 (grace_ts,),
             )
+
+            # --- _sqlplayerdata: make discord_id nullable ---
+            cursor = db.execute_sql("PRAGMA table_info(_sqlplayerdata);")
+            player_col_info = {
+                row[1]: row[3] for row in cursor.fetchall()
+            }  # name -> notnull
+            if player_col_info.get("discord_id", 0) == 1:  # 1 = NOT NULL constraint
+                db.execute_sql("""
+                    CREATE TABLE _sqlplayerdata_new (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        discord_id INTEGER UNIQUE,
+                        name TEXT NOT NULL
+                    );
+                """)
+                db.execute_sql("""
+                    INSERT INTO _sqlplayerdata_new (id, discord_id, name)
+                    SELECT id, discord_id, name FROM _sqlplayerdata;
+                """)
+                db.execute_sql("DROP TABLE _sqlplayerdata;")
+                db.execute_sql(
+                    "ALTER TABLE _sqlplayerdata_new RENAME TO _sqlplayerdata;"
+                )
+
+    @staticmethod
+    def _associate_orphan_characters(db: SqliteDatabase) -> None:
+        """Create placeholder players for characters that have no player_id."""
+        with db.connection_context():
+            orphans = list(
+                _SqlCharacterData.select().where(_SqlCharacterData.player_id.is_null())
+            )
+            if not orphans:
+                return
+            by_user: dict[str, list[_SqlCharacterData]] = defaultdict(list)
+            for cdi in orphans:
+                by_user[cdi.user].append(cdi)
+            for username, chars in by_user.items():
+                player, _ = _SqlPlayerData.get_or_create(
+                    name=username,
+                    defaults={"discord_id": None},
+                )
+                for cdi in chars:
+                    cdi.player_id = player.id
+                    cdi.save()
 
     @property
     def characters(self) -> CharacterState:

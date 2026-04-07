@@ -12,9 +12,18 @@ from initbot_core.data.character import NewCharacterData
 # looks old enough to be eligible for pruning.
 _FUTURE = int(time.time()) + 200 * 86400
 
+# Must match mock_ctx.author.id in conftest.py so that sync_player inside the
+# commands finds the same player record created here.
+_DISCORD_IDS: dict[str, int] = {
+    "testuser": 100000000000000001,
+    "otheruser": 200000000000000002,
+}
+
 
 def _add_old(state, name, user):
     """Add a character and immediately make it appear old via a patched time."""
+    discord_id = _DISCORD_IDS.get(user, abs(hash(user)) % (10**15))
+    player = state.players.upsert(discord_id=discord_id, name=user)
     with (
         patch("initbot_core.state.local.time") as m_local,
         patch("initbot_core.state.sql.time") as m_sql,
@@ -22,7 +31,7 @@ def _add_old(state, name, user):
         m_local.time.return_value = 0
         m_sql.time.return_value = 0
         return state.characters.add_store_and_get(
-            NewCharacterData(name=name, user=user)
+            NewCharacterData(name=name, user=user, player_id=player.id)
         )
 
 

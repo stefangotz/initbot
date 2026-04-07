@@ -95,33 +95,26 @@ async def _fetch_member(
     return None
 
 
-def _find_member_named(
-    guilds: Sequence[discord.Guild], username: str
-) -> discord.Member | None:
-    for guild in guilds:
-        member = guild.get_member_named(username)
-        if member:
-            return member
-    return None
-
-
 async def _send_pruning_notifications(
     guilds: Sequence[discord.Guild], state: State
 ) -> None:
     """Send pruning reminder DMs to all players with eligible characters."""
     threshold = CORE_CFG.prune_threshold_days
     by_player_id: dict[int, list] = defaultdict(list)
-    by_user: dict[str, list] = defaultdict(list)
     for cdi in state.characters.get_all():
         if is_eligible_for_pruning(cdi, threshold):
-            if cdi.player_id is not None:
-                by_player_id[cdi.player_id].append(cdi)
-            else:
-                by_user[cdi.user].append(cdi)
+            if cdi.player_id is None:
+                raise ValueError(f"Character {cdi.name!r} has no player_id")
+            by_player_id[cdi.player_id].append(cdi)
 
     for player_id, chars in by_player_id.items():
         player = state.players.get_from_id(player_id)
-        member = await _fetch_member(guilds, player.discord_id) if player else None
+        if player.discord_id is None:
+            _log.warning(
+                "Skipping pruning DM: no Discord ID for player_id=%d", player_id
+            )
+            continue
+        member = await _fetch_member(guilds, player.discord_id)
         if not member:
             _log.warning(
                 "Could not find guild member for pruning notification: player_id=%d",
@@ -129,15 +122,6 @@ async def _send_pruning_notifications(
             )
             continue
         await _notify_member(member, chars, threshold, display=f"player_id={player_id}")
-
-    for username, chars in by_user.items():
-        member = _find_member_named(guilds, username)
-        if not member:
-            _log.warning(
-                "Could not find guild member for pruning notification: %s", username
-            )
-            continue
-        await _notify_member(member, chars, threshold, display=username)
 
 
 @tasks.loop(hours=24 * 30)

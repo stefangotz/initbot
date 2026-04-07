@@ -29,32 +29,45 @@ from initbot_core.data.character import NewCharacterData  # noqa: E402
 # pylint: enable=wrong-import-position
 
 _FUTURE = int(time.time()) + 200 * 86400
+_PLAYER_ID = 42
+_DISCORD_ID = 999888777
 
 
-def _old_char(name: str, user: str) -> NewCharacterData:
-    cdi = NewCharacterData(name=name, user=user)
+def _old_char(
+    name: str, user: str, player_id: int | None = _PLAYER_ID
+) -> NewCharacterData:
+    cdi = NewCharacterData(name=name, user=user, player_id=player_id)
     cdi.last_used = 0
     return cdi
 
 
 def _recent_char(name: str, user: str) -> NewCharacterData:
-    cdi = NewCharacterData(name=name, user=user)
+    cdi = NewCharacterData(name=name, user=user, player_id=_PLAYER_ID)
     cdi.last_used = int(time.time())
     return cdi
+
+
+def _mock_state_with_player(
+    *chars: NewCharacterData, discord_id: int = _DISCORD_ID
+) -> MagicMock:
+    mock_player = MagicMock()
+    mock_player.discord_id = discord_id
+    mock_state = MagicMock()
+    mock_state.characters.get_all.return_value = list(chars)
+    mock_state.players.get_from_id.return_value = mock_player
+    return mock_state
 
 
 async def test_pruning_notification_sends_dm() -> None:
     char1 = _old_char("OldMel", "alice")
     char2 = _old_char("OldBob", "alice")
-
-    mock_state = MagicMock()
-    mock_state.characters.get_all.return_value = [char1, char2]
+    mock_state = _mock_state_with_player(char1, char2)
 
     member = MagicMock()
     member.send = AsyncMock()
 
     guild = MagicMock()
-    guild.get_member_named.return_value = member
+    guild.fetch_member = AsyncMock(return_value=member)
 
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
@@ -71,102 +84,7 @@ async def test_pruning_notification_member_not_found(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     char1 = _old_char("OldMel", "alice")
-
-    mock_state = MagicMock()
-    mock_state.characters.get_all.return_value = [char1]
-
-    guild = MagicMock()
-    guild.get_member_named.return_value = None
-
-    with patch("initbot_core.data.character.time") as mock_t:
-        mock_t.time.return_value = _FUTURE
-        await _send_pruning_notifications([guild], mock_state)
-
-    assert any("alice" in r.message for r in caplog.records if r.levelname == "WARNING")
-
-
-async def test_pruning_notification_dm_blocked(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    char1 = _old_char("OldMel", "alice")
-
-    mock_state = MagicMock()
-    mock_state.characters.get_all.return_value = [char1]
-
-    member = MagicMock()
-    member.send = AsyncMock(side_effect=Exception("DMs blocked"))
-
-    guild = MagicMock()
-    guild.get_member_named.return_value = member
-
-    with patch("initbot_core.data.character.time") as mock_t:
-        mock_t.time.return_value = _FUTURE
-        await _send_pruning_notifications([guild], mock_state)
-
-    assert any("alice" in r.message for r in caplog.records if r.levelname == "WARNING")
-
-
-async def test_pruning_notification_uses_discord_id() -> None:
-    player_id = 42
-    char = _old_char("OldMel", "alice")
-    char.player_id = player_id
-
-    mock_player = MagicMock()
-    mock_player.discord_id = 999888777
-
-    mock_state = MagicMock()
-    mock_state.characters.get_all.return_value = [char]
-    mock_state.players.get_from_id.return_value = mock_player
-
-    member = MagicMock()
-    member.send = AsyncMock()
-
-    guild = MagicMock()
-    guild.fetch_member = AsyncMock(return_value=member)
-    guild.get_member_named.return_value = None
-
-    with patch("initbot_core.data.character.time") as mock_t:
-        mock_t.time.return_value = _FUTURE
-        await _send_pruning_notifications([guild], mock_state)
-
-    guild.fetch_member.assert_awaited_with(999888777)
-    guild.get_member_named.assert_not_called()
-    member.send.assert_awaited_once()
-
-
-async def test_pruning_notification_falls_back_for_legacy_characters() -> None:
-    char = _old_char("OldMel", "alice")  # player_id=None
-
-    mock_state = MagicMock()
-    mock_state.characters.get_all.return_value = [char]
-
-    member = MagicMock()
-    member.send = AsyncMock()
-
-    guild = MagicMock()
-    guild.get_member_named.return_value = member
-
-    with patch("initbot_core.data.character.time") as mock_t:
-        mock_t.time.return_value = _FUTURE
-        await _send_pruning_notifications([guild], mock_state)
-
-    guild.get_member_named.assert_called_with("alice")
-    member.send.assert_awaited_once()
-
-
-async def test_pruning_notification_player_not_in_guild(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    player_id = 42
-    char = _old_char("OldMel", "alice")
-    char.player_id = player_id
-
-    mock_player = MagicMock()
-    mock_player.discord_id = 999888777
-
-    mock_state = MagicMock()
-    mock_state.characters.get_all.return_value = [char]
-    mock_state.players.get_from_id.return_value = mock_player
+    mock_state = _mock_state_with_player(char1)
 
     mock_response = MagicMock()
     mock_response.status = 404
@@ -181,7 +99,104 @@ async def test_pruning_notification_player_not_in_guild(
         await _send_pruning_notifications([guild], mock_state)
 
     assert any(
-        f"player_id={player_id}" in r.message
+        f"player_id={_PLAYER_ID}" in r.message
+        for r in caplog.records
+        if r.levelname == "WARNING"
+    )
+
+
+async def test_pruning_notification_dm_blocked(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    char1 = _old_char("OldMel", "alice")
+    mock_state = _mock_state_with_player(char1)
+
+    member = MagicMock()
+    member.send = AsyncMock(side_effect=Exception("DMs blocked"))
+
+    guild = MagicMock()
+    guild.fetch_member = AsyncMock(return_value=member)
+
+    with patch("initbot_core.data.character.time") as mock_t:
+        mock_t.time.return_value = _FUTURE
+        await _send_pruning_notifications([guild], mock_state)
+
+    assert any(
+        f"player_id={_PLAYER_ID}" in r.message
+        for r in caplog.records
+        if r.levelname == "WARNING"
+    )
+
+
+async def test_pruning_notification_skips_player_without_discord_id(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Characters belonging to a placeholder player (discord_id=None) are skipped."""
+    char = _old_char("OldMel", "alice")
+
+    mock_player = MagicMock()
+    mock_player.discord_id = None
+
+    mock_state = MagicMock()
+    mock_state.characters.get_all.return_value = [char]
+    mock_state.players.get_from_id.return_value = mock_player
+
+    member = MagicMock()
+    member.send = AsyncMock()
+
+    guild = MagicMock()
+    guild.fetch_member = AsyncMock(return_value=member)
+
+    with patch("initbot_core.data.character.time") as mock_t:
+        mock_t.time.return_value = _FUTURE
+        await _send_pruning_notifications([guild], mock_state)
+
+    member.send.assert_not_awaited()
+    assert any(
+        f"player_id={_PLAYER_ID}" in r.message
+        for r in caplog.records
+        if r.levelname == "WARNING"
+    )
+
+
+async def test_pruning_notification_uses_discord_id() -> None:
+    char = _old_char("OldMel", "alice")
+    mock_state = _mock_state_with_player(char, discord_id=_DISCORD_ID)
+
+    member = MagicMock()
+    member.send = AsyncMock()
+
+    guild = MagicMock()
+    guild.fetch_member = AsyncMock(return_value=member)
+
+    with patch("initbot_core.data.character.time") as mock_t:
+        mock_t.time.return_value = _FUTURE
+        await _send_pruning_notifications([guild], mock_state)
+
+    guild.fetch_member.assert_awaited_with(_DISCORD_ID)
+    member.send.assert_awaited_once()
+
+
+async def test_pruning_notification_player_not_in_guild(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    char = _old_char("OldMel", "alice")
+    mock_state = _mock_state_with_player(char)
+
+    mock_response = MagicMock()
+    mock_response.status = 404
+
+    guild = MagicMock()
+    guild.fetch_member = AsyncMock(
+        side_effect=discord.NotFound(mock_response, "Unknown Member")
+    )
+
+    with patch("initbot_core.data.character.time") as mock_t:
+        mock_t.time.return_value = _FUTURE
+        await _send_pruning_notifications([guild], mock_state)
+
+    assert any(
+        f"player_id={_PLAYER_ID}" in r.message
         for r in caplog.records
         if r.levelname == "WARNING"
     )
@@ -197,7 +212,7 @@ async def test_pruning_notification_skips_recent() -> None:
     member.send = AsyncMock()
 
     guild = MagicMock()
-    guild.get_member_named.return_value = member
+    guild.fetch_member = AsyncMock(return_value=member)
 
     await _send_pruning_notifications([guild], mock_state)
 

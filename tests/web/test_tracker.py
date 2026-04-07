@@ -72,6 +72,7 @@ def test_tracker_page_shows_player_name(tmp_path):
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
     player = state.players.upsert(discord_id=44, name="Alice")
+    assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
     settings = WebSettings(state=f"sqlite:{db_path}")
@@ -104,6 +105,7 @@ def test_per_player_token_creates_session(tmp_path):
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
     player = state.players.upsert(discord_id=42, name="Alice")
+    assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
     settings = WebSettings(state=f"sqlite:{db_path}")
@@ -121,6 +123,7 @@ def test_used_token_returns_403(tmp_path):
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
     player = state.players.upsert(discord_id=43, name="Bob")
+    assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
     settings = WebSettings(state=f"sqlite:{db_path}")

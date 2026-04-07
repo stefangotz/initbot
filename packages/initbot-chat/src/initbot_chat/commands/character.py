@@ -143,14 +143,7 @@ async def unused(ctx: commands.Context, *args: str) -> None:
         cdi
         for cdi in state.characters.get_all()
         if is_eligible_for_pruning(cdi, threshold)
-        and (
-            show_all
-            or (
-                cdi.player_id == player.id
-                if cdi.player_id is not None
-                else cdi.user == ctx.author.name
-            )
-        )
+        and (show_all or cdi.player_id == player.id)
     ]
     if not eligible:
         await ctx.send("You don't seem to have any unused characters.", delete_after=5)
@@ -173,14 +166,7 @@ async def prune(ctx: commands.Context, *args: str) -> None:
         cdi
         for cdi in ctx.bot.initbot_state.characters.get_all()
         if is_eligible_for_pruning(cdi, threshold)
-        and (
-            show_all
-            or (
-                cdi.player_id == player.id
-                if cdi.player_id is not None
-                else cdi.user == ctx.author.name
-            )
-        )
+        and (show_all or cdi.player_id == player.id)
     ]
     for cdi in to_prune:
         ctx.bot.initbot_state.characters.remove_and_store(cdi)
