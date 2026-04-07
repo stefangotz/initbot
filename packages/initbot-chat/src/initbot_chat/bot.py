@@ -201,7 +201,10 @@ async def on_message(message: discord.Message) -> None:
         result_text = message.content
 
     if is_command:
-        if not message.content.split(sep=None, maxsplit=1)[0].endswith("roll"):
+        command = (
+            str(message.content).split(sep=None, maxsplit=1)[0].strip("".join(prefixes))
+        )
+        if command not in frozenset(("init_dice", "roll")):
             message.content = result_text
         await bot.process_commands(message)
     elif result_text != message.content:
