@@ -97,10 +97,11 @@ def make_routes(
             ]
             chars.sort(key=lambda c: c.initiative or 0, reverse=True)
 
-            snapshot = tuple((c.name, c.initiative) for c in chars)
+            chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
+            snapshot = tuple((c.name, c.initiative) for c, _ in chars_with_names)
             if snapshot != last_snapshot:
                 last_snapshot = snapshot
-                yield SSE.patch_elements(_render_rows(chars))
+                yield SSE.patch_elements(_render_rows(chars_with_names))
 
             current_vuln = vuln_state.has_high_severity_vulnerabilities
             if current_vuln != last_vuln:
@@ -131,6 +132,12 @@ def make_routes(
     ]
 
 
+def _resolve_player_name(state: State, cdi: CharacterData) -> str:
+    if cdi.player_id is None:
+        raise ValueError(f"Character {cdi.name!r} has no player_id")
+    return state.players.get_from_id(cdi.player_id).name
+
+
 def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     content = (
         "<p>This application needs to receive a security update.</p>"
@@ -140,11 +147,11 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     return f'<div id="security-alert">{content}</div>'
 
 
-def _render_rows(chars: list[CharacterData]) -> str:
+def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
     rows = "".join(
         f'<tr id="r{i}"><td>{i + 1}</td><td>{_safe_int(c.initiative)}</td>'
-        f"<td>{_safe_str(c.name)}</td><td>{_safe_str(c.user)}</td></tr>"
-        for i, c in enumerate(chars)
+        f"<td>{_safe_str(c.name)}</td><td>{_safe_str(name)}</td></tr>"
+        for i, (c, name) in enumerate(chars_with_names)
     )
     return f'<tbody id="initiative-rows">{rows}</tbody>'
 

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import pytest
+
 
 def test_player_upsert_creates_record(initbot_state):
     player = initbot_state.players.upsert(discord_id=111222333, name="alice")
@@ -30,12 +32,12 @@ def test_player_upsert_assigns_unique_ids(initbot_state):
 def test_player_get_from_id_returns_record(initbot_state):
     player = initbot_state.players.upsert(discord_id=111222333, name="alice")
     found = initbot_state.players.get_from_id(player.id)
-    assert found is not None
     assert found.discord_id == 111222333
 
 
-def test_player_get_from_id_returns_none_when_missing(initbot_state):
-    assert initbot_state.players.get_from_id(99999) is None
+def test_player_get_from_id_raises_for_missing_id(initbot_state):
+    with pytest.raises(KeyError):
+        initbot_state.players.get_from_id(99999)
 
 
 def test_player_get_from_discord_id_returns_record(initbot_state):

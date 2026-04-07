@@ -42,7 +42,8 @@ class LocalCharactersData(LocalBaseModel):
 
 
 class LocalCharacterState(CharacterState):
-    def __init__(self, source_dir: Path) -> None:
+    def __init__(self, source_dir: Path, players: "LocalPlayerState") -> None:
+        self._players = players
         chars_data = LocalCharactersData()
         self._path: Final[Path] = source_dir / "characters.json"
         if self._path.exists():
@@ -71,6 +72,11 @@ class LocalCharacterState(CharacterState):
         local_char_data = LocalCharacterData(**asdict(char_data))
         if local_char_data.last_used is None:
             local_char_data.last_used = int(time.time())
+        if local_char_data.player_id is None and local_char_data.user:
+            player = self._players.get_from_name(local_char_data.user)
+            if player is None:
+                player = self._players.create_placeholder(local_char_data.user)
+            local_char_data.player_id = player.id
         self._characters.append(local_char_data)
         self._store()
         return local_char_data
@@ -106,7 +112,7 @@ class LocalCharacterState(CharacterState):
 
 class LocalPlayerData(LocalBaseModel):
     id: int
-    discord_id: int
+    discord_id: int | None
     name: str
 
 
@@ -129,11 +135,19 @@ class LocalPlayerState(PlayerState):
         return max((p.id for p in self._players), default=0) + 1
 
     def upsert(self, discord_id: int, name: str) -> PlayerData:
+        # 1. Find by discord_id (existing real player)
         for player in self._players:
             if player.discord_id == discord_id:
                 player.name = name
                 self._store()
                 return player
+        # 2. Promote placeholder with matching name
+        for player in self._players:
+            if player.discord_id is None and player.name == name:
+                player.discord_id = discord_id
+                self._store()
+                return player
+        # 3. New player
         new_player = LocalPlayerData(
             id=self._next_id(), discord_id=discord_id, name=name
         )
@@ -141,17 +155,29 @@ class LocalPlayerState(PlayerState):
         self._store()
         return new_player
 
-    def get_from_id(self, player_id: int) -> PlayerData | None:
+    def get_from_id(self, player_id: int) -> PlayerData:
         for player in self._players:
             if player.id == player_id:
                 return player
-        return None
+        raise KeyError(f"No player with id={player_id}")
 
     def get_from_discord_id(self, discord_id: int) -> PlayerData | None:
         for player in self._players:
             if player.discord_id == discord_id:
                 return player
         return None
+
+    def get_from_name(self, name: str) -> LocalPlayerData | None:
+        for player in self._players:
+            if player.name == name:
+                return player
+        return None
+
+    def create_placeholder(self, name: str) -> LocalPlayerData:
+        new_player = LocalPlayerData(id=self._next_id(), discord_id=None, name=name)
+        self._players.append(new_player)
+        self._store()
+        return new_player
 
     def get_all(self) -> Sequence[PlayerData]:
         return self._players
@@ -182,9 +208,24 @@ class LocalState(State):
     def __init__(self, source: str) -> None:
         source_dir = Path(source.split(":", maxsplit=1)[-1])
         check_state_directory(source, source_dir)
-        self._characters = LocalCharacterState(source_dir)
         self._players = LocalPlayerState(source_dir)
+        self._characters = LocalCharacterState(source_dir, self._players)
         self._web_login_tokens = _LocalWebLoginTokenState()
+        self._associate_orphan_characters()
+
+    def _associate_orphan_characters(self) -> None:
+        """Create placeholder players for characters that have no player_id.
+
+        Handles existing characters from before this migration was introduced.
+        """
+        for cdi in self._characters.get_all():
+            if cdi.player_id is not None:
+                continue
+            player = self._players.get_from_name(cdi.user)
+            if player is None:
+                player = self._players.create_placeholder(cdi.user)
+            cdi.player_id = player.id
+            self._characters.update_and_store(cdi)
 
     @property
     def characters(self) -> CharacterState:

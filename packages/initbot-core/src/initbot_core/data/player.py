@@ -12,5 +12,7 @@ from typing import Protocol, runtime_checkable
 @runtime_checkable
 class PlayerData(Protocol):
     id: int  # Internal primary key, auto-assigned, used as foreign key by other entities
-    discord_id: int  # Discord snowflake, unique but not the primary key
+    discord_id: (
+        int | None
+    )  # Discord snowflake; None for placeholder players created by migration
     name: str  # Display name, refreshed on each command invocation

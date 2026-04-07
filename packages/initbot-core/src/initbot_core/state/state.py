@@ -45,7 +45,7 @@ class CharacterState(PartialState, ABC):
         player_id: int | None = None,
     ) -> CharacterData:
         if name:
-            return self.get_from_name(name, create, user)
+            return self.get_from_name(name, create, user, player_id)
         if player_id is not None:
             try:
                 return self.get_from_player_id(player_id)
@@ -63,7 +63,11 @@ class CharacterState(PartialState, ABC):
         )
 
     def get_from_name(
-        self, name: str, create: bool = False, user: str | None = None
+        self,
+        name: str,
+        create: bool = False,
+        user: str | None = None,
+        player_id: int | None = None,
     ) -> CharacterData:
         try:
             return get_exact_or_unique_prefix_match(
@@ -71,7 +75,9 @@ class CharacterState(PartialState, ABC):
             )
         except KeyError as err:
             if create and user:
-                return self.add_store_and_get(NewCharacterData(name=name, user=user))
+                return self.add_store_and_get(
+                    NewCharacterData(name=name, user=user, player_id=player_id)
+                )
             raise KeyError(f"Unable to find character with name '{name}'") from err
 
     def get_from_user(self, user: str) -> CharacterData:
@@ -114,7 +120,7 @@ class PlayerState(PartialState, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_from_id(self, player_id: int) -> PlayerData | None:
+    def get_from_id(self, player_id: int) -> PlayerData:
         """Look up by internal player ID (used as foreign key by other entities)."""
         raise NotImplementedError()
 

@@ -23,17 +23,30 @@ def test_sync_player_creates_player_record(initbot_state):
     assert initbot_state.players.get_from_discord_id(111222333) is not None
 
 
-def test_sync_player_backfills_player_id_on_legacy_characters(initbot_state):
+def test_sync_player_promotes_placeholder(initbot_state):
+    """A placeholder player (discord_id=None) is promoted when Discord user matches by name."""
+    # add_store_and_get creates a placeholder player for "alice" since no player_id is given
     char = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Harold", user="alice")
     )
-    assert char.player_id is None
+    # Verify placeholder was created
+    all_players = initbot_state.players.get_all()
+    placeholder_list = [
+        p for p in all_players if p.name == "alice" and p.discord_id is None
+    ]
+    assert len(placeholder_list) == 1
+    placeholder = placeholder_list[0]
+    assert char.player_id == placeholder.id
 
+    # Discord user runs first command — placeholder gets promoted
+    assert initbot_state.players.get_from_discord_id(111222333) is None
     ctx = _make_ctx()
     player = sync_player(initbot_state, ctx)
 
-    updated = initbot_state.characters.get_from_name("Harold")
-    assert updated.player_id == player.id
+    assert player.discord_id == 111222333
+    assert player.id == placeholder.id  # same record, promoted in place
+    # no duplicate created
+    assert len([p for p in initbot_state.players.get_all() if p.name == "alice"]) == 1
 
 
 def test_sync_player_does_not_overwrite_existing_player_id(initbot_state):

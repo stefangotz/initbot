@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import logging
 from collections.abc import Callable, Iterable
 from typing import Any, Final
 
@@ -12,6 +13,8 @@ from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import State
+
+_log = logging.getLogger(__name__)
 
 
 def _web_configured(_ctx: commands.Context) -> bool:
@@ -26,25 +29,15 @@ web_configured: Final[Callable[..., Any]] = commands.check(_web_configured)
 
 
 def sync_player(state: State, ctx: Context) -> PlayerData:
-    """Upsert the player record and backfill player_id on their legacy characters."""
-    player = state.players.upsert(discord_id=ctx.author.id, name=ctx.author.name)
-    for cdi in state.characters.get_all():
-        if cdi.player_id is None and cdi.user == ctx.author.name:
-            cdi.player_id = player.id
-            state.characters.update_and_store(cdi)
-    return player
+    """Upsert the player record for the Discord user."""
+    return state.players.upsert(discord_id=ctx.author.id, name=ctx.author.name)
 
 
 def player_name(state: State, cdi: CharacterData) -> str:
-    """Resolve the display name for a character's owner.
-
-    Uses the PlayerData name when available, falls back to the legacy user string.
-    """
-    if cdi.player_id is not None:
-        player = state.players.get_from_id(cdi.player_id)
-        if player is not None:
-            return player.name
-    return cdi.user
+    """Resolve the display name for a character's owner via the player entity."""
+    if cdi.player_id is None:
+        raise ValueError(f"Character {cdi.name!r} has no player_id")
+    return state.players.get_from_id(cdi.player_id).name
 
 
 async def send_in_parts(
