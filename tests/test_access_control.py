@@ -16,14 +16,6 @@ def test_access_control_uses_player_id(initbot_state):
     assert found.name == "Harold"
 
 
-def test_access_control_falls_back_for_legacy_characters(initbot_state):
-    initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Harold", user="alice")
-    )
-    found = initbot_state.characters.get_from_tokens((), "alice")
-    assert found.name == "Harold"
-
-
 def test_access_control_player_id_takes_precedence_over_user(initbot_state):
     player = initbot_state.players.upsert(discord_id=111, name="alice_new")
     initbot_state.characters.add_store_and_get(

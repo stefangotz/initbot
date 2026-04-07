@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import logging
 from collections.abc import Callable, Iterable
 from typing import Any, Final
 
@@ -13,8 +12,6 @@ from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import State
-
-_log = logging.getLogger(__name__)
 
 
 def _web_configured(_ctx: commands.Context) -> bool:
@@ -35,8 +32,6 @@ def sync_player(state: State, ctx: Context) -> PlayerData:
 
 def player_name(state: State, cdi: CharacterData) -> str:
     """Resolve the display name for a character's owner via the player entity."""
-    if cdi.player_id is None:
-        raise ValueError(f"Character {cdi.name!r} has no player_id")
     return state.players.get_from_id(cdi.player_id).name
 
 

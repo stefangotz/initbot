@@ -38,10 +38,14 @@ def _initbot_state(request, tmp_path):
 
 @pytest.fixture(name="mock_ctx")
 def _mock_ctx(initbot_state):
+    discord_id = 100000000000000001
+    name = "testuser"
     ctx = MagicMock()
-    ctx.author.id = 100000000000000001
-    ctx.author.name = "testuser"
-    ctx.author.display_name = "testuser"
+    ctx.author.id = discord_id
+    ctx.author.name = name
+    ctx.author.display_name = name
+    player = initbot_state.players.upsert(discord_id=discord_id, name=name)
+    ctx.author.player_id = player.id  # pylint: disable=no-member
     ctx.bot.initbot_state = initbot_state
     ctx.send = AsyncMock(return_value=None)
     return ctx

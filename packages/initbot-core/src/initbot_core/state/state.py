@@ -74,7 +74,7 @@ class CharacterState(PartialState, ABC):
                 name, self.get_all(), lambda cdi: cdi.name
             )
         except KeyError as err:
-            if create and user:
+            if create and user and player_id is not None:
                 return self.add_store_and_get(
                     NewCharacterData(name=name, user=user, player_id=player_id)
                 )
