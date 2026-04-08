@@ -85,23 +85,39 @@ def make_routes(
     @datastar_response
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
         last_snapshot: tuple[tuple[str, int | None], ...] = ()
+        last_idle_snapshot: tuple[str, ...] = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
         while not await request.is_disconnected():
             now = int(datetime.now().timestamp())
+            all_chars = state.characters.get_all()
             chars = [
                 c
-                for c in state.characters.get_all()
+                for c in all_chars
                 if c.initiative is not None
                 and c.last_used is not None
                 and c.last_used > now - STALE_SECONDS
             ]
             chars.sort(key=lambda c: c.initiative or 0, reverse=True)
+            idle_chars = [
+                c
+                for c in all_chars
+                if c.initiative is None
+                and c.last_used is not None
+                and c.last_used > now - STALE_SECONDS
+            ]
+            idle_chars.sort(key=lambda c: c.name)
 
             chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
             snapshot = tuple((c.name, c.initiative) for c, _ in chars_with_names)
             if snapshot != last_snapshot:
                 last_snapshot = snapshot
                 yield SSE.patch_elements(_render_rows(chars_with_names))
+
+            idle_with_names = [(c, _resolve_player_name(state, c)) for c in idle_chars]
+            idle_snapshot = tuple(c.name for c in idle_chars)
+            if idle_snapshot != last_idle_snapshot:
+                last_idle_snapshot = idle_snapshot
+                yield SSE.patch_elements(_render_idle_rows(idle_with_names))
 
             current_vuln = vuln_state.has_high_severity_vulnerabilities
             if current_vuln != last_vuln:
@@ -152,6 +168,14 @@ def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
         for i, (c, name) in enumerate(chars_with_names)
     )
     return f'<tbody id="initiative-rows">{rows}</tbody>'
+
+
+def _render_idle_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
+    rows = "".join(
+        f"<tr><td>{_safe_str(c.name)}</td><td>{_safe_str(name)}</td></tr>"
+        for c, name in chars_with_names
+    )
+    return f'<tbody id="idle-rows">{rows}</tbody>'
 
 
 def _safe_int(value: int | None) -> str:
