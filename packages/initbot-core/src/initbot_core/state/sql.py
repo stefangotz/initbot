@@ -24,6 +24,7 @@ from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import (
+    CharacterActionState,
     CharacterState,
     PlayerState,
     State,
@@ -122,6 +123,80 @@ class _SqlPlayerState(PlayerState):
             _SqlPlayerData.create(id=p.id, discord_id=p.discord_id, name=p.name)
 
 
+class _SqlCharacterAction(Model):
+    # No foreign-key constraint on character_name: SQLite FK enforcement requires
+    # PRAGMA foreign_keys=ON per connection, which Peewee does not set by default,
+    # and adding it now would risk breaking existing deployments.
+    #
+    # Referential integrity is maintained at the command layer instead:
+    # initbot_chat.commands.character calls remove_all_for_character() before
+    # deleting a character. CharacterState.remove_and_store() does NOT cascade;
+    # any code that removes characters outside the command layer must call
+    # remove_all_for_character() explicitly to avoid leaving orphaned rows.
+    id = AutoField()
+    character_name = CharField()
+    position = IntegerField()  # 0-based; kept contiguous after removes
+    template = CharField()
+
+
+class _SqlCharacterActionState(CharacterActionState):
+    def get_all_for_character(self, character_name: str) -> Sequence[str]:
+        rows = (
+            _SqlCharacterAction
+            .select()
+            .where(_SqlCharacterAction.character_name == character_name)
+            .order_by(_SqlCharacterAction.position)
+        )
+        return [row.template for row in rows]
+
+    def add(self, character_name: str, template: str) -> int:
+        next_pos = len(self.get_all_for_character(character_name))
+        _SqlCharacterAction.create(
+            character_name=character_name,
+            position=next_pos,
+            template=template,
+        )
+        return next_pos + 1
+
+    def update(self, character_name: str, index: int, template: str) -> None:
+        actions = self.get_all_for_character(character_name)
+        if not 1 <= index <= len(actions):
+            raise IndexError(f"Action index {index} out of range (1-{len(actions)})")
+        _SqlCharacterAction.update(template=template).where(
+            (_SqlCharacterAction.character_name == character_name)
+            & (_SqlCharacterAction.position == index - 1)
+        ).execute()
+
+    def remove(self, character_name: str, index: int) -> None:
+        actions = self.get_all_for_character(character_name)
+        if not 1 <= index <= len(actions):
+            raise IndexError(f"Action index {index} out of range (1-{len(actions)})")
+        pos = index - 1
+        _SqlCharacterAction.delete().where(
+            (_SqlCharacterAction.character_name == character_name)
+            & (_SqlCharacterAction.position == pos)
+        ).execute()
+        # Renumber remaining rows to keep positions contiguous
+        _SqlCharacterAction.update(position=_SqlCharacterAction.position - 1).where(
+            (_SqlCharacterAction.character_name == character_name)
+            & (_SqlCharacterAction.position > pos)
+        ).execute()
+
+    def remove_all_for_character(self, character_name: str) -> None:
+        _SqlCharacterAction.delete().where(
+            _SqlCharacterAction.character_name == character_name
+        ).execute()
+
+    def import_from(self, src: CharacterActionState) -> None:
+        for cdi in _SqlCharacterData.select():
+            for pos, template in enumerate(src.get_all_for_character(cdi.name)):
+                _SqlCharacterAction.create(
+                    character_name=cdi.name,
+                    position=pos,
+                    template=template,
+                )
+
+
 _WEB_LOGIN_TOKEN_TTL: Final[int] = 60  # seconds
 
 
@@ -170,6 +245,7 @@ class SqlState(State):
         self._characters = _SqlCharacterState()
         self._players = _SqlPlayerState()
         self._web_login_tokens = _SqlWebLoginTokenState()
+        self._character_actions = _SqlCharacterActionState()
 
         state_type, state_source = source.split(":", maxsplit=1)
         if state_type == "sqlite":
@@ -187,7 +263,7 @@ class SqlState(State):
 
         data_classes = _get_data_classes()
         self._db.bind(data_classes)
-        self._db.create_tables(data_classes)
+        self._db.create_tables(data_classes, safe=True)
 
         self._migrate(self._db)
 
@@ -278,6 +354,10 @@ class SqlState(State):
     @property
     def web_login_tokens(self) -> WebLoginTokenState:
         return self._web_login_tokens
+
+    @property
+    def character_actions(self) -> CharacterActionState:
+        return self._character_actions
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:

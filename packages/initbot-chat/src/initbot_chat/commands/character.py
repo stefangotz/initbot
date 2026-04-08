@@ -84,6 +84,7 @@ async def remove(ctx: commands.Context, *args: str) -> None:
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
         args, ctx.author.name, player_id=player.id
     )
+    ctx.bot.initbot_state.character_actions.remove_all_for_character(cdi.name)
     ctx.bot.initbot_state.characters.remove_and_store(cdi)
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
 
@@ -169,6 +170,7 @@ async def prune(ctx: commands.Context, *args: str) -> None:
         and (show_all or cdi.player_id == player.id)
     ]
     for cdi in to_prune:
+        ctx.bot.initbot_state.character_actions.remove_all_for_character(cdi.name)
         ctx.bot.initbot_state.characters.remove_and_store(cdi)
     if not to_prune:
         await ctx.send("No characters to prune.", delete_after=5)

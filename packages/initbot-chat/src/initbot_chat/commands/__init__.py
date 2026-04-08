@@ -5,6 +5,7 @@
 from collections.abc import Set
 from typing import Any
 
+from initbot_chat.commands.actions import act_cmd, actions_cmd
 from initbot_chat.commands.character import (
     char,
     chars,
@@ -20,6 +21,8 @@ from initbot_chat.commands.tarot import tarot
 from initbot_chat.commands.web import web
 
 commands: Set[Any] = frozenset((
+    act_cmd,
+    actions_cmd,
     char,
     chars,
     inis,

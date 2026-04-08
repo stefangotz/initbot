@@ -15,6 +15,7 @@ from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import (
+    CharacterActionState,
     CharacterState,
     PlayerState,
     State,
@@ -35,6 +36,7 @@ class LocalCharacterData(LocalBaseModel):
     initiative: int | None = None
     initiative_dice: str | None = None
     last_used: int | None = None
+    actions: list[str] = []
 
 
 class LocalCharactersData(LocalBaseModel):
@@ -101,6 +103,63 @@ class LocalCharacterState(CharacterState):
             )
 
     def import_from(self, src: CharacterState) -> None:
+        raise NotImplementedError()
+
+
+class LocalCharacterActionState(CharacterActionState):
+    # Actions are stored as an embedded list on LocalCharacterData, so they are
+    # serialised and deleted together with the character — structural integrity
+    # is guaranteed by the JSON file format.
+    #
+    # Cascade on character deletion is handled at the command layer
+    # (initbot_chat.commands.character) rather than here. CharacterState
+    # .remove_and_store() does NOT call remove_all_for_character; callers that
+    # bypass the command layer must do so explicitly.
+    def __init__(self, character_state: LocalCharacterState) -> None:
+        self._character_state = character_state
+
+    def _find(self, character_name: str) -> LocalCharacterData:
+        for char in self._character_state.get_all():
+            if char.name == character_name and isinstance(char, LocalCharacterData):
+                return char
+        raise KeyError(f"Character '{character_name}' not found")
+
+    def get_all_for_character(self, character_name: str) -> Sequence[str]:
+        return list(self._find(character_name).actions)
+
+    def add(self, character_name: str, template: str) -> int:
+        char = self._find(character_name)
+        char.actions.append(template)
+        self._character_state.update_and_store(char)
+        return len(char.actions)
+
+    def update(self, character_name: str, index: int, template: str) -> None:
+        char = self._find(character_name)
+        if not 1 <= index <= len(char.actions):
+            raise IndexError(
+                f"Action index {index} out of range (1-{len(char.actions)})"
+            )
+        char.actions[index - 1] = template
+        self._character_state.update_and_store(char)
+
+    def remove(self, character_name: str, index: int) -> None:
+        char = self._find(character_name)
+        if not 1 <= index <= len(char.actions):
+            raise IndexError(
+                f"Action index {index} out of range (1-{len(char.actions)})"
+            )
+        del char.actions[index - 1]
+        self._character_state.update_and_store(char)
+
+    def remove_all_for_character(self, character_name: str) -> None:
+        try:
+            char = self._find(character_name)
+            char.actions.clear()
+            self._character_state.update_and_store(char)
+        except KeyError:
+            pass
+
+    def import_from(self, src: CharacterActionState) -> None:
         raise NotImplementedError()
 
 
@@ -185,6 +244,7 @@ class LocalState(State):
         self._players = LocalPlayerState(source_dir)
         self._characters = LocalCharacterState(source_dir)
         self._web_login_tokens = _LocalWebLoginTokenState()
+        self._character_actions = LocalCharacterActionState(self._characters)
 
     @property
     def characters(self) -> CharacterState:
@@ -197,6 +257,10 @@ class LocalState(State):
     @property
     def web_login_tokens(self) -> WebLoginTokenState:
         return self._web_login_tokens
+
+    @property
+    def character_actions(self) -> CharacterActionState:
+        return self._character_actions
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:
