@@ -171,6 +171,41 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       letter-spacing: 0.08em;
     }
 
+    /* ── Idle Characters section ──────────────────────────────── */
+    .idle-section {
+      margin-top: 2.5rem;
+      opacity: 0.5;
+    }
+
+    /* Character name — bold (mirrors initiative table's 3rd column) */
+    .idle-section tbody td:first-child {
+      font-weight: 700;
+      text-align: left;
+      color: var(--color-ink);
+      font-size: 1rem;
+    }
+
+    /* Player name — muted (mirrors initiative table's 4th column) */
+    .idle-section tbody td:nth-child(2) {
+      font-weight: 400;
+      font-size: 0.9rem;
+      color: rgba(26, 18, 9, 0.65);
+    }
+
+    .idle-section h2 {
+      font-family: var(--font-main);
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--color-ink);
+      text-align: center;
+      width: fit-content;
+      margin: 0 auto 1rem;
+      border-bottom: 2px solid var(--color-offset);
+      padding-bottom: 0.3rem;
+    }
+
     /* ── Responsive ───────────────────────────────────────────── */
     @media (max-width: 480px) {
       body {
@@ -197,6 +232,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <tr><td colspan="4">Alea nondum iacta est…</td></tr>
       </tbody>
     </table>
+    <section class="idle-section">
+      <h2>Idle Characters</h2>
+      <table>
+        <thead>
+          <tr><th>Character</th><th>Player</th></tr>
+        </thead>
+        <tbody id="idle-rows"></tbody>
+      </table>
+    </section>
   </div>
 </body>
 </html>

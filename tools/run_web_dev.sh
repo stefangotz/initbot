@@ -20,6 +20,7 @@ characters = [
     {"name": "Brother Thog", "user": "Bob",    "initiative": 15, "initiative_dice": "d20",   "last_used": now},
     {"name": "Elara",        "user": "Carol",  "initiative":  9, "initiative_dice": "d20-1", "last_used": now},
     {"name": "Zyx",          "user": "Dave",   "initiative":  3, "initiative_dice": "d20-2", "last_used": now},
+    {"name": "Tara",         "user": "Eve",                                                  "last_used": now},
 ]
 with open(f"{sys.argv[1]}/characters.json", "w") as f:
     json.dump({"characters": characters}, f)
@@ -29,4 +30,4 @@ mkdir -p dev-state
 rm -f dev-state/dev.sqlite
 uv run python -m initbot_core.state.export_json_to_sql_state "${DEV_JSON_DIR}" dev-state/dev.sqlite
 
-exec uv run initbot-web --web_url_path_prefix dev --web_port 8080 --state "sqlite:dev-state/dev.sqlite" "$@"
+exec env WEB_URL_PATH_PREFIX=dev uv run initbot-web --web_port 8080 --state "sqlite:dev-state/dev.sqlite" "$@"
