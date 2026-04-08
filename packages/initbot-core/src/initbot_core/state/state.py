@@ -165,6 +165,42 @@ class WebLoginTokenState(ABC):
         raise NotImplementedError()
 
 
+class CharacterActionState(PartialState, ABC):
+    """Stores ordered action templates for each character."""
+
+    @abstractmethod
+    def get_all_for_character(self, character_name: str) -> Sequence[str]:
+        """Return all action templates for the given character, in insertion order."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def add(self, character_name: str, template: str) -> int:
+        """Append a template and return its 1-based index."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update(self, character_name: str, index: int, template: str) -> None:
+        """Replace the template at 1-based index. Raises IndexError if out of range."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def remove(self, character_name: str, index: int) -> None:
+        """Delete the template at 1-based index. Raises IndexError if out of range.
+
+        Remaining actions renumber to fill the gap.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def remove_all_for_character(self, character_name: str) -> None:
+        """Delete every action belonging to the given character."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def import_from(self, src: "CharacterActionState") -> None:
+        raise NotImplementedError()
+
+
 class State(ABC):
     @property
     @abstractmethod
@@ -179,6 +215,11 @@ class State(ABC):
     @property
     @abstractmethod
     def web_login_tokens(self) -> WebLoginTokenState:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def character_actions(self) -> CharacterActionState:
         raise NotImplementedError()
 
     def import_from(self, src: "State") -> None:
