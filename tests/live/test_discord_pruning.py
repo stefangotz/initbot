@@ -42,7 +42,7 @@ async def test_fetch_member_returns_gotzmode(live_bot: discord.Client) -> None:
 async def test_pruning_notification_dm_sent_via_fetch_member(
     live_bot: discord.Client, caplog: pytest.LogCaptureFixture
 ) -> None:
-    char = NewCharacterData(name="TestPruneChar", user="gotzmode", player_id=1)
+    char = NewCharacterData(name="TestPruneChar", player_id=1)
     char.last_used = 0
 
     mock_player = MagicMock()

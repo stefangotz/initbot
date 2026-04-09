@@ -33,14 +33,14 @@ _PLAYER_ID = 42
 _DISCORD_ID = 999888777
 
 
-def _old_char(name: str, user: str, player_id: int = _PLAYER_ID) -> NewCharacterData:
-    cdi = NewCharacterData(name=name, user=user, player_id=player_id)
+def _old_char(name: str, player_id: int = _PLAYER_ID) -> NewCharacterData:
+    cdi = NewCharacterData(name=name, player_id=player_id)
     cdi.last_used = 0
     return cdi
 
 
-def _recent_char(name: str, user: str) -> NewCharacterData:
-    cdi = NewCharacterData(name=name, user=user, player_id=_PLAYER_ID)
+def _recent_char(name: str) -> NewCharacterData:
+    cdi = NewCharacterData(name=name, player_id=_PLAYER_ID)
     cdi.last_used = int(time.time())
     return cdi
 
@@ -57,8 +57,8 @@ def _mock_state_with_player(
 
 
 async def test_pruning_notification_sends_dm() -> None:
-    char1 = _old_char("OldMel", "alice")
-    char2 = _old_char("OldBob", "alice")
+    char1 = _old_char("OldMel")
+    char2 = _old_char("OldBob")
     mock_state = _mock_state_with_player(char1, char2)
 
     member = MagicMock()
@@ -81,7 +81,7 @@ async def test_pruning_notification_sends_dm() -> None:
 async def test_pruning_notification_member_not_found(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    char1 = _old_char("OldMel", "alice")
+    char1 = _old_char("OldMel")
     mock_state = _mock_state_with_player(char1)
 
     mock_response = MagicMock()
@@ -106,7 +106,7 @@ async def test_pruning_notification_member_not_found(
 async def test_pruning_notification_dm_blocked(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    char1 = _old_char("OldMel", "alice")
+    char1 = _old_char("OldMel")
     mock_state = _mock_state_with_player(char1)
 
     member = MagicMock()
@@ -127,7 +127,7 @@ async def test_pruning_notification_dm_blocked(
 
 
 async def test_pruning_notification_uses_discord_id() -> None:
-    char = _old_char("OldMel", "alice")
+    char = _old_char("OldMel")
     mock_state = _mock_state_with_player(char, discord_id=_DISCORD_ID)
 
     member = MagicMock()
@@ -147,7 +147,7 @@ async def test_pruning_notification_uses_discord_id() -> None:
 async def test_pruning_notification_player_not_in_guild(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    char = _old_char("OldMel", "alice")
+    char = _old_char("OldMel")
     mock_state = _mock_state_with_player(char)
 
     mock_response = MagicMock()
@@ -170,7 +170,7 @@ async def test_pruning_notification_player_not_in_guild(
 
 
 async def test_pruning_notification_skips_recent() -> None:
-    char1 = _recent_char("RecentMel", "alice")
+    char1 = _recent_char("RecentMel")
 
     mock_state = MagicMock()
     mock_state.characters.get_all.return_value = [char1]

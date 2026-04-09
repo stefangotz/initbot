@@ -16,9 +16,7 @@ async def test_chars_empty_state(mock_ctx):
 
 async def test_chars_with_character(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     await chars.callback(mock_ctx)
     mock_ctx.send.assert_called()
@@ -28,9 +26,7 @@ async def test_chars_with_character(mock_ctx):
 
 async def test_char_by_prefix(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mediocre Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mediocre Mel", player_id=mock_ctx.author.player_id)
     )
     await char.callback(mock_ctx, "Med")
     mock_ctx.send.assert_called()
@@ -42,17 +38,13 @@ async def test_char_missing_sends_error(mock_ctx):
     try:
         await char.callback(mock_ctx, "Nonexistent")
     except KeyError as exc:
-        await char_error(
-            mock_ctx, commands.CommandError(str(exc))
-        )  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
+        await char_error(mock_ctx, commands.CommandError(str(exc)))  # type: ignore[missing-argument]  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
     mock_ctx.send.assert_called()
 
 
 async def test_remove_character(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     await remove.callback(mock_ctx, "Mel")
     mock_ctx.send.assert_called()
@@ -66,27 +58,19 @@ async def test_remove_character(mock_ctx):
 
 async def test_duplicate_name_case_insensitive_rejected(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Foo", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Foo", player_id=mock_ctx.author.player_id)
     )
     with pytest.raises(ValueError, match="Foo"):
         mock_ctx.bot.initbot_state.characters.add_store_and_get(
-            NewCharacterData(
-                name="foo", user="testuser", player_id=mock_ctx.author.player_id
-            )
+            NewCharacterData(name="foo", player_id=mock_ctx.author.player_id)
         )
 
 
 async def test_duplicate_name_exact_rejected(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Foo", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Foo", player_id=mock_ctx.author.player_id)
     )
     with pytest.raises(ValueError, match="Foo"):
         mock_ctx.bot.initbot_state.characters.add_store_and_get(
-            NewCharacterData(
-                name="Foo", user="testuser", player_id=mock_ctx.author.player_id
-            )
+            NewCharacterData(name="Foo", player_id=mock_ctx.author.player_id)
         )

@@ -52,7 +52,7 @@ async def init(ctx: commands.Context, *args: str) -> None:
         initiative = None
         name = tokens
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name, ctx.author.name, create=len(name) > 0, player_id=player.id
+        name, create=len(name) > 0, player_id=player.id
     )
     if initiative is None:
         if cdi.initiative_dice is not None:

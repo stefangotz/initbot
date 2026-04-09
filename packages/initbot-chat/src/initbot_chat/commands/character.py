@@ -61,7 +61,7 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
         ) from exc
 
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        name, ctx.author.name, create=len(name) > 0, player_id=player.id
+        name, create=len(name) > 0, player_id=player.id
     )
     cdi.initiative_dice = spec
     cdi.initiative = None
@@ -82,7 +82,7 @@ async def remove(ctx: commands.Context, *args: str) -> None:
     That's as long as no other character name starts with "Med"."""
     player = sync_player(ctx.bot.initbot_state, ctx)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-        args, ctx.author.name, player_id=player.id
+        args, player_id=player.id
     )
     ctx.bot.initbot_state.character_actions.remove_all_for_character(cdi.name)
     ctx.bot.initbot_state.characters.remove_and_store(cdi)
@@ -113,9 +113,7 @@ async def char(ctx: commands.Context, *args: str) -> None:
     That's as long as no other character name starts with "Med"."""
     player = sync_player(ctx.bot.initbot_state, ctx)
     state = ctx.bot.initbot_state
-    cdi: CharacterData = state.characters.get_from_tokens(
-        args, ctx.author.name, player_id=player.id
-    )
+    cdi: CharacterData = state.characters.get_from_tokens(args, player_id=player.id)
     last_used_str = (
         datetime.fromtimestamp(cdi.last_used).strftime("%Y-%m-%d %H:%M")
         if cdi.last_used is not None
@@ -194,7 +192,7 @@ async def touch(ctx: commands.Context, *args: str) -> None:
     for token in tokens:
         name_arg = (token,) if token else ()
         cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
-            name_arg, ctx.author.name, player_id=player.id
+            name_arg, player_id=player.id
         )
         cdi.last_used = int(time.time())
         ctx.bot.initbot_state.characters.update_and_store(cdi)

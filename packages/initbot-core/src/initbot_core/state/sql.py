@@ -35,7 +35,6 @@ from initbot_core.state.validation import check_state_directory
 
 class _SqlCharacterData(Model):
     name = CharField(unique=True, primary_key=True)
-    user = CharField()
     initiative = IntegerField(null=True)
     initiative_dice = CharField(null=True)
     last_used = IntegerField(null=True)
@@ -297,6 +296,7 @@ class SqlState(State):
                 "cls",
                 # legacy names from even older migrations
                 "creation_time",
+                "user",
             }
             needs_rebuild = bool(obsolete & set(columns))
 
@@ -317,7 +317,6 @@ class SqlState(State):
                 db.execute_sql("""
                     CREATE TABLE _sqlcharacterdata_new (
                         name TEXT NOT NULL PRIMARY KEY,
-                        user TEXT NOT NULL,
                         initiative INTEGER,
                         initiative_dice TEXT,
                         last_used INTEGER,
@@ -326,8 +325,8 @@ class SqlState(State):
                 """)
                 db.execute_sql("""
                     INSERT INTO _sqlcharacterdata_new
-                        (name, user, initiative, initiative_dice, last_used, player_id)
-                    SELECT name, user, initiative, initiative_dice, last_used, player_id
+                        (name, initiative, initiative_dice, last_used, player_id)
+                    SELECT name, initiative, initiative_dice, last_used, player_id
                     FROM _sqlcharacterdata;
                 """)
                 db.execute_sql("DROP TABLE _sqlcharacterdata;")

@@ -9,7 +9,6 @@ from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.utils import (
     get_exact_or_unique_prefix_match,
-    get_unique_prefix_match,
     normalize_str,
 )
 
@@ -31,27 +30,22 @@ class CharacterState(PartialState, ABC):
     def get_from_tokens(
         self,
         tokens: Iterable[str],
-        user: str,
         create: bool = False,
         player_id: int | None = None,
     ) -> CharacterData:
-        return self.get_from_str(" ".join(tokens), user, create, player_id)
+        return self.get_from_str(" ".join(tokens), create, player_id)
 
     def get_from_str(
         self,
         name: str,
-        user: str,
         create: bool = False,
         player_id: int | None = None,
     ) -> CharacterData:
         if name:
-            return self.get_from_name(name, create, user, player_id)
+            return self.get_from_name(name, create, player_id)
         if player_id is not None:
-            try:
-                return self.get_from_player_id(player_id)
-            except KeyError:
-                pass  # fall back to user string for legacy characters
-        return self.get_from_user(user)
+            return self.get_from_player_id(player_id)
+        raise KeyError("No character name or player_id provided")
 
     def get_from_player_id(self, player_id: int) -> CharacterData:
         """Find the unique character owned by the given player."""
@@ -66,7 +60,6 @@ class CharacterState(PartialState, ABC):
         self,
         name: str,
         create: bool = False,
-        user: str | None = None,
         player_id: int | None = None,
     ) -> CharacterData:
         try:
@@ -74,18 +67,11 @@ class CharacterState(PartialState, ABC):
                 name, self.get_all(), lambda cdi: cdi.name
             )
         except KeyError as err:
-            if create and user and player_id is not None:
+            if create and player_id is not None:
                 return self.add_store_and_get(
-                    NewCharacterData(name=name, user=user, player_id=player_id)
+                    NewCharacterData(name=name, player_id=player_id)
                 )
             raise KeyError(f"Unable to find character with name '{name}'") from err
-
-    def get_from_user(self, user: str) -> CharacterData:
-        return get_unique_prefix_match(
-            user,
-            self.get_all(),
-            lambda cdi: cdi.user,
-        )
 
     def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         normalized = normalize_str(char_data.name)

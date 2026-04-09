@@ -12,9 +12,7 @@ from initbot_core.models.roll import contains_dice_rolls
 
 def _add_char(mock_ctx, name="Mel"):
     return mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name=name, user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name=name, player_id=mock_ctx.author.player_id)
     )
 
 
@@ -225,9 +223,7 @@ async def test_remove_char_cascades_actions(mock_ctx):
     await remove.callback(mock_ctx, "Mel")
     # Character is gone — create a new one to verify actions were cleared
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
         "Mel"
@@ -240,7 +236,6 @@ async def test_prune_cascades_actions(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
         NewCharacterData(
             name="OldChar",
-            user="testuser",
             player_id=mock_ctx.author.player_id,
             last_used=0,
         )
@@ -251,9 +246,7 @@ async def test_prune_cascades_actions(mock_ctx):
     await prune.callback(mock_ctx)
     # Character should be pruned; re-add to check actions are gone
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="OldChar", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="OldChar", player_id=mock_ctx.author.player_id)
     )
     templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
         "OldChar"

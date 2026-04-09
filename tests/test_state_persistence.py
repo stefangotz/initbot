@@ -17,10 +17,9 @@ from tests.helpers import DATA_DIR, REFERENCE_FILES
 def test_add_character_and_retrieve(initbot_state):
     player = initbot_state.players.upsert(discord_id=1, name="alice")
     cdi = initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Bob", user="alice", player_id=player.id)
+        NewCharacterData(name="Bob", player_id=player.id)
     )
     assert cdi.name == "Bob"
-    assert cdi.user == "alice"
     bobs = [c for c in initbot_state.characters.get_all() if c.name == "Bob"]
     assert len(bobs) == 1
 
@@ -32,7 +31,7 @@ def test_add_character_persists_on_reload(tmp_path):
     state1 = create_state_from_source(f"json:{tmp_path}")
     player = state1.players.upsert(discord_id=1, name="alice")
     state1.characters.add_store_and_get(
-        NewCharacterData(name="Bob", user="alice", player_id=player.id)
+        NewCharacterData(name="Bob", player_id=player.id)
     )
 
     state2 = create_state_from_source(f"json:{tmp_path}")
@@ -43,9 +42,7 @@ def test_add_character_persists_on_reload(tmp_path):
 def test_update_character_persists(initbot_state):
     player = initbot_state.players.upsert(discord_id=1, name="alice")
     cdi = initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Bob", user="alice", player_id=player.id, initiative_dice="d20+2"
-        )
+        NewCharacterData(name="Bob", player_id=player.id, initiative_dice="d20+2")
     )
     cdi.initiative_dice = "d20+5"
     initbot_state.characters.update_and_store(cdi)
@@ -56,7 +53,7 @@ def test_update_character_persists(initbot_state):
 def test_remove_character(initbot_state):
     player = initbot_state.players.upsert(discord_id=1, name="alice")
     cdi = initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Bob", user="alice", player_id=player.id)
+        NewCharacterData(name="Bob", player_id=player.id)
     )
     initbot_state.characters.remove_and_store(cdi)
     remaining = [c for c in initbot_state.characters.get_all() if c.name == "Bob"]
@@ -66,7 +63,7 @@ def test_remove_character(initbot_state):
 def test_lookup_by_prefix(initbot_state):
     player = initbot_state.players.upsert(discord_id=1, name="alice")
     initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Mediocre Mel", user="alice", player_id=player.id)
+        NewCharacterData(name="Mediocre Mel", player_id=player.id)
     )
     found = initbot_state.characters.get_from_name("Med")
     assert found.name == "Mediocre Mel"
@@ -74,20 +71,11 @@ def test_lookup_by_prefix(initbot_state):
         initbot_state.characters.get_from_name("Nonexistent")
 
 
-def test_lookup_by_user(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
-    initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Mediocre Mel", user="alice", player_id=player.id)
-    )
-    found = initbot_state.characters.get_from_user("alice")
-    assert found.name == "Mediocre Mel"
-
-
 def test_update_sets_last_used(initbot_state):
     player = initbot_state.players.upsert(discord_id=1, name="alice")
     before = int(time.time())
     cdi = initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="TimestampChar", user="alice", player_id=player.id)
+        NewCharacterData(name="TimestampChar", player_id=player.id)
     )
     cdi.initiative_dice = "d20"
     cdi.last_used = int(time.time())
@@ -101,7 +89,7 @@ def test_add_sets_last_used(initbot_state):
     player = initbot_state.players.upsert(discord_id=1, name="alice")
     before = int(time.time())
     cdi = initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="NewChar", user="alice", player_id=player.id)
+        NewCharacterData(name="NewChar", player_id=player.id)
     )
     after = int(time.time())
     assert cdi.last_used is not None

@@ -35,7 +35,7 @@ def test_sync_player_updates_name_on_second_call(initbot_state):
 def test_sync_player_does_not_overwrite_existing_player_id(initbot_state):
     other_player = initbot_state.players.upsert(discord_id=999, name="other")
     initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Harold", user="alice", player_id=other_player.id)
+        NewCharacterData(name="Harold", player_id=other_player.id)
     )
 
     ctx = _make_ctx()
@@ -48,6 +48,6 @@ def test_sync_player_does_not_overwrite_existing_player_id(initbot_state):
 def test_character_display_uses_player_name_when_available(initbot_state):
     player = initbot_state.players.upsert(discord_id=111222333, name="alice_display")
     char = initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Harold", user="alice_old", player_id=player.id)
+        NewCharacterData(name="Harold", player_id=player.id)
     )
     assert player_name(initbot_state, char) == "alice_display"

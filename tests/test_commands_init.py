@@ -12,9 +12,7 @@ from initbot_core.data.character import NewCharacterData
 
 async def test_init_explicit_value(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     await init.callback(mock_ctx, "Mel", "10")
     mock_ctx.send.assert_called_once()
@@ -26,9 +24,7 @@ async def test_init_explicit_value(mock_ctx):
 
 async def test_init_value_first(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     await init.callback(mock_ctx, "10", "Mel")
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
@@ -39,7 +35,6 @@ async def test_init_auto_roll(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
         NewCharacterData(
             name="Mel",
-            user="testuser",
             player_id=mock_ctx.author.player_id,
             initiative_dice="d20+3",
         )
@@ -52,9 +47,7 @@ async def test_init_auto_roll(mock_ctx):
 
 async def test_init_auto_roll_no_dice(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Mel", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     try:
         await init.callback(mock_ctx)
@@ -66,9 +59,7 @@ async def test_init_auto_roll_no_dice(mock_ctx):
 async def test_init_ci_name_finds_existing_character(mock_ctx):
     """$init with a case-variant name finds the existing character rather than creating one."""
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
-        NewCharacterData(
-            name="Foo", user="testuser", player_id=mock_ctx.author.player_id
-        )
+        NewCharacterData(name="Foo", player_id=mock_ctx.author.player_id)
     )
     await init.callback(mock_ctx, "foo", "7")
     char = mock_ctx.bot.initbot_state.characters.get_from_name("Foo")
@@ -79,12 +70,8 @@ async def test_init_ci_name_finds_existing_character(mock_ctx):
 async def test_inis_shows_initiative_order(mock_ctx):
     now = int(time.time())
     pid = mock_ctx.author.player_id
-    alpha = NewCharacterData(
-        name="Alpha", user="testuser", player_id=pid, initiative=10, last_used=now
-    )
-    beta = NewCharacterData(
-        name="Beta", user="testuser", player_id=pid, initiative=5, last_used=now
-    )
+    alpha = NewCharacterData(name="Alpha", player_id=pid, initiative=10, last_used=now)
+    beta = NewCharacterData(name="Beta", player_id=pid, initiative=5, last_used=now)
     mock_ctx.bot.initbot_state.characters.add_store_and_get(alpha)
     mock_ctx.bot.initbot_state.characters.add_store_and_get(beta)
 
@@ -103,7 +90,6 @@ async def test_inis_filters_old_initiative(mock_ctx):
     old_time = int(time.time()) - 25 * 3600
     old = NewCharacterData(
         name="Old",
-        user="testuser",
         player_id=mock_ctx.author.player_id,
         initiative=15,
         last_used=old_time,
@@ -121,7 +107,6 @@ async def test_inis_excludes_characters_without_initiative(mock_ctx):
     now = int(time.time())
     no_init = NewCharacterData(
         name="NoInit",
-        user="testuser",
         player_id=mock_ctx.author.player_id,
         last_used=now,
     )
