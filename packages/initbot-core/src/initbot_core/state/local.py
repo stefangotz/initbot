@@ -31,7 +31,6 @@ class LocalBaseModel(BaseModel):
 
 class LocalCharacterData(LocalBaseModel):
     name: str
-    user: str
     player_id: int
     initiative: int | None = None
     initiative_dice: str | None = None

@@ -10,20 +10,9 @@ from initbot_core.data.character import NewCharacterData
 def test_access_control_uses_player_id(initbot_state):
     player = initbot_state.players.upsert(discord_id=111, name="alice")
     initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Harold", user="alice", player_id=player.id)
+        NewCharacterData(name="Harold", player_id=player.id)
     )
-    found = initbot_state.characters.get_from_tokens((), "alice", player_id=player.id)
-    assert found.name == "Harold"
-
-
-def test_access_control_player_id_takes_precedence_over_user(initbot_state):
-    player = initbot_state.players.upsert(discord_id=111, name="alice_new")
-    initbot_state.characters.add_store_and_get(
-        NewCharacterData(name="Harold", user="alice_old", player_id=player.id)
-    )
-    found = initbot_state.characters.get_from_tokens(
-        (), "alice_new", player_id=player.id
-    )
+    found = initbot_state.characters.get_from_tokens((), player_id=player.id)
     assert found.name == "Harold"
 
 

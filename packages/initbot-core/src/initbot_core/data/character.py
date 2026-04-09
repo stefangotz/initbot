@@ -12,7 +12,6 @@ class NewCharacterData:
     """Creation input — passed into add_store_and_get."""
 
     name: str
-    user: str
     player_id: int
     initiative: int | None = None
     initiative_dice: str | None = None
@@ -24,7 +23,6 @@ class CharacterData(Protocol):
     """Data handle — the storage-native object returned by get_all() and mutated in place."""
 
     name: str
-    user: str
     initiative: int | None
     initiative_dice: str | None
     last_used: int | None
