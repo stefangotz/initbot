@@ -17,9 +17,9 @@ async def web(ctx: commands.Context) -> None:
     player = sync_player(ctx.bot.initbot_state, ctx)
     token = ctx.bot.initbot_state.web_login_tokens.create(discord_id=player.discord_id)
     if CORE_CFG.domain:
-        url = f"https://{CORE_CFG.domain}/{token}/"
+        url = f"https://{CORE_CFG.domain}/{CORE_CFG.web_url_path_prefix}/{token}/"
     else:
-        url = f"http://localhost:8080/{token}/"
+        url = f"http://localhost:8080/{CORE_CFG.web_url_path_prefix}/{token}/"
     await ctx.author.send(
         f"Your personal initiative tracker link (expires in 1 minute): {url}"
     )

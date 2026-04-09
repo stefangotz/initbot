@@ -53,18 +53,20 @@ def _dm_ctx(sqlite_state):
 
 async def test_web_sends_dm_with_token(monkeypatch, web_ctx):
     monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_url_path_prefix", "testprefix")
     await web.callback(web_ctx)
     web_ctx.author.send.assert_called_once()
     dm_text = web_ctx.author.send.call_args[0][0]
-    assert "https://example.com/" in dm_text
+    assert "https://example.com/testprefix/" in dm_text
     assert "expires in 1 minute" in dm_text
 
 
 async def test_web_sends_localhost_url_when_no_domain(monkeypatch, web_ctx):
     monkeypatch.setattr(core_config.CORE_CFG, "domain", "")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_url_path_prefix", "testprefix")
     await web.callback(web_ctx)
     dm_text = web_ctx.author.send.call_args[0][0]
-    assert "http://localhost:8080/" in dm_text
+    assert "http://localhost:8080/testprefix/" in dm_text
 
 
 async def test_web_sends_channel_notification(monkeypatch, web_ctx):
