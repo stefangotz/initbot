@@ -78,11 +78,13 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
       - name: shellcheck
-        run: shellcheck -x tools/*.sh
+        run: shellcheck -x tools/*.sh tools/test/*.sh
       - name: run_chat.sh smoke test
         run: sh ./tools/run_chat.sh --help
       - name: run_web.sh smoke test
         run: sh ./tools/run_web.sh --help
+      - name: run_web_dev.sh smoke test
+        run: sh tools/test/run_web_dev.sh
       - name: set_up_systemd.sh dry-run
         run: sh ./tools/set_up_systemd.sh --dry-run
 
@@ -144,12 +146,6 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
       - name: "Verify chat: invalid token raises LoginFailure"
-        run: |
-          output=$(docker run --rm initbot-chat --token 123 2>&1) || true
-          echo "$output"
-          echo "$output" | grep -qF "discord.errors.LoginFailure"
+        run: sh tools/test/docker_chat.sh
       - name: "Verify web: missing SQLite state raises SystemExit"
-        run: |
-          output=$(docker run --rm initbot-web 2>&1) || true
-          echo "$output"
-          echo "$output" | grep -qF "initbot-web requires a SQLite state URI"
+        run: sh tools/test/docker_web.sh
