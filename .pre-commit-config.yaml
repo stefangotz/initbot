@@ -50,6 +50,10 @@ repos:
     rev: a1bb792acda6fd0724936b4ebbdbc8eceb9c0459  # v6.2.0  # pragma: allowlist secret
     hooks:
       - id: reuse
+        # --no-multiprocessing: reuse uses ProcessPoolExecutor by default,
+        # which requires semaphore creation. This fails in sandboxed
+        # environments (e.g. nono) that block the sem_open syscall.
+        args: [--no-multiprocessing, lint]
   - repo: local
     hooks:
       # Prevent tag-based pre-commit pins slipping in via manual edits or
