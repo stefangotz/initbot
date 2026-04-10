@@ -29,7 +29,7 @@ def _client(app):
 def _authed_client(app):
     """Client with an active session obtained via the shared admin token."""
     with TestClient(app, follow_redirects=False) as client:
-        client.get(
+        client.post(
             "/testsecret/testsecret/"
         )  # sets session cookie in client's cookie jar
         yield client
@@ -38,14 +38,43 @@ def _authed_client(app):
 # ── Login flow ────────────────────────────────────────────────────────────────
 
 
-def test_valid_token_redirects_to_tracker(client):
+def test_login_get_shows_form(client):
     resp = client.get("/testsecret/testsecret/")
-    assert resp.status_code == 302
+    assert resp.status_code == 200
+    assert "Log In" in resp.text
+
+
+def test_login_get_does_not_consume_token(tmp_path):
+    """GET must not consume the token — bots (e.g. Discordbot) issue GET requests."""
+    db_path = tmp_path / "test.db"
+    state = create_state_from_source(f"sqlite:{db_path}")
+    player = state.players.upsert(discord_id=42, name="Alice")
+    assert player.discord_id is not None
+    token = state.web_login_tokens.create(discord_id=player.discord_id)
+
+    settings = WebSettings(state=f"sqlite:{db_path}")
+    app = create_app(settings, web_url_path_prefix="admintoken")
+    with TestClient(app, follow_redirects=False) as client:
+        resp_get = client.get(f"/admintoken/{token}/")
+        assert resp_get.status_code == 200  # login page, token NOT consumed
+        resp_post = client.post(f"/admintoken/{token}/")
+        assert resp_post.status_code == 303  # token consumed here
+        assert resp_post.headers["location"] == "/admintoken/tracker/"
+
+
+def test_login_post_redirects_to_tracker(client):
+    resp = client.post("/testsecret/testsecret/")
+    assert resp.status_code == 303
     assert resp.headers["location"] == "/testsecret/tracker/"
 
 
-def test_invalid_token_returns_403(client):
+def test_login_get_invalid_token_returns_403(client):
     resp = client.get("/testsecret/wrongsecret/")
+    assert resp.status_code == 403
+
+
+def test_login_post_invalid_token_returns_403(client):
+    resp = client.post("/testsecret/wrongsecret/")
     assert resp.status_code == 403
 
 
@@ -78,7 +107,7 @@ def test_tracker_page_shows_player_name(tmp_path):
     settings = WebSettings(state=f"sqlite:{db_path}")
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
-        client.get(f"/admintoken/{token}/")
+        client.post(f"/admintoken/{token}/")
         resp = client.get("/admintoken/tracker/", follow_redirects=False)
         assert resp.status_code == 200
         assert "Alice" in resp.text
@@ -111,8 +140,8 @@ def test_per_player_token_creates_session(tmp_path):
     settings = WebSettings(state=f"sqlite:{db_path}")
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
-        resp = client.get(f"/admintoken/{token}/")
-        assert resp.status_code == 302
+        resp = client.post(f"/admintoken/{token}/")
+        assert resp.status_code == 303
         assert resp.headers["location"] == "/admintoken/tracker/"
         resp2 = client.get("/admintoken/tracker/", follow_redirects=False)
         assert resp2.status_code == 200
@@ -129,9 +158,11 @@ def test_used_token_returns_403(tmp_path):
     settings = WebSettings(state=f"sqlite:{db_path}")
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
-        client.get(f"/admintoken/{token}/")  # first use — consumes the token
-        resp = client.get(f"/admintoken/{token}/")  # second use — should fail
-        assert resp.status_code == 403
+        client.post(f"/admintoken/{token}/")  # first use — consumes the token
+        resp_get = client.get(f"/admintoken/{token}/")  # GET after use — should fail
+        assert resp_get.status_code == 403
+        resp_post = client.post(f"/admintoken/{token}/")  # POST after use — should fail
+        assert resp_post.status_code == 403
 
 
 # ── Session expiry & logout ───────────────────────────────────────────────────
@@ -140,7 +171,7 @@ def test_used_token_returns_403(tmp_path):
 def test_expired_session_returns_403(app, monkeypatch):
     future = time.time() + tracker_module.SESSION_TTL + 1
     with TestClient(app, follow_redirects=False) as client:
-        client.get("/testsecret/testsecret/")  # log in (session written at real now)
+        client.post("/testsecret/testsecret/")  # log in
         monkeypatch.setattr(tracker_module.time, "time", lambda: future)
         resp = client.get("/testsecret/tracker/")
         assert resp.status_code == 403

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import logging
 import re
 import time
 from asyncio import sleep
@@ -25,6 +26,28 @@ POLL_INTERVAL = 1.5
 STALE_SECONDS = 24 * 3600
 SESSION_TTL: Final[int] = 8 * 3600
 
+_log = logging.getLogger(__name__)
+
+
+def _require_auth(request: Request) -> Response | None:
+    """Return a 403 Response if the session is missing or expired, else None."""
+    if not request.session.get("authenticated"):
+        return Response(status_code=403)
+    expires_at = request.session.get("expires_at")
+    if expires_at is None or time.time() > expires_at:
+        request.session.clear()
+        return Response(status_code=403)
+    return None
+
+
+def _write_session(
+    request: Request, discord_id: int | None, player_name: str | None
+) -> None:
+    request.session["authenticated"] = True
+    request.session["discord_id"] = discord_id
+    request.session["player_name"] = player_name
+    request.session["expires_at"] = int(time.time()) + SESSION_TTL
+
 
 def make_routes(
     state: State,
@@ -35,25 +58,27 @@ def make_routes(
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
 
-    def _require_auth(request: Request) -> Response | None:
-        """Return a 403 Response if the session is missing or expired, else None."""
-        if not request.session.get("authenticated"):
-            return Response(status_code=403)
-        expires_at = request.session.get("expires_at")
-        if expires_at is None or time.time() > expires_at:
-            request.session.clear()
-            return Response(status_code=403)
-        return None
+    async def login_page(request: Request) -> Response:
+        """GET: validate token without consuming it; render auto-submit login form.
 
-    def _write_session(
-        request: Request, discord_id: int | None, player_name: str | None
-    ) -> None:
-        request.session["authenticated"] = True
-        request.session["discord_id"] = discord_id
-        request.session["player_name"] = player_name
-        request.session["expires_at"] = int(time.time()) + SESSION_TTL
+        Bots and link-preview crawlers (e.g. Discordbot) make GET requests but never
+        submit forms, so the token is preserved for the actual user.
+        """
+        token = request.path_params["token"]
+        _log.info(
+            "login GET: scheme=%s x-forwarded-proto=%s",
+            request.url.scheme,
+            request.headers.get("x-forwarded-proto", "<absent>"),
+        )
+        is_player_token = state.web_login_tokens.find_valid(token) is not None
+        is_admin_token = bool(url_path_prefix) and token == url_path_prefix
+        if not (is_player_token or is_admin_token):
+            _log.warning("login GET: invalid or already-used token")
+            return Response(status_code=403)
+        return templates.TemplateResponse(request, "login.html", {})
 
-    async def login_redirect(request: Request) -> Response:
+    async def login_post(request: Request) -> Response:
+        """POST: consume token, write session, redirect to tracker."""
         token = request.path_params["token"]
         discord_id = state.web_login_tokens.find_valid(token)
         if discord_id is not None:
@@ -62,10 +87,20 @@ def make_routes(
             _write_session(
                 request, discord_id, player.name if player is not None else None
             )
-            return RedirectResponse(tracker_url, status_code=302)
+            _log.info(
+                "login POST: session written discord_id=%s session_keys=%s",
+                discord_id,
+                list(request.session.keys()),
+            )
+            return RedirectResponse(tracker_url, status_code=303)
         if url_path_prefix and token == url_path_prefix:
             _write_session(request, None, None)
-            return RedirectResponse(tracker_url, status_code=302)
+            _log.info(
+                "login POST: admin session written session_keys=%s",
+                list(request.session.keys()),
+            )
+            return RedirectResponse(tracker_url, status_code=303)
+        _log.warning("login POST: invalid or already-used token")
         return Response(status_code=403)
 
     async def tracker_page(request: Request) -> Response:
@@ -142,7 +177,8 @@ def make_routes(
                 Route("/tracker/", tracker_page),
                 Route("/tracker/sse", tracker_sse),
                 Route("/logout", logout),
-                Route("/{token}/", login_redirect),
+                Route("/{token}/", login_page, methods=["GET"]),
+                Route("/{token}/", login_post, methods=["POST"]),
             ],
         )
     ]
