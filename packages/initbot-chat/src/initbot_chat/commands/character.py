@@ -70,6 +70,36 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
     await ctx.send(f"{cdi.name}'s initiative dice is now {spec}", delete_after=3)
 
 
+@commands.command(usage="[current name] <new name>")
+async def rename(ctx: commands.Context, *args: str) -> None:
+    """Rename your (or someone else's) character.
+
+    You can specify a character to rename or omit it.
+    If you manage only a single character, omit it: `$rename Alex` changes the name of your current character to Alex.
+    If you manage more than one character or want to rename someone else's character, add their name: `$rename Mel Alex` renames Mel to Alex
+
+    The first character name can be an abbreviation.
+    For example, if the full name of a character is "Mediocre Mel", then typing "med" is sufficient: `$rename med Alex`
+
+    The new name needs to be one word (no spaces).
+    """
+    player = sync_player(ctx.bot.initbot_state, ctx)
+    tokens = list(args)
+    if not tokens:
+        raise ValueError(
+            "Please provide a new name, e.g. `$rename Alex` or `$rename Med Alex`"
+        )
+    new_name = tokens[-1]
+    old_tokens = tokens[:-1]
+    cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
+        old_tokens, create=False, player_id=player.id
+    )
+    old_name = cdi.name
+    ctx.bot.initbot_state.character_actions.rename_character(old_name, new_name)
+    cdi = ctx.bot.initbot_state.characters.rename_and_store(cdi, new_name)
+    await ctx.send(f"Renamed {old_name} to {cdi.name}", delete_after=3)
+
+
 @commands.command(usage="[character name]")
 async def remove(ctx: commands.Context, *args: str) -> None:
     """Removes a character from the bot.
@@ -204,6 +234,7 @@ async def touch(ctx: commands.Context, *args: str) -> None:
 
 
 @init_dice.error
+@rename.error
 @remove.error
 @chars.error
 @char.error
