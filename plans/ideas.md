@@ -1,16 +1,13 @@
 # Ideas
 
-- document the need for extra state data from a getting started perspective
 - Does sqlite support listening for events?
 - claude's /security-review seems to be testing for a whole bunch of typical web vulnerabilities; would be great to have these in CI
 - consider a dev container
 - rename LocalState store to JsonState store or similar, update URI as well
-- enforce pinning pre-commit dependencies to commit SHAs
 - an interactive configuration mode in each application for a convenient way to set and persist configuration settings; user interaction to be based on metadata of config options; auto-activate on first run; persisting optional
 
 ## web app
 
-- front-end design
 - ini updates via web app
 
 ## chat
@@ -23,5 +20,3 @@
 - Voice processing
   - With speaker identification and STT, the bot could take audio commands
   - With LLM embedding, could summarise campaign progress and do recaps
-- better support for removing characters with ambiguous names (differences in case)
-- prevent creation of characters whose names only differ in case; fall-back to existing character for init command
