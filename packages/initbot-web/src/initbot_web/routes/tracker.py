@@ -54,6 +54,7 @@ def make_routes(
     templates: Jinja2Templates,
     url_path_prefix: str,
     vuln_state: VulnerabilityState,
+    admin_token: str,
 ) -> list[Mount]:
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
@@ -71,7 +72,7 @@ def make_routes(
             request.headers.get("x-forwarded-proto", "<absent>"),
         )
         is_player_token = state.web_login_tokens.find_valid(token) is not None
-        is_admin_token = bool(url_path_prefix) and token == url_path_prefix
+        is_admin_token = token == admin_token
         if not (is_player_token or is_admin_token):
             _log.warning("login GET: invalid or already-used token")
             return Response(status_code=403)
@@ -93,7 +94,7 @@ def make_routes(
                 list(request.session.keys()),
             )
             return RedirectResponse(tracker_url, status_code=303)
-        if url_path_prefix and token == url_path_prefix:
+        if token == admin_token:
             _write_session(request, None, None)
             _log.info(
                 "login POST: admin session written session_keys=%s",

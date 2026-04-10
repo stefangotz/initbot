@@ -72,9 +72,10 @@ def create_app(
     # Ephemeral signing key: sessions are invalidated on app restart, which is acceptable.
     session_secret = secrets.token_urlsafe(32)
     https_only = bool(CORE_CFG.domain)
+    admin_token = secrets.token_urlsafe(32)
 
-    return Starlette(
-        routes=make_routes(state, templates, url_path_prefix, vuln_state),
+    app = Starlette(
+        routes=make_routes(state, templates, url_path_prefix, vuln_state, admin_token),
         middleware=[
             Middleware(
                 SessionMiddleware,  # type: ignore[invalid-argument-type]  # SessionMiddleware satisfies _MiddlewareFactory
@@ -85,16 +86,21 @@ def create_app(
         ],
         lifespan=lifespan,
     )
+    app.state.admin_token = admin_token
+    app.state.url_path_prefix = url_path_prefix
+    return app
 
 
 def run() -> None:
     cfg = WebSettings(_cli_parse_args=True)  # type: ignore
-    prefix = CORE_CFG.web_url_path_prefix or secrets.token_urlsafe(32)
-    print(f"URL: http://localhost:{cfg.web_port}/{prefix}/{prefix}/")
+    app = create_app(cfg)
+    prefix = app.state.url_path_prefix
+    admin_token = app.state.admin_token
+    print(f"URL: http://localhost:{cfg.web_port}/{prefix}/{admin_token}/")
     if CORE_CFG.domain:
-        print(f"External URL: https://{CORE_CFG.domain}/{prefix}/{prefix}/")
+        print(f"External URL: https://{CORE_CFG.domain}/{prefix}/{admin_token}/")
     uvicorn.run(
-        create_app(cfg, web_url_path_prefix=prefix),
+        app,
         host=cfg.web_host,
         port=cfg.web_port,
     )
