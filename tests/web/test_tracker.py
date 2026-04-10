@@ -30,7 +30,7 @@ def _authed_client(app):
     """Client with an active session obtained via the shared admin token."""
     with TestClient(app, follow_redirects=False) as client:
         client.post(
-            "/testsecret/testsecret/"
+            f"/testsecret/{app.state.admin_token}/"
         )  # sets session cookie in client's cookie jar
         yield client
 
@@ -38,8 +38,8 @@ def _authed_client(app):
 # ── Login flow ────────────────────────────────────────────────────────────────
 
 
-def test_login_get_shows_form(client):
-    resp = client.get("/testsecret/testsecret/")
+def test_login_get_shows_form(client, app):
+    resp = client.get(f"/testsecret/{app.state.admin_token}/")
     assert resp.status_code == 200
     assert "Log In" in resp.text
 
@@ -62,8 +62,8 @@ def test_login_get_does_not_consume_token(tmp_path):
         assert resp_post.headers["location"] == "/admintoken/tracker/"
 
 
-def test_login_post_redirects_to_tracker(client):
-    resp = client.post("/testsecret/testsecret/")
+def test_login_post_redirects_to_tracker(client, app):
+    resp = client.post(f"/testsecret/{app.state.admin_token}/")
     assert resp.status_code == 303
     assert resp.headers["location"] == "/testsecret/tracker/"
 
@@ -171,7 +171,7 @@ def test_used_token_returns_403(tmp_path):
 def test_expired_session_returns_403(app, monkeypatch):
     future = time.time() + tracker_module.SESSION_TTL + 1
     with TestClient(app, follow_redirects=False) as client:
-        client.post("/testsecret/testsecret/")  # log in
+        client.post(f"/testsecret/{app.state.admin_token}/")  # log in
         monkeypatch.setattr(tracker_module.time, "time", lambda: future)
         resp = client.get("/testsecret/tracker/")
         assert resp.status_code == 403
