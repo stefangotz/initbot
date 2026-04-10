@@ -12,6 +12,7 @@ from initbot_chat.commands.character import (
     init_dice,
     prune,
     remove,
+    rename,
     touch,
     unused,
 )
@@ -30,6 +31,7 @@ commands: Set[Any] = frozenset((
     init_dice,
     prune,
     remove,
+    rename,
     roll,
     touch,
     tarot,

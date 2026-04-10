@@ -57,6 +57,14 @@ class _SqlCharacterState(CharacterState):
             _SqlCharacterData.name == char_data.name
         ).execute()
 
+    def _rename_and_store(
+        self, char_data: CharacterData, new_name: str
+    ) -> CharacterData:
+        _SqlCharacterData.update(name=new_name).where(
+            _SqlCharacterData.name == char_data.name
+        ).execute()
+        return _SqlCharacterData.get(_SqlCharacterData.name == new_name)  # type: ignore[return-value]
+
     def update_and_store(self, char_data: CharacterData) -> None:
         if not isinstance(char_data, _SqlCharacterData):
             raise TypeError(
@@ -184,6 +192,11 @@ class _SqlCharacterActionState(CharacterActionState):
     def remove_all_for_character(self, character_name: str) -> None:
         _SqlCharacterAction.delete().where(
             _SqlCharacterAction.character_name == character_name
+        ).execute()
+
+    def rename_character(self, old_name: str, new_name: str) -> None:
+        _SqlCharacterAction.update(character_name=new_name).where(
+            _SqlCharacterAction.character_name == old_name
         ).execute()
 
     def import_from(self, src: CharacterActionState) -> None:

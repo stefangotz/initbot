@@ -83,8 +83,26 @@ class CharacterState(PartialState, ABC):
                 )
         return self._add_store_and_get(char_data)
 
+    def rename_and_store(
+        self, char_data: CharacterData, new_name: str
+    ) -> CharacterData:
+        normalized = normalize_str(new_name)
+        for existing in self.get_all():
+            if normalize_str(existing.name) == normalized:
+                raise ValueError(
+                    f"A character named '{existing.name}' already exists "
+                    f"(character names must be unique ignoring case)"
+                )
+        return self._rename_and_store(char_data, new_name)
+
     @abstractmethod
     def _add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _rename_and_store(
+        self, char_data: CharacterData, new_name: str
+    ) -> CharacterData:
         raise NotImplementedError()
 
     @abstractmethod
@@ -180,6 +198,11 @@ class CharacterActionState(PartialState, ABC):
     @abstractmethod
     def remove_all_for_character(self, character_name: str) -> None:
         """Delete every action belonging to the given character."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def rename_character(self, old_name: str, new_name: str) -> None:
+        """Update the character_name key for all actions belonging to old_name."""
         raise NotImplementedError()
 
     @abstractmethod

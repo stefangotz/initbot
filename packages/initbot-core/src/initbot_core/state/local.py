@@ -84,6 +84,17 @@ class LocalCharacterState(CharacterState):
         self._characters.remove(char_data)
         self._store()
 
+    def _rename_and_store(
+        self, char_data: CharacterData, new_name: str
+    ) -> CharacterData:
+        if not isinstance(char_data, LocalCharacterData):
+            raise TypeError(
+                f"Only character data returned by the State class can be renamed: {char_data}"
+            )
+        char_data.name = new_name
+        self._store()
+        return char_data
+
     def update_and_store(self, char_data: CharacterData) -> None:
         if not isinstance(char_data, LocalCharacterData):
             raise TypeError(
@@ -157,6 +168,9 @@ class LocalCharacterActionState(CharacterActionState):
             self._character_state.update_and_store(char)
         except KeyError:
             pass
+
+    def rename_character(self, old_name: str, new_name: str) -> None:
+        pass  # Actions are embedded in LocalCharacterData; renaming the character handles this
 
     def import_from(self, src: CharacterActionState) -> None:
         raise NotImplementedError()
