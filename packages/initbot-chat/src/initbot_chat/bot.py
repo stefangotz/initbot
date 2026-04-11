@@ -29,7 +29,11 @@ intents = Intents.default()
 intents.message_content = True
 
 # pylint: disable=no-member
-bot = Bot(command_prefix=tuple(CFG.command_prefixes.split(",")), intents=intents)
+bot = Bot(
+    command_prefix=tuple(CFG.command_prefixes.split(",")),
+    case_insensitive=True,
+    intents=intents,
+)
 
 _STARTUP_FAILED: bool = False
 
@@ -182,7 +186,7 @@ async def on_message(message: discord.Message) -> None:
         "".join(parts) for parts in product(prefixes, command_names)
     )
     is_command = any(
-        message.content.startswith(prefixed_command)
+        message.content.lower().startswith(prefixed_command)
         for prefixed_command in prefixed_commands
     )
 
@@ -195,7 +199,10 @@ async def on_message(message: discord.Message) -> None:
 
     if is_command:
         command = (
-            str(message.content).split(sep=None, maxsplit=1)[0].strip("".join(prefixes))
+            str(message.content)
+            .split(sep=None, maxsplit=1)[0]
+            .strip("".join(prefixes))
+            .lower()
         )
         if command not in frozenset(("actions", "init_dice", "roll")):
             message.content = result_text
