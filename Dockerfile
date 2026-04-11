@@ -6,7 +6,8 @@
 FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 COPY . /root/
 WORKDIR /root
-RUN uv build --package initbot-core --wheel \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv build --package initbot-core --wheel \
     && uv build --package initbot-chat --wheel \
     && uv build --package initbot-web --wheel
 
@@ -14,16 +15,17 @@ RUN uv build --package initbot-core --wheel \
 FROM ghcr.io/astral-sh/uv:python3.14-alpine AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-RUN apk upgrade --no-cache \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk upgrade \
     && adduser -u 5678 --disabled-password --gecos "" appuser \
     && mkdir /data && chown appuser /data
 
 # Stage 3a: chat bot image (core + chat wheels only)
 FROM runtime-base AS chat
 COPY --from=builder /root/dist/initbot_core-*.whl /root/dist/initbot_chat-*.whl /tmp/
-RUN uv venv /app \
-    && export VIRTUAL_ENV=/app \
-    && uv pip install --no-cache --compile-bytecode /tmp/*.whl \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv /app \
+    && VIRTUAL_ENV=/app uv pip install --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
 USER appuser
 WORKDIR /home/appuser
@@ -32,9 +34,9 @@ ENTRYPOINT ["/app/bin/initbot"]
 # Stage 3b: web app image (core + web wheels only)
 FROM runtime-base AS web
 COPY --from=builder /root/dist/initbot_core-*.whl /root/dist/initbot_web-*.whl /tmp/
-RUN uv venv /app \
-    && export VIRTUAL_ENV=/app \
-    && uv pip install --no-cache --compile-bytecode /tmp/*.whl \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv /app \
+    && VIRTUAL_ENV=/app uv pip install --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
 USER appuser
 WORKDIR /home/appuser
