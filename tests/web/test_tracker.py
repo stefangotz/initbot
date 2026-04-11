@@ -7,8 +7,10 @@ import time
 import pytest
 from starlette.testclient import TestClient
 
+import initbot_core.state.state as state_module
 import initbot_web.routes.tracker as tracker_module
 from initbot_core.state.factory import create_state_from_source
+from initbot_core.state.state import _SESSION_SECRET_TTL
 from initbot_web.app import create_app
 from initbot_web.config import WebSettings
 
@@ -182,3 +184,39 @@ def test_logout_clears_session(authed_client):
     assert resp.status_code == 200
     resp2 = authed_client.get("/testsecret/tracker/")
     assert resp2.status_code == 403
+
+
+# ── Session secret persistence ────────────────────────────────────────────────
+
+
+def test_session_survives_restart(tmp_path):
+    """Session cookies remain valid when a new app instance reuses the unexpired secret."""
+    settings = WebSettings(state=f"sqlite:{tmp_path / 'test.db'}")
+    app1 = create_app(settings, web_url_path_prefix="testsecret")
+    with TestClient(app1, follow_redirects=False) as client1:
+        client1.post(f"/testsecret/{app1.state.admin_token}/")
+        cookies = dict(client1.cookies)
+
+    app2 = create_app(settings, web_url_path_prefix="testsecret")
+    with TestClient(app2, follow_redirects=False) as client2:
+        client2.cookies.update(cookies)
+        resp = client2.get("/testsecret/tracker/")
+        assert resp.status_code == 200
+
+
+def test_session_invalidated_after_secret_expiry(tmp_path, monkeypatch):
+    """Sessions are invalidated when the signing secret has expired and is rotated."""
+    settings = WebSettings(state=f"sqlite:{tmp_path / 'test.db'}")
+    app1 = create_app(settings, web_url_path_prefix="testsecret")
+    with TestClient(app1, follow_redirects=False) as client1:
+        client1.post(f"/testsecret/{app1.state.admin_token}/")
+        cookies = dict(client1.cookies)
+
+    future = int(time.time()) + _SESSION_SECRET_TTL + 1
+    monkeypatch.setattr(state_module.time, "time", lambda: future)
+
+    app2 = create_app(settings, web_url_path_prefix="testsecret")
+    with TestClient(app2, follow_redirects=False) as client2:
+        client2.cookies.update(cookies)
+        resp = client2.get("/testsecret/tracker/")
+        assert resp.status_code == 403

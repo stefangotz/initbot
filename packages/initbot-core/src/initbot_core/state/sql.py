@@ -27,6 +27,7 @@ from initbot_core.state.state import (
     CharacterActionState,
     CharacterState,
     PlayerState,
+    SessionSecretState,
     State,
     WebLoginTokenState,
 )
@@ -249,6 +250,23 @@ class _SqlWebLoginTokenState(WebLoginTokenState):
         _SqlWebLoginToken.delete().where(_SqlWebLoginToken.expires_at <= now).execute()
 
 
+class _SqlSessionSecret(Model):
+    id = IntegerField(primary_key=True)  # single-row table; always id=1
+    secret = CharField()
+    expires_at = IntegerField()
+
+
+class _SqlSessionSecretState(SessionSecretState):
+    def _load(self) -> tuple[str, int] | None:
+        row = _SqlSessionSecret.get_or_none(_SqlSessionSecret.id == 1)
+        return (str(row.secret), int(row.expires_at)) if row is not None else None
+
+    def _store(self, secret: str, expires_at: int) -> None:
+        _SqlSessionSecret.insert(
+            id=1, secret=secret, expires_at=expires_at
+        ).on_conflict_replace().execute()
+
+
 class SqlState(State):
     def __init__(
         self,
@@ -258,6 +276,7 @@ class SqlState(State):
         self._players = _SqlPlayerState()
         self._web_login_tokens = _SqlWebLoginTokenState()
         self._character_actions = _SqlCharacterActionState()
+        self._session_secret = _SqlSessionSecretState()
 
         state_type, state_source = source.split(":", maxsplit=1)
         if state_type == "sqlite":
@@ -370,6 +389,10 @@ class SqlState(State):
     @property
     def character_actions(self) -> CharacterActionState:
         return self._character_actions
+
+    @property
+    def session_secret(self) -> SessionSecretState:
+        return self._session_secret
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:

@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import secrets
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence, Set
+from typing import Final
 
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
@@ -210,6 +213,35 @@ class CharacterActionState(PartialState, ABC):
         raise NotImplementedError()
 
 
+_SESSION_SECRET_TTL: Final[int] = (
+    8 * 60 * 60
+)  # 8 hours, matches SESSION_TTL in initbot-web
+
+
+class SessionSecretState(ABC):
+    """Stores the persistent session-signing secret used by the web app."""
+
+    @abstractmethod
+    def _load(self) -> tuple[str, int] | None:
+        """Return (secret, expires_at) if a record exists, else None."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _store(self, secret: str, expires_at: int) -> None:
+        """Persist secret and expiry, replacing any existing record."""
+        raise NotImplementedError()
+
+    def get_or_rotate(self) -> str:
+        """Return the current secret, generating a new one if absent or expired."""
+        now = int(time.time())
+        entry = self._load()
+        if entry is not None and entry[1] > now:
+            return entry[0]
+        new_secret = secrets.token_urlsafe(32)
+        self._store(new_secret, now + _SESSION_SECRET_TTL)
+        return new_secret
+
+
 class State(ABC):
     @property
     @abstractmethod
@@ -229,6 +261,11 @@ class State(ABC):
     @property
     @abstractmethod
     def character_actions(self) -> CharacterActionState:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def session_secret(self) -> SessionSecretState:
         raise NotImplementedError()
 
     def import_from(self, src: "State") -> None:
