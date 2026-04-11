@@ -3,9 +3,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 
+import shutil
 from pathlib import Path
 
 from initbot_core.state.factory import create_state_from_source
+
+_DATA_DIR = Path(__file__).parent / "data"
 
 
 def _check_state(state) -> None:
@@ -15,12 +18,12 @@ def _check_state(state) -> None:
 
 
 def test_load_json():
-    state = create_state_from_source(f"json:{Path(__file__).parent / 'data'}")
+    state = create_state_from_source(f"json:{_DATA_DIR}")
     _check_state(state)
 
 
-def test_load_sqlite():
-    state = create_state_from_source(
-        f"sqlite:{Path(__file__).parent / 'data' / 'test.sqlite'}"
-    )
+def test_load_sqlite(tmp_path):
+    db_copy = tmp_path / "test.sqlite"
+    shutil.copy2(_DATA_DIR / "test.sqlite", db_copy)
+    state = create_state_from_source(f"sqlite:{db_copy}")
     _check_state(state)

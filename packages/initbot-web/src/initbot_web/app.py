@@ -69,8 +69,9 @@ def create_app(
         with suppress(CancelledError):
             await task
 
-    # Ephemeral signing key: sessions are invalidated on app restart, which is acceptable.
-    session_secret = secrets.token_urlsafe(32)
+    # Key rotation would be desirable (itsdangerous supports it via a list of secrets)
+    # but Starlette's SessionMiddleware only accepts a single secret_key at this point.
+    session_secret = state.session_secret.get_or_rotate()
     https_only = bool(CORE_CFG.domain)
     admin_token = secrets.token_urlsafe(32)
 

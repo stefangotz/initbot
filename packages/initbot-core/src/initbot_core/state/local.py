@@ -18,6 +18,7 @@ from initbot_core.state.state import (
     CharacterActionState,
     CharacterState,
     PlayerState,
+    SessionSecretState,
     State,
     WebLoginTokenState,
 )
@@ -250,6 +251,14 @@ class _LocalWebLoginTokenState(WebLoginTokenState):
         raise NotImplementedError("Web login tokens require SQLite state")
 
 
+class _LocalSessionSecretState(SessionSecretState):
+    def _load(self) -> tuple[str, int] | None:
+        raise NotImplementedError("Session secrets require SQLite state")
+
+    def _store(self, secret: str, expires_at: int) -> None:
+        raise NotImplementedError("Session secrets require SQLite state")
+
+
 class LocalState(State):
     def __init__(self, source: str) -> None:
         source_dir = Path(source.split(":", maxsplit=1)[-1])
@@ -258,6 +267,7 @@ class LocalState(State):
         self._characters = LocalCharacterState(source_dir)
         self._web_login_tokens = _LocalWebLoginTokenState()
         self._character_actions = LocalCharacterActionState(self._characters)
+        self._session_secret = _LocalSessionSecretState()
 
     @property
     def characters(self) -> CharacterState:
@@ -274,6 +284,10 @@ class LocalState(State):
     @property
     def character_actions(self) -> CharacterActionState:
         return self._character_actions
+
+    @property
+    def session_secret(self) -> SessionSecretState:
+        return self._session_secret
 
     @classmethod
     def get_supported_state_types(cls) -> Set[str]:
