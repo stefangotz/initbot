@@ -6,6 +6,6 @@
 
 set -ue
 
-output=$(docker run --rm initbot-web 2>&1) || true
+output=$(docker run --rm -e STATE=unknown:foo initbot-web 2>&1) || true
 echo "$output"
-echo "$output" | grep -qF "initbot-web requires a SQLite state URI"
+echo "$output" | grep -qF "Unknown kind of data store: unknown"

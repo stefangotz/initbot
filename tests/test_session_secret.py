@@ -9,8 +9,10 @@ from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import _SESSION_SECRET_TTL
 
 
-@pytest.fixture(name="state")
-def _state(tmp_path):
+@pytest.fixture(params=["json", "sqlite"], name="state")
+def _state(request, tmp_path):
+    if request.param == "json":
+        return create_state_from_source(f"json:{tmp_path}")
     return create_state_from_source(f"sqlite:{tmp_path / 'test.db'}")
 
 

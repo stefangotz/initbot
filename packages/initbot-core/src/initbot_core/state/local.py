@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import logging
+import secrets
 import time
 from collections.abc import Mapping, MutableSequence, Sequence, Set
 from dataclasses import asdict
@@ -15,6 +16,7 @@ from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import (
+    _WEB_LOGIN_TOKEN_TTL,
     CharacterActionState,
     CharacterState,
     PlayerState,
@@ -114,7 +116,17 @@ class LocalCharacterState(CharacterState):
             )
 
     def import_from(self, src: CharacterState) -> None:
-        raise NotImplementedError()
+        for cdi in src.get_all():
+            self._characters.append(
+                LocalCharacterData(
+                    name=cdi.name,
+                    player_id=cdi.player_id,
+                    initiative=cdi.initiative,
+                    initiative_dice=cdi.initiative_dice,
+                    last_used=cdi.last_used,
+                )
+            )
+        self._store()
 
 
 class LocalCharacterActionState(CharacterActionState):
@@ -174,7 +186,11 @@ class LocalCharacterActionState(CharacterActionState):
         pass  # Actions are embedded in LocalCharacterData; renaming the character handles this
 
     def import_from(self, src: CharacterActionState) -> None:
-        raise NotImplementedError()
+        for char in self._character_state.get_all():
+            templates = src.get_all_for_character(char.name)
+            if templates and isinstance(char, LocalCharacterData):
+                char.actions = list(templates)
+        self._character_state._store()  # pylint: disable=protected-access
 
 
 class LocalPlayerData(LocalBaseModel):
@@ -234,29 +250,90 @@ class LocalPlayerState(PlayerState):
             file_desc.write(LocalPlayersData(players=self._players).model_dump_json())
 
     def import_from(self, src: PlayerState) -> None:
-        raise NotImplementedError()
+        for p in src.get_all():
+            self._players.append(
+                LocalPlayerData(id=p.id, discord_id=p.discord_id, name=p.name)
+            )
+        self._store()
+
+
+class _LocalWebLoginTokenData(LocalBaseModel):
+    discord_id: int
+    expires_at: int
+    used: bool = False
+
+
+class _LocalWebLoginTokensData(LocalBaseModel):
+    tokens: dict[str, _LocalWebLoginTokenData] = {}
 
 
 class _LocalWebLoginTokenState(WebLoginTokenState):
+    def __init__(self, source_dir: Path) -> None:
+        self._path: Final[Path] = source_dir / "web_login_tokens.json"
+        tokens_data = _LocalWebLoginTokensData()
+        if self._path.exists():
+            with self._path.open() as file_desc:
+                tokens_data = _LocalWebLoginTokensData.model_validate_json(
+                    file_desc.read()
+                )
+        self._tokens: dict[str, _LocalWebLoginTokenData] = tokens_data.tokens
+
+    def _store(self) -> None:
+        with open(self._path, "w", encoding="UTF8") as file_desc:
+            file_desc.write(
+                _LocalWebLoginTokensData(tokens=self._tokens).model_dump_json()
+            )
+
     def create(self, discord_id: int) -> str:
-        raise NotImplementedError("Web login tokens require SQLite state")
+        token = secrets.token_urlsafe(32)
+        self._tokens[token] = _LocalWebLoginTokenData(
+            discord_id=discord_id,
+            expires_at=int(time.time()) + _WEB_LOGIN_TOKEN_TTL,
+        )
+        self._store()
+        return token
 
     def find_valid(self, token: str) -> int | None:
-        raise NotImplementedError("Web login tokens require SQLite state")
+        entry = self._tokens.get(token)
+        if entry is None or entry.used or entry.expires_at <= int(time.time()):
+            return None
+        return entry.discord_id
 
     def mark_used(self, token: str) -> None:
-        raise NotImplementedError("Web login tokens require SQLite state")
+        entry = self._tokens.get(token)
+        if entry is not None:
+            entry.used = True
+            self._store()
 
     def prune_expired(self) -> None:
-        raise NotImplementedError("Web login tokens require SQLite state")
+        now = int(time.time())
+        expired = [t for t, e in self._tokens.items() if e.expires_at <= now]
+        for t in expired:
+            del self._tokens[t]
+        if expired:
+            self._store()
+
+
+class _LocalSessionSecretData(LocalBaseModel):
+    secret: str
+    expires_at: int
 
 
 class _LocalSessionSecretState(SessionSecretState):
+    def __init__(self, source_dir: Path) -> None:
+        self._path: Final[Path] = source_dir / "session_secret.json"
+
     def _load(self) -> tuple[str, int] | None:
-        raise NotImplementedError("Session secrets require SQLite state")
+        if not self._path.exists():
+            return None
+        with self._path.open() as file_desc:
+            data = _LocalSessionSecretData.model_validate_json(file_desc.read())
+        return data.secret, data.expires_at
 
     def _store(self, secret: str, expires_at: int) -> None:
-        raise NotImplementedError("Session secrets require SQLite state")
+        data = _LocalSessionSecretData(secret=secret, expires_at=expires_at)
+        with open(self._path, "w", encoding="UTF8") as file_desc:
+            file_desc.write(data.model_dump_json())
 
 
 class LocalState(State):
@@ -265,9 +342,9 @@ class LocalState(State):
         check_state_directory(source, source_dir)
         self._players = LocalPlayerState(source_dir)
         self._characters = LocalCharacterState(source_dir)
-        self._web_login_tokens = _LocalWebLoginTokenState()
+        self._web_login_tokens = _LocalWebLoginTokenState(source_dir)
         self._character_actions = LocalCharacterActionState(self._characters)
-        self._session_secret = _LocalSessionSecretState()
+        self._session_secret = _LocalSessionSecretState(source_dir)
 
     @property
     def characters(self) -> CharacterState:

@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence, Set
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, cast
 
 from peewee import (
     AutoField,
@@ -24,6 +24,7 @@ from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.state.state import (
+    _WEB_LOGIN_TOKEN_TTL,
     CharacterActionState,
     CharacterState,
     PlayerState,
@@ -208,9 +209,6 @@ class _SqlCharacterActionState(CharacterActionState):
                     position=pos,
                     template=template,
                 )
-
-
-_WEB_LOGIN_TOKEN_TTL: Final[int] = 60  # seconds
 
 
 class _SqlWebLoginToken(Model):
