@@ -181,5 +181,5 @@ jobs:
           severity: CRITICAL,HIGH
       - name: "Verify chat: invalid token raises LoginFailure"
         run: sh tools/test/docker_chat.sh
-      - name: "Verify web: missing SQLite state raises SystemExit"
+      - name: "Verify web: unknown state type raises error"
         run: sh tools/test/docker_web.sh
