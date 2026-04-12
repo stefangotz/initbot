@@ -213,6 +213,8 @@ class CharacterActionState(PartialState, ABC):
         raise NotImplementedError()
 
 
+_WEB_LOGIN_TOKEN_TTL: Final[int] = 60  # seconds
+
 _SESSION_SECRET_TTL: Final[int] = (
     8 * 60 * 60
 )  # 8 hours, matches SESSION_TTL in initbot-web
