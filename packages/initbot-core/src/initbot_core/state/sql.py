@@ -50,8 +50,11 @@ class _SqlCharacterState(CharacterState):
     def _add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
         if char_data.last_used is None:
             char_data.last_used = int(time.time())
-        return _SqlCharacterData.create(  # type: ignore[return-value]
-            **{k: v for k, v in asdict(char_data).items() if v is not None}
+        return cast(
+            CharacterData,
+            _SqlCharacterData.create(**{
+                k: v for k, v in asdict(char_data).items() if v is not None
+            }),
         )
 
     def remove_and_store(self, char_data: CharacterData) -> None:
@@ -112,7 +115,7 @@ class _SqlPlayerState(PlayerState):
                 ).execute()
                 player.name = name
             return player
-        return _SqlPlayerData.create(discord_id=discord_id, name=name)  # type: ignore[return-value]
+        return _SqlPlayerData.create(discord_id=discord_id, name=name)  # type: ignore  # peewee Model subclass satisfies PlayerData
 
     def get_from_id(self, player_id: int) -> PlayerData:
         result = _SqlPlayerData.get_or_none(_SqlPlayerData.id == player_id)

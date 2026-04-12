@@ -235,8 +235,8 @@ async def touch(ctx: commands.Context, *args: str) -> None:
 
 @init_dice.error
 @rename.error
-@remove.error
-@chars.error
+@remove.error  # type: ignore  # stacking .error across cog/non-cog commands; valid at runtime
+@chars.error  # type: ignore  # stacking .error across cog/non-cog commands; valid at runtime
 @char.error
 @unused.error
 @prune.error
