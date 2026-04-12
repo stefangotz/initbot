@@ -52,8 +52,6 @@ def create_app(
     settings: WebSettings | None = None, web_url_path_prefix: str | None = None
 ) -> Starlette:
     cfg = settings or WebSettings()
-    if not cfg.state.startswith("sqlite:"):
-        raise SystemExit(f"initbot-web requires a SQLite state URI. Got: {cfg.state!r}")
     state = create_state_from_source(cfg.state)
     templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
     vuln_state = VulnerabilityState()
