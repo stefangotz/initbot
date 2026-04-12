@@ -101,7 +101,7 @@ async def inis(ctx: commands.Context) -> None:
     await ctx.send(embed=embed)
 
 
-@inis.error
+@inis.error  # type: ignore  # stacking .error across cog/non-cog commands; valid at runtime
 @init.error
 async def init_error(ctx: commands.Context, error: commands.CommandError) -> None:
     logging.exception(ctx.command)
