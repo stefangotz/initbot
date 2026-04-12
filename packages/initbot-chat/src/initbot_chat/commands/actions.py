@@ -25,6 +25,26 @@ def search_actions(templates: Sequence[str], terms: list[str]) -> list[tuple[int
     ]
 
 
+def _split_search_and_template(sub_args: list[str]) -> tuple[list[str], str]:
+    """Split sub_args into (search_terms, template) for keyword-based update.
+
+    Splits at the first token containing a dice roll: everything before it are
+    search terms; from that token onward is the new template.
+    Raises ValueError if no dice roll is found or no search terms precede it.
+    """
+    for i, token in enumerate(sub_args):
+        if contains_dice_rolls(token):
+            if i == 0:
+                raise ValueError(
+                    "Provide search words before the new template, "
+                    "e.g. `$actions update axe Mel swings at d20+6 for d12+5`"
+                )
+            return list(sub_args[:i]), " ".join(sub_args[i:])
+    raise ValueError(
+        "The new template must contain at least one dice roll (e.g. d20, 2d6+3)."
+    )
+
+
 def _split_actions_args(
     args: tuple[str, ...],
 ) -> tuple[list[str], str, list[str]]:
@@ -42,23 +62,30 @@ def _split_actions_args(
     )
 
 
+async def _send_no_match(
+    ctx: commands.Context, char_name: str, terms: list[str]
+) -> None:
+    terms_display = " ".join(terms)
+    await ctx.send(
+        f"No actions for {char_name} matched '{terms_display}'. "
+        f"Search checks whether each word appears anywhere in the action template "
+        f"(case-insensitive). Use `$actions list` to see all actions, "
+        f"or try fewer/different search terms.",
+        delete_after=10,
+    )
+
+
 async def _handle_search_result(
     ctx: commands.Context,
     char_name: str,
     matches: list[tuple[int, str]],
     terms: list[str],
 ) -> None:
-    terms_display = " ".join(terms)
     if not matches:
-        await ctx.send(
-            f"No actions for {char_name} matched '{terms_display}'. "
-            f"Search checks whether each word appears anywhere in the action template "
-            f"(case-insensitive). Use `$actions list` to see all actions, "
-            f"or try fewer/different search terms.",
-            delete_after=10,
-        )
+        await _send_no_match(ctx, char_name, terms)
         return
     if len(matches) > 1:
+        terms_display = " ".join(terms)
         await send_in_parts(
             ctx,
             (
@@ -98,15 +125,8 @@ async def _list_search_results(
         )
     templates = char_actions.get_all_for_character(char_name)
     matches = search_actions(templates, sub_args)
-    terms_display = " ".join(sub_args)
     if not matches:
-        await ctx.send(
-            f"No actions for {char_name} matched '{terms_display}'. "
-            f"Search checks whether each word appears anywhere in the action template "
-            f"(case-insensitive). Use `$actions list` to see all actions, "
-            f"or try fewer/different search terms.",
-            delete_after=10,
-        )
+        await _send_no_match(ctx, char_name, sub_args)
         return
     await send_in_parts(
         ctx,
@@ -115,6 +135,97 @@ async def _list_search_results(
             *(f"{i}. {t}" for i, t in matches),
         ),
     )
+
+
+async def _do_remove(
+    ctx: commands.Context,
+    char_actions: CharacterActionState,
+    char_name: str,
+    sub_args: list[str],
+) -> None:
+    if not sub_args:
+        raise ValueError("Usage: `$actions [character] remove NR|WORDS`")
+    templates = char_actions.get_all_for_character(char_name)
+    if sub_args[0].isdigit():
+        idx = int(sub_args[0])
+        if not 1 <= idx <= len(templates):
+            count = len(templates)
+            noun = "action" if count == 1 else "actions"
+            await ctx.send(
+                f"{char_name} only has {count} {noun}. Use `$actions list` to see them.",
+                delete_after=10,
+            )
+            return
+        char_actions.remove(char_name, idx)
+        await ctx.send(
+            f"Removed {char_name}'s action #{idx} ({templates[idx - 1]})",
+            delete_after=5,
+        )
+        return
+    matches = search_actions(templates, sub_args)
+    if not matches:
+        await _send_no_match(ctx, char_name, sub_args)
+        return
+    if len(matches) > 1:
+        terms_display = " ".join(sub_args)
+        await send_in_parts(
+            ctx,
+            (
+                f"Multiple actions for {char_name} matched '{terms_display}'. "
+                f"Use `$actions remove NR` with the action number to remove the one you want:",
+                *(f"{i}. {t}" for i, t in matches),
+            ),
+        )
+        return
+    idx, tmpl = matches[0]
+    char_actions.remove(char_name, idx)
+    await ctx.send(
+        f"Removed {char_name}'s action #{idx} ({tmpl})",
+        delete_after=5,
+    )
+
+
+async def _do_update(
+    ctx: commands.Context,
+    char_actions: CharacterActionState,
+    char_name: str,
+    sub_args: list[str],
+) -> None:
+    if not sub_args:
+        raise ValueError("Usage: `$actions [character] update NR|WORDS TEMPLATE`")
+    if sub_args[0].isdigit():
+        if len(sub_args) < 2:
+            raise ValueError("Usage: `$actions [character] update NR TEMPLATE`")
+        template = " ".join(sub_args[1:])
+        if not contains_dice_rolls(template):
+            raise ValueError(
+                f"Template must contain at least one dice roll (e.g. d20, 2d6+3). Got: '{template}'"
+            )
+        char_actions.update(char_name, int(sub_args[0]), template)
+        await ctx.send(
+            f"Updated action #{sub_args[0]} for {char_name}.", delete_after=5
+        )
+        return
+    search_terms, template = _split_search_and_template(sub_args)
+    templates = char_actions.get_all_for_character(char_name)
+    matches = search_actions(templates, search_terms)
+    if not matches:
+        await _send_no_match(ctx, char_name, search_terms)
+        return
+    if len(matches) > 1:
+        terms_display = " ".join(search_terms)
+        await send_in_parts(
+            ctx,
+            (
+                f"Multiple actions for {char_name} matched '{terms_display}'. "
+                f"Use `$actions update NR TEMPLATE` with the action number to update the one you want:",
+                *(f"{i}. {t}" for i, t in matches),
+            ),
+        )
+        return
+    idx, _ = matches[0]
+    char_actions.update(char_name, idx, template)
+    await ctx.send(f"Updated action #{idx} for {char_name}.", delete_after=5)
 
 
 @commands.command(
@@ -132,7 +243,9 @@ async def actions_cmd(ctx: commands.Context, *args: str) -> None:
     - list — show all actions a character knows, with their action numbers.
     - add TEMPLATE — add a new action template containing at least one dice roll.
     - update NR TEMPLATE — replace the template of the action with the given number.
+    - update WORDS TEMPLATE — replace the template of the action whose current template contains all of the given words. The new template begins at the first dice roll in your message. If more than one action matches, they are listed so you can pick by number.
     - remove NR — delete the action with the given number.
+    - remove WORDS — delete the action whose template contains all of the given words. If more than one action matches, they are listed so you can pick by number.
     - search WORDS — find actions whose template contains all of the given words (case-insensitive). Useful for discovering an action number when you remember part of the description but not the number.
 
     You can specify a character name or omit it.
@@ -167,34 +280,10 @@ async def actions_cmd(ctx: commands.Context, *args: str) -> None:
         await ctx.send(f"Added action #{index} for {cdi.name}.", delete_after=5)
 
     elif subcommand == "update":
-        if len(sub_args) < 2 or not sub_args[0].isdigit():
-            raise ValueError("Usage: `$actions [character] update IDX TEMPLATE`")
-        template = " ".join(sub_args[1:])
-        if not contains_dice_rolls(template):
-            raise ValueError(
-                f"Template must contain at least one dice roll (e.g. d20, 2d6+3). Got: '{template}'"
-            )
-        char_actions.update(cdi.name, int(sub_args[0]), template)
-        await ctx.send(f"Updated action #{sub_args[0]} for {cdi.name}.", delete_after=5)
+        await _do_update(ctx, char_actions, cdi.name, sub_args)
 
     elif subcommand == "remove":
-        if not sub_args or not sub_args[0].isdigit():
-            raise ValueError("Usage: `$actions [character] remove IDX`")
-        idx = int(sub_args[0])
-        templates = char_actions.get_all_for_character(cdi.name)
-        if not 1 <= idx <= len(templates):
-            count = len(templates)
-            noun = "action" if count == 1 else "actions"
-            await ctx.send(
-                f"{cdi.name} only has {count} {noun}. Use `$actions list` to see them.",
-                delete_after=10,
-            )
-            return
-        char_actions.remove(cdi.name, idx)
-        await ctx.send(
-            f"Removed {cdi.name}'s action #{sub_args[0]} ({templates[idx - 1]})",
-            delete_after=5,
-        )
+        await _do_remove(ctx, char_actions, cdi.name, sub_args)
 
     elif subcommand == "search":
         await _list_search_results(ctx, char_actions, cdi.name, sub_args)

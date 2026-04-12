@@ -4,7 +4,12 @@
 
 import pytest
 
-from initbot_chat.commands.actions import act_cmd, actions_cmd, search_actions
+from initbot_chat.commands.actions import (
+    _split_search_and_template,
+    act_cmd,
+    actions_cmd,
+    search_actions,
+)
 from initbot_chat.commands.character import prune, remove
 from initbot_core.data.character import NewCharacterData
 from initbot_core.models.roll import contains_dice_rolls
@@ -432,3 +437,191 @@ async def test_actions_search_with_character_prefix(mock_ctx):
     await actions_cmd.callback(mock_ctx, "Med", "search", "javelin")
     all_msgs = " ".join(str(c) for c in mock_ctx.send.call_args_list)
     assert "javelin" in all_msgs
+
+
+# ---------------------------------------------------------------------------
+# _split_search_and_template (pure function)
+# ---------------------------------------------------------------------------
+
+
+def test_split_search_and_template_basic():
+    assert _split_search_and_template(["axe", "d20+6"]) == (["axe"], "d20+6")
+
+
+def test_split_search_and_template_multi_word_template():
+    assert _split_search_and_template([
+        "axe",
+        "Mel",
+        "swings",
+        "at",
+        "d20+6",
+        "for",
+        "d12+5",
+    ]) == (["axe", "Mel", "swings", "at"], "d20+6 for d12+5")
+
+
+def test_split_search_and_template_multi_term_search():
+    assert _split_search_and_template(["axe", "attack", "d20+6"]) == (
+        ["axe", "attack"],
+        "d20+6",
+    )
+
+
+def test_split_search_and_template_no_search_terms_raises():
+    with pytest.raises(ValueError, match="search words"):
+        _split_search_and_template(["d20+6", "for", "d12"])
+
+
+def test_split_search_and_template_no_dice_raises():
+    with pytest.raises(ValueError, match="dice roll"):
+        _split_search_and_template(["axe", "attack", "Mel"])
+
+
+# ---------------------------------------------------------------------------
+# $actions remove — search mode
+# ---------------------------------------------------------------------------
+
+
+async def test_actions_remove_by_search_single_match(mock_ctx):
+    _add_char(mock_ctx)
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with axe at d20+5 for d12+3"
+    )
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with javelin at d20+3 for d8+1"
+    )
+    await actions_cmd.callback(mock_ctx, "remove", "axe")
+    msg = mock_ctx.send.call_args[0][0]
+    assert "Removed" in msg
+    assert "axe" in msg
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mel"
+    )
+    assert len(templates) == 1
+    assert "javelin" in templates[0]
+
+
+async def test_actions_remove_by_search_no_match(mock_ctx):
+    _add_char(mock_ctx)
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with axe at d20+5 for d12+3"
+    )
+    await actions_cmd.callback(mock_ctx, "remove", "fireball")
+    msg = mock_ctx.send.call_args[0][0]
+    assert "No actions" in msg
+    assert "fireball" in msg
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mel"
+    )
+    assert len(templates) == 1
+
+
+async def test_actions_remove_by_search_multiple_matches(mock_ctx):
+    _add_char(mock_ctx)
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with axe at d20+5 for d12+3"
+    )
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with javelin at d20+3 for d8+1"
+    )
+    await actions_cmd.callback(mock_ctx, "remove", "attacks")
+    all_msgs = " ".join(str(c) for c in mock_ctx.send.call_args_list)
+    assert "Multiple actions" in all_msgs
+    assert "$actions remove NR" in all_msgs
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mel"
+    )
+    assert len(templates) == 2
+
+
+async def test_actions_remove_by_search_with_character_prefix(mock_ctx):
+    _add_char(mock_ctx, name="Mediocre Mel")
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mediocre Mel", "Mediocre Mel attacks with axe at d20+5"
+    )
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mediocre Mel", "Mediocre Mel attacks with javelin at d20+3"
+    )
+    await actions_cmd.callback(mock_ctx, "Med", "remove", "axe")
+    msg = mock_ctx.send.call_args[0][0]
+    assert "Removed" in msg
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mediocre Mel"
+    )
+    assert len(templates) == 1
+    assert "javelin" in templates[0]
+
+
+# ---------------------------------------------------------------------------
+# $actions update — search mode
+# ---------------------------------------------------------------------------
+
+
+async def test_actions_update_by_search_single_match(mock_ctx):
+    _add_char(mock_ctx)
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with axe at d20+5 for d12+3"
+    )
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with javelin at d20+3 for d8+1"
+    )
+    await actions_cmd.callback(mock_ctx, "update", "axe", "d20+6", "for", "d12+5")
+    msg = mock_ctx.send.call_args[0][0]
+    assert "Updated" in msg
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mel"
+    )
+    assert "d20+6" in templates[0]
+    assert "d12+5" in templates[0]
+
+
+async def test_actions_update_by_search_no_match(mock_ctx):
+    _add_char(mock_ctx)
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with axe at d20+5 for d12+3"
+    )
+    await actions_cmd.callback(mock_ctx, "update", "fireball", "d20+6")
+    msg = mock_ctx.send.call_args[0][0]
+    assert "No actions" in msg
+    assert "fireball" in msg
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mel"
+    )
+    assert "d20+5" in templates[0]
+
+
+async def test_actions_update_by_search_multiple_matches(mock_ctx):
+    _add_char(mock_ctx)
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with axe at d20+5 for d12+3"
+    )
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mel", "Mel attacks with javelin at d20+3 for d8+1"
+    )
+    await actions_cmd.callback(mock_ctx, "update", "attacks", "d20+6")
+    all_msgs = " ".join(str(c) for c in mock_ctx.send.call_args_list)
+    assert "Multiple actions" in all_msgs
+    assert "$actions update NR TEMPLATE" in all_msgs
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mel"
+    )
+    assert len(templates) == 2
+
+
+async def test_actions_update_by_search_with_character_prefix(mock_ctx):
+    _add_char(mock_ctx, name="Mediocre Mel")
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mediocre Mel", "Mediocre Mel attacks with axe at d20+5"
+    )
+    mock_ctx.bot.initbot_state.character_actions.add(
+        "Mediocre Mel", "Mediocre Mel attacks with javelin at d20+3"
+    )
+    await actions_cmd.callback(
+        mock_ctx, "Med", "update", "javelin", "d20+4", "for", "d8+2"
+    )
+    msg = mock_ctx.send.call_args[0][0]
+    assert "Updated" in msg
+    templates = mock_ctx.bot.initbot_state.character_actions.get_all_for_character(
+        "Mediocre Mel"
+    )
+    assert any("d20+4" in t and "d8+2" in t for t in templates)
