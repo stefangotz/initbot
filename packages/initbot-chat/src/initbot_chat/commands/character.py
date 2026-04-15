@@ -15,7 +15,7 @@ from initbot_core.data.character import (
     CharacterData,
     is_eligible_for_pruning,
 )
-from initbot_core.models.roll import NerdDiceRoll
+from initbot_core.models.roll import DiceExpression
 from initbot_core.state.state import State
 
 
@@ -54,7 +54,7 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
     name = tokens[:-1]
 
     try:
-        NerdDiceRoll.create(spec)
+        DiceExpression.create(spec)
     except ValueError as exc:
         raise ValueError(
             f"'{spec}' is not a valid dice spec. Use a format like d20, d20+3, or 2d6-1."
