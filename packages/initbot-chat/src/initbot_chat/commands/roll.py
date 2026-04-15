@@ -16,8 +16,10 @@ async def roll(ctx: commands.Context, *words: str) -> None:
     The *dice* to roll can be, for example, d20, 2d6, or d8+2.
     This follows the usual notation [dice]d{sides}[+/-mod] to say what kind of die to roll (how many sides), how many of those to roll, and how much bonus to add (or subtract).
 
-    To make the same roll several times in a row and get each result separately, add [rolls]x, so for example, 3x1d6+1.
-    This generates a reply with a total and the individual rolls, for example, 14 (5, 7, 2).
+    You can combine different dice types with + or -: d20+d8 rolls both and adds them, d20+d8+d6 rolls all three, and 2d6+d4+3 rolls the mixed group and adds 3.
+
+    To evaluate an expression several times and see each result separately, add [rolls]x: 3xd6 rolls d6 three times, and 2x(d20+d8) evaluates d20+d8 twice.
+    This generates a reply showing each result and the total, for example, 4+13=17.
 
     The bot just replaces anything that looks like a dice roll in your message with the result of the roll.
     For example, "roll d20+5 to attack the construct for 1d6+3 damage" will generate a reply like "Mediocre Mel rolled 15 to attack the construct for 7 damage".

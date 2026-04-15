@@ -12,7 +12,6 @@
 
 ## chat
 
-- support d20+d8+d6
 - support advantage / don't total 2xd20
 - relax command parsing
 - protect discord.py token
