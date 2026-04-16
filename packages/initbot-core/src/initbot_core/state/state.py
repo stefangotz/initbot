@@ -5,7 +5,7 @@
 import secrets
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence, Set
+from collections.abc import Iterable, Sequence
 from typing import Final
 
 from initbot_core.data.character import CharacterData, NewCharacterData
@@ -16,16 +16,7 @@ from initbot_core.utils import (
 )
 
 
-class PartialState:
-    """Marker base class for all partial state objects.
-
-    Serves as the common base for CharacterState and PlayerState so that
-    State.import_from can discover sub-state attributes via issubclass checks
-    at runtime.
-    """
-
-
-class CharacterState(PartialState, ABC):
+class CharacterState(ABC):
     @abstractmethod
     def get_all(self) -> Sequence[CharacterData]:
         raise NotImplementedError()
@@ -116,12 +107,8 @@ class CharacterState(PartialState, ABC):
     def update_and_store(self, char_data: CharacterData) -> None:
         raise NotImplementedError()
 
-    @abstractmethod
-    def import_from(self, src: "CharacterState") -> None:
-        raise NotImplementedError()
 
-
-class PlayerState(PartialState, ABC):
+class PlayerState(ABC):
     @abstractmethod
     def upsert(self, discord_id: int, name: str) -> PlayerData:
         raise NotImplementedError()
@@ -138,10 +125,6 @@ class PlayerState(PartialState, ABC):
 
     @abstractmethod
     def get_all(self) -> Sequence[PlayerData]:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def import_from(self, src: "PlayerState") -> None:
         raise NotImplementedError()
 
 
@@ -172,7 +155,7 @@ class WebLoginTokenState(ABC):
         raise NotImplementedError()
 
 
-class CharacterActionState(PartialState, ABC):
+class CharacterActionState(ABC):
     """Stores ordered action templates for each character."""
 
     @abstractmethod
@@ -206,10 +189,6 @@ class CharacterActionState(PartialState, ABC):
     @abstractmethod
     def rename_character(self, old_name: str, new_name: str) -> None:
         """Update the character_name key for all actions belonging to old_name."""
-        raise NotImplementedError()
-
-    @abstractmethod
-    def import_from(self, src: "CharacterActionState") -> None:
         raise NotImplementedError()
 
 
@@ -268,22 +247,4 @@ class State(ABC):
     @property
     @abstractmethod
     def session_secret(self) -> SessionSecretState:
-        raise NotImplementedError()
-
-    def import_from(self, src: "State") -> None:
-        target_attributes = {
-            name: getattr(self, name) for name in dir(self) if not name.startswith("_")
-        }
-        target_states = {
-            name: value
-            for name, value in target_attributes.items()
-            if issubclass(type(value), PartialState)
-        }
-        for target_state_name, target_state in target_states.items():
-            print(f"Importing {target_state_name} from {src}")
-            target_state.import_from(getattr(src, target_state_name))
-
-    @classmethod
-    @abstractmethod
-    def get_supported_state_types(cls) -> Set[str]:
         raise NotImplementedError()

@@ -20,8 +20,8 @@ class Settings(BaseSettings):
         description="The bot only recognizes commands with one of the prefixes in this comma-separated list. Note that the empty string is a valid prefix, so if you want to use the bot without a command prefix, set this to an empty string.",
     )
     state: str = Field(
-        default="json:./",
-        description="The data store that contains the bot state. This is a URI that specifies the type of data store and the location of the data store. The default is 'json:./' which maintains the state as a set of JSON files in the current working directory.",
+        default="sqlite:./initbot.db",
+        description="The data store URI. Format: 'sqlite:/path/to/file.db'. The default creates initbot.db in the current working directory.",
     )
     max_inline_roll_message_length: int = Field(
         default=90,
