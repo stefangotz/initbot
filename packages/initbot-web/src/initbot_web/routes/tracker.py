@@ -59,6 +59,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
     set_initiative_url = f"/{url_path_prefix}/tracker/set-initiative"
+    delete_character_url = f"/{url_path_prefix}/tracker/delete-character"
 
     async def login_page(request: Request) -> Response:
         """GET: validate token without consuming it; render auto-submit login form.
@@ -149,13 +150,17 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             snapshot = tuple((c.name, c.initiative) for c, _ in chars_with_names)
             if snapshot != last_snapshot:
                 last_snapshot = snapshot
-                yield SSE.patch_elements(_render_rows(chars_with_names))
+                yield SSE.patch_elements(
+                    _render_rows(chars_with_names, delete_character_url)
+                )
 
             idle_with_names = [(c, _resolve_player_name(state, c)) for c in idle_chars]
             idle_snapshot = tuple(c.name for c in idle_chars)
             if idle_snapshot != last_idle_snapshot:
                 last_idle_snapshot = idle_snapshot
-                yield SSE.patch_elements(_render_idle_rows(idle_with_names))
+                yield SSE.patch_elements(
+                    _render_idle_rows(idle_with_names, delete_character_url)
+                )
 
             current_vuln = vuln_state.has_high_severity_vulnerabilities
             if current_vuln != last_vuln:
@@ -192,6 +197,24 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return err
         return await _set_initiative(request)
 
+    @datastar_response
+    async def _delete_character(
+        request: Request,
+    ) -> DatastarEvent | tuple[()]:
+        char_name: str = request.path_params.get("char_name", "")
+        try:
+            char = state.characters.get_from_name(char_name)
+        except (TypeError, ValueError, KeyError):
+            return ()
+        state.character_actions.remove_all_for_character(char.name)
+        state.characters.remove_and_store(char)
+        return ()
+
+    async def delete_character(request: Request) -> Response:
+        if (err := _require_auth(request)) is not None:
+            return err
+        return await _delete_character(request)
+
     async def logout(request: Request) -> Response:
         request.session.clear()
         return Response(status_code=200)
@@ -203,6 +226,11 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 Route("/tracker/", tracker_page),
                 Route("/tracker/sse", tracker_sse),
                 Route("/tracker/set-initiative", set_initiative, methods=["POST"]),
+                Route(
+                    "/tracker/delete-character/{char_name}",
+                    delete_character,
+                    methods=["POST"],
+                ),
                 Route("/logout", logout),
                 Route("/{token}/", login_page, methods=["GET"]),
                 Route("/{token}/", login_post, methods=["POST"]),
@@ -231,7 +259,18 @@ def _render_edit_button(char_name: str) -> str:
     )
 
 
-def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
+def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
+    safe = _safe_str(char_name)
+    return (
+        f'<button type="button" class="del-btn"'
+        f" data-on:click=\"@post('{delete_url_prefix}/{safe}')\">"
+        f"\U0001f5d1</button>"
+    )
+
+
+def _render_rows(
+    chars_with_names: list[tuple[CharacterData, str]], delete_url_prefix: str
+) -> str:
     rows = "".join(
         f'<tr id="r{i}">'
         f"<td>{i + 1}</td>"
@@ -239,18 +278,22 @@ def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
         f" {_render_edit_button(c.name)}</td>"
         f"<td>{_safe_str(c.name)}</td>"
         f"<td>{_safe_str(name)}</td>"
+        f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
         f"</tr>"
         for i, (c, name) in enumerate(chars_with_names)
     )
     return f'<tbody id="initiative-rows">{rows}</tbody>'
 
 
-def _render_idle_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
+def _render_idle_rows(
+    chars_with_names: list[tuple[CharacterData, str]], delete_url_prefix: str
+) -> str:
     rows = "".join(
         f"<tr>"
         f"<td>{_render_edit_button(c.name)}</td>"
         f"<td>{_safe_str(c.name)}</td>"
         f"<td>{_safe_str(name)}</td>"
+        f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
         f"</tr>"
         for c, name in chars_with_names
     )

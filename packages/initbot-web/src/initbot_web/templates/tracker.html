@@ -209,6 +209,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       outline: none;
     }
 
+    /* ── Delete button ────────────────────────────────────────── */
+    .del-btn {
+      background: none;
+      border: none;
+      padding: 0 0.25rem;
+      opacity: 0.3;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .del-btn:hover {
+      opacity: 1;
+    }
+
+    /* Last column (delete) — narrow, centred */
+    tbody td:last-child,
+    thead th:last-child {
+      width: 2.5rem;
+      text-align: center;
+    }
+
     /* ── Edit button ──────────────────────────────────────────── */
     .edit-btn {
       background: none;
@@ -317,7 +339,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
       <table>
         <thead>
-          <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th></tr>
+          <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th><th></th></tr>
         </thead>
         <tbody id="initiative-rows">
           <tr><td colspan="4">Alea nondum iacta est…</td></tr>
@@ -327,7 +349,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <h2>Idle Characters</h2>
         <table>
           <thead>
-            <tr><th>Init</th><th>Character</th><th>Player</th></tr>
+            <tr><th>Init</th><th>Character</th><th>Player</th><th></th></tr>
           </thead>
           <tbody id="idle-rows"></tbody>
         </table>
