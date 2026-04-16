@@ -2,14 +2,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import dataclasses
 import secrets
 import time
-from collections.abc import Iterable, Mapping, Sequence, Set
+from collections.abc import Sequence
 from dataclasses import asdict
 from inspect import isclass
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 from peewee import (
     AutoField,
@@ -87,17 +86,6 @@ class _SqlCharacterState(CharacterState):
             _SqlCharacterData.name == char_data.name
         ).execute()
 
-    def import_from(self, src: CharacterState) -> None:
-        for cdi in src.get_all():
-            _SqlCharacterData.create(**{
-                k: v
-                for k, v in (
-                    (f.name, getattr(cdi, f.name, None))
-                    for f in dataclasses.fields(NewCharacterData)
-                )
-                if v is not None
-            })
-
 
 class _SqlPlayerData(Model):
     id = AutoField()  # internal primary key, auto-increment
@@ -129,10 +117,6 @@ class _SqlPlayerState(PlayerState):
 
     def get_all(self) -> Sequence[PlayerData]:
         return tuple(_SqlPlayerData.select())
-
-    def import_from(self, src: PlayerState) -> None:
-        for p in src.get_all():
-            _SqlPlayerData.create(id=p.id, discord_id=p.discord_id, name=p.name)
 
 
 class _SqlCharacterAction(Model):
@@ -204,15 +188,6 @@ class _SqlCharacterActionState(CharacterActionState):
             _SqlCharacterAction.character_name == old_name
         ).execute()
 
-    def import_from(self, src: CharacterActionState) -> None:
-        for cdi in _SqlCharacterData.select():
-            for pos, template in enumerate(src.get_all_for_character(cdi.name)):
-                _SqlCharacterAction.create(
-                    character_name=cdi.name,
-                    position=pos,
-                    template=template,
-                )
-
 
 class _SqlWebLoginToken(Model):
     token = CharField(primary_key=True)
@@ -283,8 +258,6 @@ class SqlState(State):
         if state_type == "sqlite":
             path = Path(state_source)
             check_state_directory(source, path.parent)
-            if not path.exists():
-                path.touch(exist_ok=True)
             self._db = SqliteDatabase(
                 path,
                 pragmas={"journal_mode": "wal", "synchronous": "normal"},
@@ -394,14 +367,6 @@ class SqlState(State):
     @property
     def session_secret(self) -> SessionSecretState:
         return self._session_secret
-
-    @classmethod
-    def get_supported_state_types(cls) -> Set[str]:
-        return {"sqlite"}
-
-
-def _import_from(cls: type[Any], dicts: Iterable[Mapping[str, Any]]) -> None:
-    cls.insert_many(dicts).execute()
 
 
 def _get_data_classes() -> Sequence[type[Model]]:

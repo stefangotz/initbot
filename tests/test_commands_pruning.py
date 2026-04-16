@@ -24,11 +24,7 @@ def _add_old(state, name, user):
     """Add a character and immediately make it appear old via a patched time."""
     discord_id = _DISCORD_IDS.get(user, abs(hash(user)) % (10**15))
     player = state.players.upsert(discord_id=discord_id, name=user)
-    with (
-        patch("initbot_core.state.local.time") as m_local,
-        patch("initbot_core.state.sql.time") as m_sql,
-    ):
-        m_local.time.return_value = 0
+    with patch("initbot_core.state.sql.time") as m_sql:
         m_sql.time.return_value = 0
         return state.characters.add_store_and_get(
             NewCharacterData(name=name, player_id=player.id)

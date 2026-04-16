@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import shutil
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -10,19 +9,11 @@ import pytest
 import initbot_core.config as core_config
 from initbot_chat.commands.web import web
 from initbot_core.state.factory import create_state_from_source
-from tests.helpers import DATA_DIR, REFERENCE_FILES
 
 
 @pytest.fixture(name="sqlite_state")
 def _sqlite_state(tmp_path):
-    db_path = tmp_path / "test.db"
-    state = create_state_from_source(f"sqlite:{db_path}")
-    ref_dir = tmp_path / "ref"
-    ref_dir.mkdir()
-    for f in REFERENCE_FILES:
-        shutil.copy(DATA_DIR / f, ref_dir / f)
-    state.import_from(create_state_from_source(f"json:{ref_dir}"))
-    return state
+    return create_state_from_source(f"sqlite:{tmp_path / 'test.db'}")
 
 
 @pytest.fixture(name="web_ctx")

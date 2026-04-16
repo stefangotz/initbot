@@ -9,10 +9,8 @@ import pytest
 from initbot_core.state.factory import create_state_from_source
 
 
-@pytest.fixture(params=["json", "sqlite"], name="token_state")
-def _token_state(request, tmp_path):
-    if request.param == "json":
-        return create_state_from_source(f"json:{tmp_path}")
+@pytest.fixture(name="token_state")
+def _token_state(tmp_path):
     return create_state_from_source(f"sqlite:{tmp_path / 'test.db'}")
 
 

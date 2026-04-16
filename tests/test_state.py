@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-
 import shutil
 from pathlib import Path
 
@@ -15,11 +14,6 @@ def _check_state(state) -> None:
     assert state is not None
     assert state.characters is not None
     assert len(state.characters.get_all()) == 1
-
-
-def test_load_json():
-    state = create_state_from_source(f"json:{_DATA_DIR}")
-    _check_state(state)
 
 
 def test_load_sqlite(tmp_path):
