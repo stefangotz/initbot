@@ -35,6 +35,27 @@ The web app package is at `packages/initbot-web/`. The single current page is th
 - **Playwright MCP** is configured and connected. Use it to navigate to the running app, take screenshots, and verify visual changes after editing templates.
 - **`/frontend-design` skill** is installed. Invoke it at the start of design work to establish a visual direction before writing code.
 
+#### Playwright setup
+
+**Without a sandbox:** Enable the official plugin in `~/.claude/settings.json`:
+```json
+"enabledPlugins": {
+  "playwright@claude-plugins-official": true
+}
+```
+The plugin starts the browser automatically — no other configuration needed. The `.mcp.json` in the project root is not required and can be ignored.
+
+#### Playwright in a nono sandbox
+
+Browsers cannot launch inside a nono sandbox (macOS Seatbelt blocks the Mach IPC and xattr syscalls browsers require). The workaround is to run the Playwright MCP server as an external process and connect to it over localhost.
+
+**Before starting Claude Code in nono**, run in a separate terminal:
+```
+tools/run_playwright.sh
+```
+
+This starts `@playwright/mcp` on `http://localhost:8931/sse`. Claude Code connects to it via SSE transport (configured in `~/.claude/mcp.json`), so all browser automation runs outside the sandbox entirely. The nono profile needs no extra `--allow` flags beyond the defaults.
+
 ### Dev server
 
 Start with:
@@ -42,19 +63,49 @@ Start with:
 tools/run_web_dev.sh
 ```
 
-This generates 5 sample characters with fresh initiative timestamps, exports them to `dev-state/dev.sqlite`, and starts the server at:
+This generates 5 sample characters with fresh initiative timestamps, exports them to `dev-state/dev.sqlite`, and starts the server. The server prints the session URL to stdout:
 ```
-http://localhost:8080/s/dev/
+URL: http://localhost:8080/dev/<token>/
 ```
 
-The state is regenerated on each run (timestamps stay fresh). `dev-state/` is gitignored.
+Read the URL from the server output (e.g. `/tmp/initbot-web-dev.log` if started in the background). The state is regenerated on each run (timestamps stay fresh). `dev-state/` is gitignored.
+
+### Datastar RC.8 gotchas
+
+The tracker uses Datastar v1.0.0-RC.8. Several things differ from what documentation or LLM training data might suggest:
+
+**Attribute format — colons, not hyphens, for sub-keys:**
+- `data-on:click="expr"` ✓  — `data-on-click` is silently ignored
+- `data-on:submit__prevent="@post(...)"` ✓
+- `data-on:keydown__escape="expr"` ✗  — fires on **every** keydown, not just Escape; use `data-on:keydown="evt.key==='Escape' && expr"` instead
+- `data-bind:signalname` ✓
+- Plugins with no sub-key (`data-show`, `data-signals`, `data-init`, `data-text`, `data-effect`) still use plain hyphens ✓
+
+**`data-on:click` and `data-init` cannot coexist on the same element.** Put `data-on:click` on a separate child div used as an event-delegation wrapper; `data-init` stays on the outer div.
+
+**HTML lowercases attribute keys — signal names must be all-lowercase when referenced via `data-bind:`.** `data-bind:initVal` becomes `data-bind:initval` in the DOM. The bind plugin then looks for signal `initval`, not `initVal`. Keep signal names that appear in `data-bind:` all-lowercase throughout (`data-signals`, expressions, and server-side JSON keys must all agree).
+
+**`evt` is available in `data-on:*` expressions.** The `on` plugin injects `evt` as an extra named argument so `evt.target.closest(...)` works correctly.
+
+**Server → client signal reset:** After a POST action, return `SSE.patch_signals({"editing": False})` to dismiss the edit panel. Dispatching `datastar-signal-patch` CustomEvents from the browser externally has no effect.
 
 ### Design iteration workflow
 
-1. Start the dev server (`tools/run_web_dev.sh`)
-2. Use Playwright MCP to navigate to `http://localhost:8080/s/dev/` and take a screenshot
-3. Edit `packages/initbot-web/src/initbot_web/templates/tracker.html`
-4. Use Playwright MCP to verify the result visually before committing
+1. Start the dev server in the background: `tools/run_web_dev.sh &>/tmp/initbot-web-dev.log &`
+2. Read the URL from the log: `grep '^URL:' /tmp/initbot-web-dev.log`
+3. Use Playwright MCP to navigate to that URL and take a screenshot
+4. Edit `packages/initbot-web/src/initbot_web/templates/tracker.html`
+5. Use Playwright MCP to verify the result visually before committing
+
+**The dev server does not auto-reload.** After changing Python source files (routes, handlers), kill the running server and restart it. Stale code returns wrong HTTP status codes with no helpful error — always restart after backend changes.
+
+**To inspect what Datastar sends in a `@post()`, intercept `window.fetch` before triggering the action:**
+```js
+window._bodies = [];
+const orig = window.fetch;
+window.fetch = async (url, opts) => { window._bodies.push(opts?.body); return orig(url, opts); };
+```
+Then check `window._bodies` in a follow-up `browser_evaluate`. Server logs show status codes only, not bodies.
 
 ## Implementation Workflow
 

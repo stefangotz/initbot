@@ -49,7 +49,7 @@ def _write_session(
     request.session["expires_at"] = int(time.time()) + SESSION_TTL
 
 
-def make_routes(
+def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     state: State,
     templates: Jinja2Templates,
     url_path_prefix: str,
@@ -58,6 +58,7 @@ def make_routes(
 ) -> list[Mount]:
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
+    set_initiative_url = f"/{url_path_prefix}/tracker/set-initiative"
 
     async def login_page(request: Request) -> Response:
         """GET: validate token without consuming it; render auto-submit login form.
@@ -114,6 +115,7 @@ def make_routes(
             {
                 "player_name": player_name,
                 "sse_url": sse_url,
+                "set_initiative_url": set_initiative_url,
                 "has_high_severity_vulnerabilities": vuln_state.has_high_severity_vulnerabilities,
             },
         )
@@ -167,6 +169,29 @@ def make_routes(
             return err
         return await _tracker_sse(request)
 
+    @datastar_response
+    async def _set_initiative(
+        request: Request,
+    ) -> DatastarEvent | tuple[()]:
+        data = await request.json()
+        char_name: str = data.get("editchar", "")
+        try:
+            initiative = int(data.get("initval", ""))
+            if initiative < -99 or initiative > 99:
+                return ()
+            char = state.characters.get_from_name(char_name)
+        except (TypeError, ValueError, KeyError):
+            return ()
+        char.initiative = initiative
+        char.last_used = int(time.time())
+        state.characters.update_and_store(char)
+        return SSE.patch_signals({"editing": False})
+
+    async def set_initiative(request: Request) -> Response:
+        if (err := _require_auth(request)) is not None:
+            return err
+        return await _set_initiative(request)
+
     async def logout(request: Request) -> Response:
         request.session.clear()
         return Response(status_code=200)
@@ -177,6 +202,7 @@ def make_routes(
             routes=[
                 Route("/tracker/", tracker_page),
                 Route("/tracker/sse", tracker_sse),
+                Route("/tracker/set-initiative", set_initiative, methods=["POST"]),
                 Route("/logout", logout),
                 Route("/{token}/", login_page, methods=["GET"]),
                 Route("/{token}/", login_post, methods=["POST"]),
@@ -198,10 +224,22 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     return f'<div id="security-alert">{content}</div>'
 
 
+def _render_edit_button(char_name: str) -> str:
+    safe = _safe_str(char_name)
+    return (
+        f'<button type="button" class="edit-btn" data-char="{safe}">\U0001f58a</button>'
+    )
+
+
 def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
     rows = "".join(
-        f'<tr id="r{i}"><td>{i + 1}</td><td>{_safe_int(c.initiative)}</td>'
-        f"<td>{_safe_str(c.name)}</td><td>{_safe_str(name)}</td></tr>"
+        f'<tr id="r{i}">'
+        f"<td>{i + 1}</td>"
+        f'<td><span class="init-val">{_safe_int(c.initiative)}</span>'
+        f" {_render_edit_button(c.name)}</td>"
+        f"<td>{_safe_str(c.name)}</td>"
+        f"<td>{_safe_str(name)}</td>"
+        f"</tr>"
         for i, (c, name) in enumerate(chars_with_names)
     )
     return f'<tbody id="initiative-rows">{rows}</tbody>'
@@ -209,7 +247,11 @@ def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
 
 def _render_idle_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
     rows = "".join(
-        f"<tr><td>{_safe_str(c.name)}</td><td>{_safe_str(name)}</td></tr>"
+        f"<tr>"
+        f"<td>{_render_edit_button(c.name)}</td>"
+        f"<td>{_safe_str(c.name)}</td>"
+        f"<td>{_safe_str(name)}</td>"
+        f"</tr>"
         for c, name in chars_with_names
     )
     return f'<tbody id="idle-rows">{rows}</tbody>'
