@@ -9,6 +9,7 @@ from starlette.testclient import TestClient
 
 import initbot_core.state.state as state_module
 import initbot_web.routes.tracker as tracker_module
+from initbot_core.data.character import NewCharacterData
 from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import _SESSION_SECRET_TTL
 from initbot_web.app import create_app
@@ -202,6 +203,82 @@ def test_session_survives_restart(tmp_path):
         client2.cookies.update(cookies)
         resp = client2.get("/testsecret/tracker/")
         assert resp.status_code == 200
+
+
+# ── set-initiative endpoint ───────────────────────────────────────────────────
+
+
+def _make_app_with_character(tmp_path):
+    """Return (app, state, char_name) with one character in the DB."""
+    db_path = tmp_path / "test.db"
+    state = create_state_from_source(f"sqlite:{db_path}")
+    player = state.players.upsert(discord_id=99, name="Tester")
+    assert player.id is not None
+    char = state.characters.add_store_and_get(
+        NewCharacterData(name="Aldric", player_id=player.id)
+    )
+    settings = WebSettings(state=f"sqlite:{db_path}")
+    app = create_app(settings, web_url_path_prefix="testsecret")
+    return app, state, char.name
+
+
+def test_set_initiative_requires_auth(tmp_path):
+    app, _, char_name = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": char_name, "initval": 10},
+        )
+        assert resp.status_code == 403
+
+
+def test_set_initiative_updates_character(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "Aldric", "initval": 17},
+        )
+        assert resp.status_code == 200
+        assert state.characters.get_from_name("Aldric").initiative == 17
+
+
+def test_set_initiative_unknown_character_returns_2xx_no_change(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "NoSuchCharacter", "initval": 5},
+        )
+        assert resp.status_code in (200, 204)
+
+
+def test_set_initiative_out_of_range_returns_200_no_change(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    char = state.characters.get_from_name("Aldric")
+    char.initiative = 10
+    state.characters.update_and_store(char)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "Aldric", "initval": 999},
+        )
+        assert resp.status_code in (200, 204)
+        assert state.characters.get_from_name("Aldric").initiative == 10
+
+
+def test_set_initiative_missing_initval_returns_2xx_no_change(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "Aldric"},
+        )
+        assert resp.status_code in (200, 204)
 
 
 def test_session_invalidated_after_secret_expiry(tmp_path, monkeypatch):

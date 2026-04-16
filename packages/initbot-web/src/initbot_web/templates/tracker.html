@@ -171,14 +171,92 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       letter-spacing: 0.08em;
     }
 
+    /* ── Edit panel ───────────────────────────────────────────── */
+    #edit-panel {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 0.6rem 1rem;
+      border-left: 4px solid var(--color-gold);
+      background: var(--color-row-alt);
+    }
+
+    #edit-label {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-gold);
+      min-width: 6rem;
+    }
+
+    #edit-panel form {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #edit-input {
+      width: 5rem;
+      font-family: var(--font-main);
+      font-size: 1rem;
+      color: var(--color-gold);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--color-gold);
+      padding: 0.15rem 0.25rem;
+      text-align: center;
+      outline: none;
+    }
+
+    /* ── Edit button ──────────────────────────────────────────── */
+    .edit-btn {
+      background: none;
+      border: none;
+      padding: 0 0.25rem;
+      color: var(--color-gold);
+      opacity: 0.45;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .edit-btn:hover {
+      opacity: 1;
+    }
+
+    /* ── Touch cancel button (hidden on pointer devices) ─────── */
+    .cancel-touch {
+      display: none;
+      background: none;
+      border: 1px solid var(--color-offset);
+      font-size: 0.85rem;
+      padding: 0.15rem 0.4rem;
+      cursor: pointer;
+      color: var(--color-ink);
+      font-family: var(--font-main);
+    }
+
+    @media (hover: none) {
+      .cancel-touch {
+        display: inline;
+      }
+    }
+
     /* ── Idle Characters section ──────────────────────────────── */
     .idle-section {
       margin-top: 2.5rem;
       opacity: 0.5;
     }
 
-    /* Character name — bold (mirrors initiative table's 3rd column) */
+    /* Init column — edit button cell */
     .idle-section tbody td:first-child {
+      text-align: center;
+      width: 3rem;
+    }
+
+    /* Character name — bold (mirrors initiative table's 3rd column) */
+    .idle-section tbody td:nth-child(2) {
       font-weight: 700;
       text-align: left;
       color: var(--color-ink);
@@ -186,7 +264,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     /* Player name — muted (mirrors initiative table's 4th column) */
-    .idle-section tbody td:nth-child(2) {
+    .idle-section tbody td:nth-child(3) {
       font-weight: 400;
       font-size: 0.9rem;
       color: rgba(26, 18, 9, 0.65);
@@ -223,24 +301,38 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   {% if player_name %}<div id="player-bar">{{ player_name }}</div>{% endif %}
   <div id="security-alert">{% if has_high_severity_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
-  <div data-init="@get('{{ sse_url }}')">
-    <table>
-      <thead>
-        <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th></tr>
-      </thead>
-      <tbody id="initiative-rows">
-        <tr><td colspan="4">Alea nondum iacta est…</td></tr>
-      </tbody>
-    </table>
-    <section class="idle-section">
-      <h2>Idle Characters</h2>
+  <div data-init="@get('{{ sse_url }}')"
+       data-signals='{"editing": false, "editchar": "", "initval": ""}'>
+    <div id="edit-panel" data-show="$editing" style="display: none">
+      <span id="edit-label" data-text="$editchar"></span>
+      <form data-on:submit__prevent="@post('{{ set_initiative_url }}')"
+            data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
+        <input id="edit-input" type="number" data-bind:initval
+               min="-99" max="99" autocomplete="off" required
+               data-on:keydown="evt.key==='Escape' && ($editing=false)">
+        <button type="button" class="cancel-touch"
+                data-on:click="$editing=false">&#x2717;</button>
+      </form>
+    </div>
+    <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
       <table>
         <thead>
-          <tr><th>Character</th><th>Player</th></tr>
+          <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th></tr>
         </thead>
-        <tbody id="idle-rows"></tbody>
+        <tbody id="initiative-rows">
+          <tr><td colspan="4">Alea nondum iacta est…</td></tr>
+        </tbody>
       </table>
-    </section>
+      <section class="idle-section">
+        <h2>Idle Characters</h2>
+        <table>
+          <thead>
+            <tr><th>Init</th><th>Character</th><th>Player</th></tr>
+          </thead>
+          <tbody id="idle-rows"></tbody>
+        </table>
+      </section>
+    </div>
   </div>
 </body>
 </html>
