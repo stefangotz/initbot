@@ -99,13 +99,13 @@ class TestDiceExpressionCompound(unittest.TestCase):
         expr = DiceExpression.create("d20+d8+d6")
         value = expr.roll_one()
         assert isinstance(value, int)
-        assert 3 <= value <= 44
+        assert 3 <= value <= 34
 
     def test_mixed_dice_and_constant(self):
         expr = DiceExpression.create("2d6+d4+3")
         value = expr.roll_one()
         assert isinstance(value, int)
-        assert 6 <= value <= 18
+        assert 6 <= value <= 19
 
     def test_subtraction(self):
         expr = DiceExpression.create("d20-d6")

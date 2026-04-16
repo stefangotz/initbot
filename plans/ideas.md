@@ -1,6 +1,7 @@
 # Ideas
 
 - Does sqlite support listening for events?
+- Use hypothesis for property-based tests on DiceExpression: verify roll results always fall within the computed min/max without hand-calculating bounds
 - claude's /security-review seems to be testing for a whole bunch of typical web vulnerabilities; would be great to have these in CI
 - consider a dev container
 - rename LocalState store to JsonState store or similar, update URI as well
