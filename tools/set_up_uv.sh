@@ -7,6 +7,6 @@
 set -ue
 
 if ! which uv; then
-	curl -LsSf https://astral.sh/uv/install.sh | sh
+	curl -LsSf https://github.com/astral-sh/uv/releases/download/0.11.7/uv-installer.sh | sh
 	which uv > /dev/null
 fi
