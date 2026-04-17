@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Stage 1: build all three wheels
-FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
+FROM ghcr.io/astral-sh/uv:python3.14-alpine@sha256:9e24cef9880ce029f2a14a914dc2d03c640c2b71de5cf11167516b36980e16fd AS builder
 COPY . /root/
 WORKDIR /root
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && uv build --package initbot-web --wheel
 
 # Stage 2: shared OS configuration (no packages)
-FROM ghcr.io/astral-sh/uv:python3.14-alpine AS runtime-base
+FROM ghcr.io/astral-sh/uv:python3.14-alpine@sha256:9e24cef9880ce029f2a14a914dc2d03c640c2b71de5cf11167516b36980e16fd AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN --mount=type=cache,target=/var/cache/apk \
