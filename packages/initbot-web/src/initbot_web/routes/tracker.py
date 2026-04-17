@@ -129,11 +129,21 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     @datastar_response
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
         last_snapshot: tuple[tuple[str, int | None, str | None], ...] = ()
-        last_idle_snapshot: tuple[tuple[str, str | None], ...] = ()
+        last_char_snapshot: tuple[tuple[str, int | None, str | None, str], ...] = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
+
+        discord_id: int | None = request.session.get("discord_id")
+        logged_in_player = (
+            state.players.get_from_discord_id(discord_id)
+            if discord_id is not None
+            else None
+        )
+        logged_in_player_id = logged_in_player.id if logged_in_player else None
+
         while not await request.is_disconnected():
             now = int(datetime.now().timestamp())
             all_chars = state.characters.get_all()
+
             chars = [
                 c
                 for c in all_chars
@@ -142,34 +152,38 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 and c.last_used > now - STALE_SECONDS
             ]
             chars.sort(key=lambda c: c.initiative or 0, reverse=True)
-            idle_chars = [
-                c
-                for c in all_chars
-                if c.initiative is None
-                and c.last_used is not None
-                and c.last_used > now - STALE_SECONDS
-            ]
-            idle_chars.sort(key=lambda c: c.name)
-
             chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
             snapshot = tuple(
                 (c.name, c.initiative, c.initiative_dice) for c, _ in chars_with_names
             )
             if snapshot != last_snapshot:
                 last_snapshot = snapshot
-                yield SSE.patch_elements(
-                    _render_rows(
-                        chars_with_names, delete_character_url, roll_initiative_url
-                    )
-                )
+                yield SSE.patch_elements(_render_rows(chars_with_names))
 
-            idle_with_names = [(c, _resolve_player_name(state, c)) for c in idle_chars]
-            idle_snapshot = tuple((c.name, c.initiative_dice) for c in idle_chars)
-            if idle_snapshot != last_idle_snapshot:
-                last_idle_snapshot = idle_snapshot
+            my_chars = sorted(
+                [c for c in all_chars if c.player_id == logged_in_player_id],
+                key=lambda c: c.name,
+            )
+            other_chars = sorted(
+                [c for c in all_chars if c.player_id != logged_in_player_id],
+                key=lambda c: c.name,
+            )
+            all_chars_ordered = my_chars + other_chars
+            all_with_names = [
+                (c, _resolve_player_name(state, c)) for c in all_chars_ordered
+            ]
+            char_snapshot = tuple(
+                (c.name, c.initiative, c.initiative_dice, name)
+                for c, name in all_with_names
+            )
+            if char_snapshot != last_char_snapshot:
+                last_char_snapshot = char_snapshot
                 yield SSE.patch_elements(
-                    _render_idle_rows(
-                        idle_with_names, delete_character_url, roll_initiative_url
+                    _render_char_rows(
+                        all_with_names,
+                        roll_initiative_url,
+                        delete_character_url,
+                        len(my_chars),
                     )
                 )
 
@@ -342,48 +356,61 @@ def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
     )
 
 
-def _render_rows(
-    chars_with_names: list[tuple[CharacterData, str]],
-    delete_url_prefix: str,
-    roll_url_prefix: str,
-) -> str:
+def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
+    if not chars_with_names:
+        return (
+            '<tbody id="initiative-rows">'
+            '<tr><td colspan="2">Alea nondum iacta est\u2026</td></tr>'
+            "</tbody>"
+        )
     rows = "".join(
         f'<tr id="r{i}">'
-        f"<td>{i + 1}</td>"
-        f'<td><span class="init-val">{_safe_int(c.initiative)}</span>'
-        f" {_render_edit_button(c.name)}"
-        f"{_render_roll_button(c.name, roll_url_prefix) if _has_valid_dice(c.initiative_dice) else ''}"
-        f"</td>"
+        f"<td>{_safe_int(c.initiative)}</td>"
         f"<td>{_safe_str(c.name)}</td>"
-        f"<td>{_safe_str(name)}</td>"
-        f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
         f"</tr>"
-        for i, (c, name) in enumerate(chars_with_names)
+        for i, (c, _) in enumerate(chars_with_names)
     )
     return f'<tbody id="initiative-rows">{rows}</tbody>'
 
 
-def _render_idle_rows(
+def _render_char_rows(
     chars_with_names: list[tuple[CharacterData, str]],
-    delete_url_prefix: str,
     roll_url_prefix: str,
+    delete_url_prefix: str,
+    my_chars_count: int,
 ) -> str:
-    rows = "".join(
-        f"<tr>"
-        f"<td>{_render_edit_button(c.name)}"
-        f"{_render_roll_button(c.name, roll_url_prefix) if _has_valid_dice(c.initiative_dice) else ''}"
-        f"</td>"
-        f"<td>{_safe_str(c.name)}</td>"
-        f"<td>{_safe_str(name)}</td>"
-        f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
-        f"</tr>"
-        for c, name in chars_with_names
-    )
-    return f'<tbody id="idle-rows">{rows}</tbody>'
+    rows = []
+    for i, (c, player_name) in enumerate(chars_with_names):
+        separator = ' class="group-separator"' if i == my_chars_count > 0 else ""
+        roll_btn = (
+            _render_roll_button(c.name, roll_url_prefix)
+            if _has_valid_dice(c.initiative_dice)
+            else ""
+        )
+        rows.append(
+            f"<tr{separator}>"
+            f"<td>{_safe_str(c.name)}</td>"
+            f"<td>{_safe_str(player_name)}</td>"
+            f"<td>{_safe_int(c.initiative)}</td>"
+            f"<td>{_safe_dice(c.initiative_dice)}</td>"
+            f"<td>{_render_edit_button(c.name)}</td>"
+            f"<td>{roll_btn}</td>"
+            f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
+            f"</tr>"
+        )
+    return f'<tbody id="char-rows">{"".join(rows)}</tbody>'
 
 
 def _safe_int(value: int | None) -> str:
-    return re.sub(r"[^\d]", "", str(value))
+    if value is None:
+        return ""
+    return str(int(value))
+
+
+def _safe_dice(value: str | None) -> str:
+    if not value:
+        return ""
+    return re.sub(r"[^a-zA-Z0-9+\-*/() ]", "", value)
 
 
 def _safe_str(value: str) -> str:
