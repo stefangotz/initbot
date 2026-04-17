@@ -339,3 +339,66 @@ def test_session_invalidated_after_secret_expiry(tmp_path, monkeypatch):
         client2.cookies.update(cookies)
         resp = client2.get("/testsecret/tracker/")
         assert resp.status_code == 403
+
+
+# ── roll-initiative endpoint ──────────────────────────────────────────────────
+
+
+def _make_app_with_dice(tmp_path, initiative_dice: str | None):
+    """Return (app, state, char_name) with one character, optionally with initiative_dice."""
+    db_path = tmp_path / "test.db"
+    state = create_state_from_source(f"sqlite:{db_path}")
+    player = state.players.upsert(discord_id=99, name="Tester")
+    assert player.id is not None
+    char = state.characters.add_store_and_get(
+        NewCharacterData(
+            name="Aldric", player_id=player.id, initiative_dice=initiative_dice
+        )
+    )
+    settings = WebSettings(state=f"sqlite:{db_path}")
+    app = create_app(settings, web_url_path_prefix="testsecret")
+    return app, state, char.name
+
+
+def test_roll_initiative_requires_auth(tmp_path):
+    app, _, char_name = _make_app_with_dice(tmp_path, "d6")
+    with TestClient(app, follow_redirects=False) as client:
+        resp = client.post(f"/testsecret/tracker/roll-initiative/{char_name}")
+        assert resp.status_code == 403
+
+
+def test_roll_initiative_updates_character(tmp_path):
+    app, state, _ = _make_app_with_dice(tmp_path, "d6")
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
+        assert resp.status_code in (200, 204)
+        initiative = state.characters.get_from_name("Aldric").initiative
+        assert initiative is not None
+        assert 1 <= initiative <= 6
+
+
+def test_roll_initiative_unknown_character_returns_2xx_no_change(tmp_path):
+    app, _, _ = _make_app_with_dice(tmp_path, "d6")
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post("/testsecret/tracker/roll-initiative/NoSuchCharacter")
+        assert resp.status_code in (200, 204)
+
+
+def test_roll_initiative_no_dice_set_returns_2xx_no_change(tmp_path):
+    app, state, _ = _make_app_with_dice(tmp_path, None)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
+        assert resp.status_code in (200, 204)
+        assert state.characters.get_from_name("Aldric").initiative is None
+
+
+def test_roll_initiative_invalid_dice_returns_2xx_no_change(tmp_path):
+    app, state, _ = _make_app_with_dice(tmp_path, "notvalid")
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
+        assert resp.status_code in (200, 204)
+        assert state.characters.get_from_name("Aldric").initiative is None

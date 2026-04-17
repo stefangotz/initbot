@@ -63,6 +63,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
     set_initiative_url = f"/{url_path_prefix}/tracker/set-initiative"
+    roll_initiative_url = f"/{url_path_prefix}/tracker/roll-initiative"
     delete_character_url = f"/{url_path_prefix}/tracker/delete-character"
 
     async def login_page(request: Request) -> Response:
@@ -127,8 +128,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
     @datastar_response
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
-        last_snapshot: tuple[tuple[str, int | None], ...] = ()
-        last_idle_snapshot: tuple[str, ...] = ()
+        last_snapshot: tuple[tuple[str, int | None, str | None], ...] = ()
+        last_idle_snapshot: tuple[tuple[str, str | None], ...] = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
         while not await request.is_disconnected():
             now = int(datetime.now().timestamp())
@@ -151,19 +152,25 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             idle_chars.sort(key=lambda c: c.name)
 
             chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
-            snapshot = tuple((c.name, c.initiative) for c, _ in chars_with_names)
+            snapshot = tuple(
+                (c.name, c.initiative, c.initiative_dice) for c, _ in chars_with_names
+            )
             if snapshot != last_snapshot:
                 last_snapshot = snapshot
                 yield SSE.patch_elements(
-                    _render_rows(chars_with_names, delete_character_url)
+                    _render_rows(
+                        chars_with_names, delete_character_url, roll_initiative_url
+                    )
                 )
 
             idle_with_names = [(c, _resolve_player_name(state, c)) for c in idle_chars]
-            idle_snapshot = tuple(c.name for c in idle_chars)
+            idle_snapshot = tuple((c.name, c.initiative_dice) for c in idle_chars)
             if idle_snapshot != last_idle_snapshot:
                 last_idle_snapshot = idle_snapshot
                 yield SSE.patch_elements(
-                    _render_idle_rows(idle_with_names, delete_character_url)
+                    _render_idle_rows(
+                        idle_with_names, delete_character_url, roll_initiative_url
+                    )
                 )
 
             current_vuln = vuln_state.has_high_severity_vulnerabilities
@@ -236,6 +243,28 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return err
         return await _delete_character(request)
 
+    @datastar_response
+    async def _roll_initiative(
+        request: Request,
+    ) -> DatastarEvent | tuple[()]:
+        char_name: str = request.path_params.get("char_name", "")
+        try:
+            char = state.characters.get_from_name(char_name)
+        except (TypeError, ValueError, KeyError):
+            return ()
+        initiative_dice = char.initiative_dice
+        if not initiative_dice or not _has_valid_dice(initiative_dice):
+            return ()
+        char.initiative = DiceExpression.create(initiative_dice).roll_one()
+        char.last_used = int(time.time())
+        state.characters.update_and_store(char)
+        return ()
+
+    async def roll_initiative(request: Request) -> Response:
+        if (err := _require_auth(request)) is not None:
+            return err
+        return await _roll_initiative(request)
+
     async def logout(request: Request) -> Response:
         request.session.clear()
         return Response(status_code=200)
@@ -247,6 +276,11 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 Route("/tracker/", tracker_page),
                 Route("/tracker/sse", tracker_sse),
                 Route("/tracker/set-initiative", set_initiative, methods=["POST"]),
+                Route(
+                    "/tracker/roll-initiative/{char_name}",
+                    roll_initiative,
+                    methods=["POST"],
+                ),
                 Route(
                     "/tracker/delete-character/{char_name}",
                     delete_character,
@@ -273,6 +307,25 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     return f'<div id="security-alert">{content}</div>'
 
 
+def _has_valid_dice(initiative_dice: str | None) -> bool:
+    if not initiative_dice:
+        return False
+    try:
+        DiceExpression.create(initiative_dice)
+        return True
+    except ValueError:
+        return False
+
+
+def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
+    safe = _safe_str(char_name)
+    return (
+        f'<button type="button" class="roll-btn"'
+        f" data-on:click=\"@post('{roll_url_prefix}/{safe}')\">"
+        f"\U0001f3b2</button>"
+    )
+
+
 def _render_edit_button(char_name: str) -> str:
     safe = _safe_str(char_name)
     return (
@@ -290,13 +343,17 @@ def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
 
 
 def _render_rows(
-    chars_with_names: list[tuple[CharacterData, str]], delete_url_prefix: str
+    chars_with_names: list[tuple[CharacterData, str]],
+    delete_url_prefix: str,
+    roll_url_prefix: str,
 ) -> str:
     rows = "".join(
         f'<tr id="r{i}">'
         f"<td>{i + 1}</td>"
         f'<td><span class="init-val">{_safe_int(c.initiative)}</span>'
-        f" {_render_edit_button(c.name)}</td>"
+        f" {_render_edit_button(c.name)}"
+        f"{_render_roll_button(c.name, roll_url_prefix) if _has_valid_dice(c.initiative_dice) else ''}"
+        f"</td>"
         f"<td>{_safe_str(c.name)}</td>"
         f"<td>{_safe_str(name)}</td>"
         f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
@@ -307,11 +364,15 @@ def _render_rows(
 
 
 def _render_idle_rows(
-    chars_with_names: list[tuple[CharacterData, str]], delete_url_prefix: str
+    chars_with_names: list[tuple[CharacterData, str]],
+    delete_url_prefix: str,
+    roll_url_prefix: str,
 ) -> str:
     rows = "".join(
         f"<tr>"
-        f"<td>{_render_edit_button(c.name)}</td>"
+        f"<td>{_render_edit_button(c.name)}"
+        f"{_render_roll_button(c.name, roll_url_prefix) if _has_valid_dice(c.initiative_dice) else ''}"
+        f"</td>"
         f"<td>{_safe_str(c.name)}</td>"
         f"<td>{_safe_str(name)}</td>"
         f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
