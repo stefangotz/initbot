@@ -112,6 +112,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.12em;
+      white-space: nowrap;
     }
 
     tbody tr {
@@ -125,12 +126,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     tbody td {
       padding: 0.6rem 1rem;
       vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 0;
     }
 
-    /* ── Shared table layout for column alignment ──────────────── */
-    #initiative-table,
-    .char-section table {
-      table-layout: fixed;
+    /* ── Character name column: absorb remaining width ─────────── */
+    #initiative-table thead th:first-child,
+    #initiative-rows td:first-child,
+    .char-section table thead th:first-child,
+    #char-rows td:first-child {
+      width: 100%;
     }
 
     /* ── Initiative table column styles ────────────────────────── */
@@ -355,10 +362,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
        data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": ""}'>
     <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
       <table id="initiative-table">
-        <colgroup>
-          <col style="width: 40%">
-          <col style="width: 18%">
-        </colgroup>
         <thead>
           <tr><th>Character</th><th>Player</th><th>Init</th></tr>
         </thead>
@@ -382,12 +385,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           </form>
         </div>
         <table>
-          <colgroup>
-            <col style="width: 40%">
-            <col style="width: 18%">
-            <col style="width: 10%">
-            <col style="width: 14%">
-          </colgroup>
           <thead>
             <tr><th>Character</th><th>Player</th><th>Init</th><th>Dice</th><th></th><th></th><th></th></tr>
           </thead>
