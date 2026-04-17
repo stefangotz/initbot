@@ -4,7 +4,6 @@
 
 import time
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
 
 
 @dataclass
@@ -18,15 +17,15 @@ class NewCharacterData:
     last_used: int | None = None
 
 
-@runtime_checkable
-class CharacterData(Protocol):
-    """Data handle — the storage-native object returned by get_all() and mutated in place."""
+@dataclass
+class CharacterData:
+    """Data handle returned by the storage layer and mutated in place before update_and_store."""
 
     name: str
-    initiative: int | None
-    initiative_dice: str | None
-    last_used: int | None
     player_id: int
+    initiative: int | None = None
+    initiative_dice: str | None = None
+    last_used: int | None = None
 
 
 def is_eligible_for_pruning(cdi: CharacterData, threshold_days: int) -> bool:
