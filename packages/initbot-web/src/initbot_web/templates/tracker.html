@@ -114,10 +114,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       letter-spacing: 0.12em;
     }
 
-    thead th:first-child {
-      text-align: center;
-    }
-
     tbody tr {
       border-bottom: 1px solid rgba(74, 71, 66, 0.25);
     }
@@ -131,29 +127,51 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       vertical-align: middle;
     }
 
-    /* Rank — muted, centered */
-    tbody td:first-child {
-      text-align: center;
-      color: rgba(26, 18, 9, 0.45);
-      font-size: 0.85rem;
-    }
-
-    /* Initiative value — gold, bold, primary scan target */
-    tbody td:nth-child(2) {
+    /* ── Initiative table column styles ────────────────────────── */
+    /* Init value — gold, bold */
+    #initiative-rows td:first-child {
       font-weight: 700;
       font-size: 1.05rem;
       color: var(--color-gold);
     }
 
     /* Character name — bold */
-    tbody td:nth-child(3) {
+    #initiative-rows td:nth-child(2) {
+      font-weight: 700;
+    }
+
+    /* ── Character table column styles ─────────────────────────── */
+    /* Character name — bold */
+    #char-rows td:first-child {
       font-weight: 700;
     }
 
     /* Player name — muted */
-    tbody td:nth-child(4) {
+    #char-rows td:nth-child(2) {
       color: rgba(26, 18, 9, 0.65);
       font-size: 0.9rem;
+    }
+
+    /* Init value — gold, bold */
+    #char-rows td:nth-child(3) {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--color-gold);
+    }
+
+    /* Dice expression — muted */
+    #char-rows td:nth-child(4) {
+      color: rgba(26, 18, 9, 0.65);
+      font-size: 0.9rem;
+    }
+
+    /* Action columns (edit, die, delete) — narrow, centred */
+    #char-rows td:nth-child(5),
+    #char-rows td:nth-child(6),
+    #char-rows td:nth-child(7) {
+      width: 2rem;
+      text-align: center;
+      padding: 0.6rem 0.25rem;
     }
 
     /* Top-ranked combatant: gold left-accent */
@@ -280,34 +298,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       }
     }
 
-    /* ── Idle Characters section ──────────────────────────────── */
-    .idle-section {
+    /* ── Characters section ───────────────────────────────────── */
+    .char-section {
       margin-top: 2.5rem;
-      opacity: 0.5;
     }
 
-    /* Init column — edit button cell */
-    .idle-section tbody td:first-child {
-      text-align: center;
-      width: 3rem;
-    }
-
-    /* Character name — bold (mirrors initiative table's 3rd column) */
-    .idle-section tbody td:nth-child(2) {
-      font-weight: 700;
-      text-align: left;
-      color: var(--color-ink);
-      font-size: 1rem;
-    }
-
-    /* Player name — muted (mirrors initiative table's 4th column) */
-    .idle-section tbody td:nth-child(3) {
-      font-weight: 400;
-      font-size: 0.9rem;
-      color: rgba(26, 18, 9, 0.65);
-    }
-
-    .idle-section h2 {
+    .char-section h2 {
       font-family: var(--font-main);
       font-size: clamp(1rem, 2.5vw, 1.4rem);
       font-weight: 700;
@@ -317,8 +313,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       text-align: center;
       width: fit-content;
       margin: 0 auto 1rem;
-      border-bottom: 2px solid var(--color-offset);
+      border-bottom: 2px solid var(--color-gold);
       padding-bottom: 0.3rem;
+    }
+
+    /* ── Group separator row ──────────────────────────────────── */
+    tr.group-separator td {
+      border-top: 2px solid rgba(74, 71, 66, 0.4);
     }
 
     /* ── Responsive ───────────────────────────────────────────── */
@@ -340,35 +341,35 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <h1>Initiative Order</h1>
   <div data-init="@get('{{ sse_url }}')"
        data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": ""}'>
-    <div id="edit-panel" data-show="$editing" style="display: none">
-      <span id="edit-label" data-text="$editchar"></span>
-      <form data-on:submit__prevent="@post('{{ set_initiative_url }}')"
-            data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
-        <input id="edit-input" type="text" data-bind:initval
-               autocomplete="off" placeholder="e.g. 17 or d20+3"
-               data-on:keydown="evt.key==='Escape' && ($editing=false)"
-               data-on:input="$editerror=''">
-        <button type="button" class="cancel-touch"
-                data-on:click="$editing=false">&#x2717;</button>
-        <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
-      </form>
-    </div>
     <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
       <table>
         <thead>
-          <tr><th>#</th><th>Init</th><th>Character</th><th>Player</th><th></th></tr>
+          <tr><th>Init</th><th>Character</th></tr>
         </thead>
         <tbody id="initiative-rows">
-          <tr><td colspan="4">Alea nondum iacta est…</td></tr>
+          <tr><td colspan="2">Alea nondum iacta est…</td></tr>
         </tbody>
       </table>
-      <section class="idle-section">
-        <h2>Idle Characters</h2>
+      <section class="char-section">
+        <h2>Characters</h2>
+        <div id="edit-panel" data-show="$editing" style="display: none">
+          <span id="edit-label" data-text="$editchar"></span>
+          <form data-on:submit__prevent="@post('{{ set_initiative_url }}')"
+                data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
+            <input id="edit-input" type="text" data-bind:initval
+                   autocomplete="off" placeholder="e.g. 17 or d20+3"
+                   data-on:keydown="evt.key==='Escape' && ($editing=false)"
+                   data-on:input="$editerror=''">
+            <button type="button" class="cancel-touch"
+                    data-on:click="$editing=false">&#x2717;</button>
+            <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
+          </form>
+        </div>
         <table>
           <thead>
-            <tr><th>Init</th><th>Character</th><th>Player</th><th></th></tr>
+            <tr><th>Character</th><th>Player</th><th>Init</th><th>Dice</th><th></th><th></th><th></th></tr>
           </thead>
-          <tbody id="idle-rows"></tbody>
+          <tbody id="char-rows"></tbody>
         </table>
       </section>
     </div>
