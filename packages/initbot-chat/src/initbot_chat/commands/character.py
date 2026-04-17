@@ -35,8 +35,6 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
     - `$init_dice d20+3` — roll d20 and add 3
     - `$init_dice Alfalfa d20+3` — set spec for the named character
 
-    Setting the dice spec clears any previously rolled initiative value.
-
     If the Discord user manages only a single character, the character name is
     optional and can be omitted.  If there is no character with the given name,
     a new character with that name is created.
@@ -64,7 +62,6 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
         name, create=len(name) > 0, player_id=player.id
     )
     cdi.initiative_dice = spec
-    cdi.initiative = None
     cdi.last_used = int(time.time())
     ctx.bot.initbot_state.characters.update_and_store(cdi)
     await ctx.send(f"{cdi.name}'s initiative dice is now {spec}", delete_after=3)
