@@ -360,15 +360,16 @@ def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
     if not chars_with_names:
         return (
             '<tbody id="initiative-rows">'
-            '<tr><td colspan="2">Alea nondum iacta est\u2026</td></tr>'
+            '<tr><td colspan="3">Alea nondum iacta est\u2026</td></tr>'
             "</tbody>"
         )
     rows = "".join(
         f'<tr id="r{i}">'
-        f"<td>{_safe_int(c.initiative)}</td>"
         f"<td>{_safe_str(c.name)}</td>"
+        f"<td>{_safe_str(name)}</td>"
+        f"<td>{_safe_int(c.initiative)}</td>"
         f"</tr>"
-        for i, (c, _) in enumerate(chars_with_names)
+        for i, (c, name) in enumerate(chars_with_names)
     )
     return f'<tbody id="initiative-rows">{rows}</tbody>'
 
