@@ -19,12 +19,16 @@ from starlette.routing import Mount, Route
 from starlette.templating import Jinja2Templates
 
 from initbot_core.data.character import CharacterData
+from initbot_core.models.roll import DiceExpression
 from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
 
 POLL_INTERVAL = 1.5
 STALE_SECONDS = 24 * 3600
 SESSION_TTL: Final[int] = 8 * 3600
+_INITIATIVE_INPUT_ERROR = (
+    "Enter a number from \u221299 to 99, or a dice formula like d20+5."
+)
 
 _log = logging.getLogger(__name__)
 
@@ -180,17 +184,34 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     ) -> DatastarEvent | tuple[()]:
         data = await request.json()
         char_name: str = data.get("editchar", "")
+        initval: str = str(data.get("initval", "")).strip()
+
+        if not initval:
+            return SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+
+        as_integer: int | None = None
         try:
-            initiative = int(data.get("initval", ""))
-            if initiative < -99 or initiative > 99:
-                return ()
+            as_integer = int(initval)
+            if as_integer < -99 or as_integer > 99:
+                return SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+        except ValueError:
+            try:
+                DiceExpression.create(initval)
+            except ValueError:
+                return SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+
+        try:
             char = state.characters.get_from_name(char_name)
         except (TypeError, ValueError, KeyError):
             return ()
-        char.initiative = initiative
+
+        if as_integer is not None:
+            char.initiative = as_integer
+        else:
+            char.initiative_dice = initval
         char.last_used = int(time.time())
         state.characters.update_and_store(char)
-        return SSE.patch_signals({"editing": False})
+        return SSE.patch_signals({"editing": False, "editerror": ""})
 
     async def set_initiative(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:

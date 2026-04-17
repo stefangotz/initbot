@@ -255,7 +255,7 @@ def test_set_initiative_unknown_character_returns_2xx_no_change(tmp_path):
         assert resp.status_code in (200, 204)
 
 
-def test_set_initiative_out_of_range_returns_200_no_change(tmp_path):
+def test_set_initiative_out_of_range_returns_error_signal(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     char = state.characters.get_from_name("Aldric")
     char.initiative = 10
@@ -268,9 +268,10 @@ def test_set_initiative_out_of_range_returns_200_no_change(tmp_path):
         )
         assert resp.status_code in (200, 204)
         assert state.characters.get_from_name("Aldric").initiative == 10
+        assert "editerror" in resp.text
 
 
-def test_set_initiative_missing_initval_returns_2xx_no_change(tmp_path):
+def test_set_initiative_missing_initval_returns_error_signal(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
@@ -279,6 +280,47 @@ def test_set_initiative_missing_initval_returns_2xx_no_change(tmp_path):
             json={"editchar": "Aldric"},
         )
         assert resp.status_code in (200, 204)
+        assert "editerror" in resp.text
+
+
+def test_set_initiative_invalid_input_returns_error_signal(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "Aldric", "initval": "notvalid"},
+        )
+        assert resp.status_code in (200, 204)
+        assert "editerror" in resp.text
+
+
+def test_set_initiative_dice_expression_stores_dice(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "Aldric", "initval": "d20+5"},
+        )
+        assert resp.status_code == 200
+        assert state.characters.get_from_name("Aldric").initiative_dice == "d20+5"
+
+
+def test_set_initiative_dice_expression_preserves_existing_initiative(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    char = state.characters.get_from_name("Aldric")
+    char.initiative = 10
+    state.characters.update_and_store(char)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post(
+            "/testsecret/tracker/set-initiative",
+            json={"editchar": "Aldric", "initval": "d20+5"},
+        )
+        updated = state.characters.get_from_name("Aldric")
+        assert updated.initiative_dice == "d20+5"
+        assert updated.initiative == 10
 
 
 def test_session_invalidated_after_secret_expiry(tmp_path, monkeypatch):

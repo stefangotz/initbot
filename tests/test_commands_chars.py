@@ -5,7 +5,14 @@
 import pytest
 from discord.ext import commands
 
-from initbot_chat.commands.character import char, char_error, chars, remove, rename
+from initbot_chat.commands.character import (
+    char,
+    char_error,
+    chars,
+    init_dice,
+    remove,
+    rename,
+)
 from initbot_core.data.character import NewCharacterData
 
 
@@ -133,6 +140,16 @@ async def test_rename_conflict_case_insensitive(mock_ctx):
     )
     with pytest.raises(ValueError, match="Beta"):
         await rename.callback(mock_ctx, "Alpha", "beta")
+
+
+async def test_init_dice_sets_spec_preserves_initiative(mock_ctx):
+    mock_ctx.bot.initbot_state.characters.add_store_and_get(
+        NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id, initiative=14)
+    )
+    await init_dice.callback(mock_ctx, "d20+3")
+    updated = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
+    assert updated.initiative_dice == "d20+3"
+    assert updated.initiative == 14
 
 
 async def test_rename_preserves_actions(mock_ctx):

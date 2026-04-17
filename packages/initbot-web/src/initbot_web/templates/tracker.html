@@ -197,7 +197,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     #edit-input {
-      width: 5rem;
+      width: 15rem;
       font-family: var(--font-main);
       font-size: 1rem;
       color: var(--color-gold);
@@ -324,16 +324,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <div id="security-alert">{% if has_high_severity_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
   <div data-init="@get('{{ sse_url }}')"
-       data-signals='{"editing": false, "editchar": "", "initval": ""}'>
+       data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": ""}'>
     <div id="edit-panel" data-show="$editing" style="display: none">
       <span id="edit-label" data-text="$editchar"></span>
       <form data-on:submit__prevent="@post('{{ set_initiative_url }}')"
             data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
-        <input id="edit-input" type="number" data-bind:initval
-               min="-99" max="99" autocomplete="off" required
-               data-on:keydown="evt.key==='Escape' && ($editing=false)">
+        <input id="edit-input" type="text" data-bind:initval
+               autocomplete="off" placeholder="e.g. 17 or d20+3"
+               data-on:keydown="evt.key==='Escape' && ($editing=false)"
+               data-on:input="$editerror=''">
         <button type="button" class="cancel-touch"
                 data-on:click="$editing=false">&#x2717;</button>
+        <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
       </form>
     </div>
     <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
