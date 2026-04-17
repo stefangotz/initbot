@@ -127,17 +127,29 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       vertical-align: middle;
     }
 
+    /* ── Shared table layout for column alignment ──────────────── */
+    #initiative-table,
+    .char-section table {
+      table-layout: fixed;
+    }
+
     /* ── Initiative table column styles ────────────────────────── */
-    /* Init value — gold, bold */
+    /* Character name — bold */
     #initiative-rows td:first-child {
+      font-weight: 700;
+    }
+
+    /* Player name — muted */
+    #initiative-rows td:nth-child(2) {
+      color: rgba(26, 18, 9, 0.65);
+      font-size: 0.9rem;
+    }
+
+    /* Init value — gold, bold */
+    #initiative-rows td:nth-child(3) {
       font-weight: 700;
       font-size: 1.05rem;
       color: var(--color-gold);
-    }
-
-    /* Character name — bold */
-    #initiative-rows td:nth-child(2) {
-      font-weight: 700;
     }
 
     /* ── Character table column styles ─────────────────────────── */
@@ -342,12 +354,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <div data-init="@get('{{ sse_url }}')"
        data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": ""}'>
     <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
-      <table>
+      <table id="initiative-table">
+        <colgroup>
+          <col style="width: 40%">
+          <col style="width: 18%">
+        </colgroup>
         <thead>
-          <tr><th>Init</th><th>Character</th></tr>
+          <tr><th>Character</th><th>Player</th><th>Init</th></tr>
         </thead>
         <tbody id="initiative-rows">
-          <tr><td colspan="2">Alea nondum iacta est…</td></tr>
+          <tr><td colspan="3">Alea nondum iacta est…</td></tr>
         </tbody>
       </table>
       <section class="char-section">
@@ -366,6 +382,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           </form>
         </div>
         <table>
+          <colgroup>
+            <col style="width: 40%">
+            <col style="width: 18%">
+            <col style="width: 10%">
+            <col style="width: 14%">
+          </colgroup>
           <thead>
             <tr><th>Character</th><th>Player</th><th>Init</th><th>Dice</th><th></th><th></th><th></th></tr>
           </thead>
