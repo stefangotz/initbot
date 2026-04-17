@@ -16,7 +16,6 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "peewee~=4.0",
     "pydantic-settings~=2.0",
     "pydantic~=2.0",
     "python-dotenv~=1.2",
