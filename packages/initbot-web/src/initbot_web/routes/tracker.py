@@ -331,10 +331,25 @@ def _has_valid_dice(initiative_dice: str | None) -> bool:
         return False
 
 
+_ROLL_BTN_TITLE = (
+    "Roll initiative using this character\u2019s dice formula. "
+    "Requires initiative dice to be set (e.g. d20+3). "
+    "Equivalent to $init without specifying a value."
+)
+_EDIT_BTN_TITLE = (
+    "Set this character\u2019s initiative. "
+    "Enter a number (e.g. 17) or a dice formula (e.g. d20+3). "
+    "Equivalent to the $init command."
+)
+_DELETE_BTN_TITLE = (
+    "Remove this character from the tracker. Equivalent to the $remove command."
+)
+
+
 def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
     safe = _safe_str(char_name)
     return (
-        f'<button type="button" class="roll-btn"'
+        f'<button type="button" class="roll-btn" title="{_ROLL_BTN_TITLE}"'
         f" data-on:click=\"@post('{roll_url_prefix}/{safe}')\">"
         f"\U0001f3b2</button>"
     )
@@ -343,14 +358,15 @@ def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
 def _render_edit_button(char_name: str) -> str:
     safe = _safe_str(char_name)
     return (
-        f'<button type="button" class="edit-btn" data-char="{safe}">\U0001f58a</button>'
+        f'<button type="button" class="edit-btn" title="{_EDIT_BTN_TITLE}"'
+        f' data-char="{safe}">\U0001f58a</button>'
     )
 
 
 def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
     safe = _safe_str(char_name)
     return (
-        f'<button type="button" class="del-btn"'
+        f'<button type="button" class="del-btn" title="{_DELETE_BTN_TITLE}"'
         f" data-on:click=\"@post('{delete_url_prefix}/{safe}')\">"
         f"\U0001f5d1</button>"
     )
