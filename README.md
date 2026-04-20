@@ -1,5 +1,7 @@
 # Initbot
 
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/12602/baseline)](https://www.bestpractices.dev/projects/12602)
+
 An RPG Discord chat bot and a companion web app.
 
 ## Applications
