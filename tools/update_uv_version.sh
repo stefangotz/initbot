@@ -8,8 +8,8 @@ set -ue
 
 TOOLS_DIR="$(dirname "$0")"
 
-UV_VERSION=$(curl -LsSf "https://api.github.com/repos/astral-sh/uv/releases/latest" \
-    | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])")
+LATEST_RELEASE=$(curl -LsSf "https://api.github.com/repos/astral-sh/uv/releases/latest")
+UV_VERSION=$(echo "$LATEST_RELEASE" | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])")
 
 fetch_sha256() {
     curl -LsSf \
