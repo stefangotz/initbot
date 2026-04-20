@@ -31,6 +31,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache-python: true
           prune-cache: false
+      - name: Check uv lock file is up to date
+        run: uv lock --check
       - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }}
       - name: ruff
