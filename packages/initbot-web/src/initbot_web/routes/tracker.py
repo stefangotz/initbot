@@ -6,7 +6,7 @@ import logging
 import re
 import time
 from asyncio import sleep
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 from datetime import datetime
 from typing import Final
 
@@ -19,6 +19,7 @@ from starlette.routing import Mount, Route
 from starlette.templating import Jinja2Templates
 
 from initbot_core.data.character import CharacterData, NewCharacterData
+from initbot_core.data.player import PlayerData
 from initbot_core.models.roll import DiceExpression
 from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
@@ -57,6 +58,99 @@ def _write_session(
     request.session["discord_id"] = discord_id
     request.session["player_name"] = player_name
     request.session["expires_at"] = int(time.time()) + SESSION_TTL
+
+
+def _parse_initval(
+    initval: str,
+    allow_empty: bool = False,
+) -> tuple[int | None, DatastarEvent] | tuple[int | None, None]:
+    """Return (as_integer_or_None, None) on success, or (None, error_event) on failure."""
+    if not initval:
+        if allow_empty:
+            return None, None
+        return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+    try:
+        as_integer = int(initval)
+        if as_integer < -99 or as_integer > 99:
+            return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+        return as_integer, None
+    except ValueError:
+        try:
+            DiceExpression.create(initval)
+            return None, None
+        except ValueError:
+            return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+
+
+def _apply_edit(
+    state: State,
+    edit_char_name: str,
+    new_char_name: str,
+    editplayerid_str: str,
+    initval: str,
+) -> DatastarEvent | tuple[()] | CharacterData:
+    """Validate and apply edit-mode changes; return char on success or a signal/no-op."""
+    effective_name = new_char_name if new_char_name else edit_char_name
+    if len(effective_name) > _NAME_MAX_LEN:
+        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_LEN})
+    as_integer, err = _parse_initval(initval, allow_empty=True)
+    if err is not None:
+        return err
+    try:
+        char = state.characters.get_from_name(edit_char_name)
+    except (TypeError, ValueError, KeyError):
+        return ()
+    if effective_name != edit_char_name:
+        try:
+            char = state.characters.rename_and_store(char, effective_name)
+        except ValueError:
+            return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_EXISTS})
+    if editplayerid_str:
+        try:
+            new_player_id = int(editplayerid_str)
+            state.players.get_from_id(new_player_id)
+            char.player_id = new_player_id
+        except (ValueError, KeyError):
+            pass
+    if as_integer is not None:
+        char.initiative = as_integer
+    elif initval:
+        char.initiative_dice = initval
+    return char
+
+
+def _apply_create(
+    state: State,
+    discord_id: int | None,
+    player_name: str | None,
+    new_char_name: str,
+    initval: str,
+) -> DatastarEvent | tuple[()] | CharacterData:
+    """Validate and create a new character; return char on success or a signal/no-op."""
+    if not new_char_name:
+        return ()
+    if len(new_char_name) > _NAME_MAX_LEN:
+        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_LEN})
+    as_integer, err = _parse_initval(initval)
+    if err is not None:
+        return err
+    if discord_id is not None:
+        player = state.players.get_from_discord_id(discord_id)
+        if player is None:
+            player = state.players.upsert(discord_id, player_name or "Player")
+    else:
+        player = state.players.upsert(_ADMIN_DISCORD_ID, _ADMIN_PLAYER_NAME)
+    try:
+        char = state.characters.add_store_and_get(
+            NewCharacterData(name=new_char_name, player_id=player.id)
+        )
+    except ValueError:
+        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_EXISTS})
+    if as_integer is not None:
+        char.initiative = as_integer
+    else:
+        char.initiative_dice = initval
+    return char
 
 
 def make_routes(  # pylint: disable=too-many-locals,too-many-statements
@@ -136,6 +230,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
         last_snapshot: tuple[tuple[str, int | None, str | None], ...] = ()
         last_char_snapshot: tuple[tuple[str, int | None, str | None, str], ...] = ()
+        last_player_snapshot: tuple[tuple[int, str], ...] = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
 
         discord_id: int | None = request.session.get("discord_id")
@@ -193,6 +288,13 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                     )
                 )
 
+            all_players = state.players.get_all()
+            players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
+            player_snapshot = tuple((p.id, p.name) for p in players)
+            if player_snapshot != last_player_snapshot:
+                last_player_snapshot = player_snapshot
+                yield SSE.patch_elements(_render_player_select(players))
+
             current_vuln = vuln_state.has_high_severity_vulnerabilities
             if current_vuln != last_vuln:
                 last_vuln = current_vuln
@@ -205,68 +307,33 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return err
         return await _tracker_sse(request)
 
-    def _parse_initval(
-        initval: str,
-    ) -> tuple[int | None, DatastarEvent] | tuple[int | None, None]:
-        """Return (as_integer_or_None, None) on success, or (None, error_event) on failure."""
-        if not initval:
-            return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
-        try:
-            as_integer = int(initval)
-            if as_integer < -99 or as_integer > 99:
-                return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
-            return as_integer, None
-        except ValueError:
-            try:
-                DiceExpression.create(initval)
-                return None, None
-            except ValueError:
-                return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
-
     @datastar_response
     async def _add_character(
         request: Request,
     ) -> DatastarEvent | tuple[()]:
         data = await request.json()
-        new_char_name: str = str(data.get("newcharname", "")).strip()
+        edit_char_name: str = str(data.get("editchar", "")).strip()
         initval: str = str(data.get("initval", "")).strip()
-
-        as_integer, err = _parse_initval(initval)
-        if err is not None:
-            return err
-
-        if new_char_name:
-            if len(new_char_name) > _NAME_MAX_LEN:
-                return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_LEN})
-            discord_id: int | None = request.session.get("discord_id")
-            if discord_id is not None:
-                player = state.players.get_from_discord_id(discord_id)
-                if player is None:
-                    player = state.players.upsert(
-                        discord_id, request.session.get("player_name") or "Player"
-                    )
-            else:
-                player = state.players.upsert(_ADMIN_DISCORD_ID, _ADMIN_PLAYER_NAME)
-
-            try:
-                char = state.characters.add_store_and_get(
-                    NewCharacterData(name=new_char_name, player_id=player.id)
-                )
-            except ValueError:
-                return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_EXISTS})
+        if edit_char_name:
+            result = _apply_edit(
+                state,
+                edit_char_name,
+                str(data.get("newcharname", "")).strip(),
+                str(data.get("editplayerid", "")).strip(),
+                initval,
+            )
         else:
-            edit_char_name: str = data.get("editchar", "")
-            try:
-                char = state.characters.get_from_name(edit_char_name)
-            except (TypeError, ValueError, KeyError):
-                return ()
-
-        if as_integer is not None:
-            char.initiative = as_integer
-        else:
-            char.initiative_dice = initval
-        char.last_used = int(time.time())
-        state.characters.update_and_store(char)
+            result = _apply_create(
+                state,
+                request.session.get("discord_id"),
+                request.session.get("player_name"),
+                str(data.get("newcharname", "")).strip(),
+                initval,
+            )
+        if not isinstance(result, CharacterData):
+            return result
+        result.last_used = int(time.time())
+        state.characters.update_and_store(result)
         return SSE.patch_signals({
             "editing": False,
             "creating": False,
@@ -361,6 +428,17 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     return f'<div id="security-alert">{content}</div>'
 
 
+def _render_player_select(players: Sequence[PlayerData]) -> str:
+    options = "".join(
+        f'<option value="{p.id}">{_safe_str(p.name)}</option>' for p in players
+    )
+    return (
+        f'<select id="player-select" data-bind:editplayerid '
+        f'data-show="!$creating" style="display:none">'
+        f"{options}</select>"
+    )
+
+
 def _has_valid_dice(initiative_dice: str | None) -> bool:
     if not initiative_dice:
         return False
@@ -395,11 +473,11 @@ def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
     )
 
 
-def _render_edit_button(char_name: str) -> str:
+def _render_edit_button(char_name: str, player_id: int) -> str:
     safe = _safe_str(char_name)
     return (
         f'<button type="button" class="edit-btn" title="{_EDIT_BTN_TITLE}"'
-        f' data-char="{safe}">\U0001f58a</button>'
+        f' data-char="{safe}" data-playerid="{player_id}">\U0001f58a</button>'
     )
 
 
@@ -450,7 +528,7 @@ def _render_char_rows(
             f"<td>{_safe_str(player_name)}</td>"
             f"<td>{_safe_int(c.initiative)}</td>"
             f"<td>{_safe_dice(c.initiative_dice)}</td>"
-            f"<td>{_render_edit_button(c.name)}</td>"
+            f"<td>{_render_edit_button(c.name, c.player_id)}</td>"
             f"<td>{roll_btn}</td>"
             f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
             f"</tr>"

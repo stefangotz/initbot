@@ -271,16 +271,21 @@ def test_set_initiative_out_of_range_returns_error_signal(tmp_path):
         assert "editerror" in resp.text
 
 
-def test_set_initiative_missing_initval_returns_error_signal(tmp_path):
-    app, _, _ = _make_app_with_character(tmp_path)
+def test_set_initiative_missing_initval_leaves_initiative_unchanged(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    char = state.characters.get_from_name("Aldric")
+    char.initiative = 12
+    char.initiative_dice = "d20+3"
+    state.characters.update_and_store(char)
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
-        resp = client.post(
+        client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric"},
         )
-        assert resp.status_code in (200, 204)
-        assert "editerror" in resp.text
+        updated = state.characters.get_from_name("Aldric")
+        assert updated.initiative == 12
+        assert updated.initiative_dice == "d20+3"
 
 
 def test_set_initiative_invalid_input_returns_error_signal(tmp_path):
@@ -402,3 +407,104 @@ def test_roll_initiative_invalid_dice_returns_2xx_no_change(tmp_path):
         resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
         assert resp.status_code in (200, 204)
         assert state.characters.get_from_name("Aldric").initiative is None
+
+
+# ── Edit character name and player ────────────────────────────────────────────
+
+
+def _make_app_with_two_players(tmp_path):
+    """Return (app, state, char, player1, player2) with one character owned by player1."""
+    db_path = tmp_path / "test.db"
+    state = create_state_from_source(f"sqlite:{db_path}")
+    player1 = state.players.upsert(discord_id=10, name="Alice")
+    player2 = state.players.upsert(discord_id=20, name="Bob")
+    char = state.characters.add_store_and_get(
+        NewCharacterData(name="Gandalf", player_id=player1.id)
+    )
+    settings = WebSettings(state=f"sqlite:{db_path}")
+    app = create_app(settings, web_url_path_prefix="testsecret")
+    return app, state, char, player1, player2
+
+
+def test_rename_character(tmp_path):
+    app, state, _, _, _ = _make_app_with_two_players(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "Gandalf", "newcharname": "Gandalf the White"},
+        )
+        assert resp.status_code == 200
+        all_names = [c.name for c in state.characters.get_all()]
+        assert "Gandalf the White" in all_names
+        assert "Gandalf" not in all_names
+
+
+def test_rename_to_existing_name_returns_error(tmp_path):
+    app, state, _, player1, _ = _make_app_with_two_players(tmp_path)
+    state.characters.add_store_and_get(
+        NewCharacterData(name="Saruman", player_id=player1.id)
+    )
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "Gandalf", "newcharname": "Saruman"},
+        )
+        assert resp.status_code in (200, 204)
+        assert "nameerror" in resp.text
+        assert state.characters.get_from_name("Gandalf") is not None
+
+
+def test_change_character_player(tmp_path):
+    app, state, _, _, player2 = _make_app_with_two_players(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "Gandalf", "editplayerid": str(player2.id)},
+        )
+        assert resp.status_code == 200
+        assert state.characters.get_from_name("Gandalf").player_id == player2.id
+
+
+def test_change_character_player_invalid_id_ignored(tmp_path):
+    app, state, _, player1, _ = _make_app_with_two_players(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "Gandalf", "editplayerid": "9999"},
+        )
+        assert resp.status_code == 200
+        assert state.characters.get_from_name("Gandalf").player_id == player1.id
+
+
+def test_player_select_excludes_admin(tmp_path):
+    db_path = tmp_path / "test.db"
+    state = create_state_from_source(f"sqlite:{db_path}")
+    player1 = state.players.upsert(discord_id=10, name="Alice")
+    player2 = state.players.upsert(discord_id=20, name="Bob")
+    admin_player = state.players.upsert(discord_id=0, name="admin")
+    non_admin_ids = {p.id for p in state.players.get_all() if p.discord_id != 0}
+    assert player1.id in non_admin_ids
+    assert player2.id in non_admin_ids
+    assert admin_player.id not in non_admin_ids
+
+
+def test_rename_and_change_player_together(tmp_path):
+    app, state, _, _, player2 = _make_app_with_two_players(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={
+                "editchar": "Gandalf",
+                "newcharname": "Gandalf the White",
+                "editplayerid": str(player2.id),
+            },
+        )
+        assert resp.status_code == 200
+        updated = state.characters.get_from_name("Gandalf the White")
+        assert updated is not None
+        assert updated.player_id == player2.id

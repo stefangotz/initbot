@@ -226,8 +226,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     #edit-input,
-    #name-input {
-      width: 15rem;
+    #name-input,
+    #player-select {
       font-family: var(--font-main);
       font-size: 1rem;
       color: var(--color-gold);
@@ -235,8 +235,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       border: none;
       border-bottom: 2px solid var(--color-gold);
       padding: 0.15rem 0.25rem;
-      text-align: center;
       outline: none;
+    }
+
+    #edit-input,
+    #name-input {
+      width: 15rem;
+      text-align: center;
+    }
+
+    #player-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c9a84c'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.25rem center;
+      padding-right: 1.25rem;
+      cursor: pointer;
+    }
+
+    #player-select option {
+      background: var(--color-bg, #1a1a2e);
+      color: var(--color-gold);
     }
 
     /* ── Delete button ────────────────────────────────────────── */
@@ -369,8 +389,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <div id="security-alert">{% if has_high_severity_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
   <div data-init="@get('{{ sse_url }}')"
-       data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": "", "creating": false, "newcharname": "", "nameerror": ""}'>
-    <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $creating=false, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='', $newcharname='', $editerror='', $nameerror='')">
+       data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": "", "creating": false, "newcharname": "", "nameerror": "", "editplayerid": ""}'>
+    <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $creating=false, $editchar=evt.target.closest('.edit-btn').dataset.char, $newcharname=evt.target.closest('.edit-btn').dataset.char, $editplayerid=evt.target.closest('.edit-btn').dataset.playerid, $initval='', $editerror='', $nameerror='')">
       <table id="initiative-table">
         <thead>
           <tr><th>Character</th><th>Player</th><th>Init</th></tr>
@@ -383,15 +403,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <h2>Dramatis Personae</h2>
         <button type="button" class="add-btn"
                 title="Add a new character to the tracker"
-                data-on:click="$editing=true, $creating=true, $editchar='', $initval='', $newcharname='', $editerror='', $nameerror=''">
+                data-on:click="$editing=true, $creating=true, $editchar='', $initval='', $newcharname='', $editplayerid='', $editerror='', $nameerror=''">
           &#x2795;
         </button>
         <div id="edit-panel" data-show="$editing" style="display: none">
           <form data-on:submit__prevent="@post('{{ add_character_url }}')"
-                data-effect="$editing && setTimeout(() => ($creating ? document.getElementById('name-input') : document.getElementById('edit-input'))?.focus(), 0)">
+                data-effect="$editing && setTimeout(() => document.getElementById('name-input')?.focus(), 0)">
             <input id="name-input" type="text" data-bind:newcharname
                    maxlength="32"
-                   data-show="$creating" style="display:none"
                    autocomplete="off" placeholder="Character name"
                    data-on:keydown="evt.key==='Escape' && ($editing=false)"
                    data-on:input="$nameerror=''">
@@ -400,6 +419,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                    autocomplete="off" placeholder="e.g. 17 or d20+3"
                    data-on:keydown="evt.key==='Escape' && ($editing=false)"
                    data-on:input="$editerror=''">
+            <select id="player-select" data-bind:editplayerid
+                    data-show="!$creating" style="display:none">
+            </select>
             <button type="submit" style="display:none" aria-hidden="true"></button>
             <button type="button" class="cancel-touch"
                     data-on:click="$editing=false">&#x2717;</button>
