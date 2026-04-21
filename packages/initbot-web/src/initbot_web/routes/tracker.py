@@ -18,7 +18,7 @@ from starlette.responses import RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.templating import Jinja2Templates
 
-from initbot_core.data.character import CharacterData
+from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.models.roll import DiceExpression
 from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
@@ -29,6 +29,12 @@ SESSION_TTL: Final[int] = 8 * 3600
 _INITIATIVE_INPUT_ERROR = (
     "Enter a number from \u221299 to 99, or a dice formula like d20+5."
 )
+_ADMIN_DISCORD_ID: Final[int] = 0
+_ADMIN_PLAYER_NAME: Final[str] = "admin"
+_NAME_MAX_LEN: Final[int] = 32
+_NAME_INPUT_ERROR_EMPTY: Final[str] = "Enter a character name."
+_NAME_INPUT_ERROR_LEN: Final[str] = f"Name must be {_NAME_MAX_LEN} characters or fewer."
+_NAME_INPUT_ERROR_EXISTS: Final[str] = "A character with this name already exists."
 
 _log = logging.getLogger(__name__)
 
@@ -62,7 +68,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 ) -> list[Mount]:
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
-    set_initiative_url = f"/{url_path_prefix}/tracker/set-initiative"
+    add_character_url = f"/{url_path_prefix}/tracker/add-character"
     roll_initiative_url = f"/{url_path_prefix}/tracker/roll-initiative"
     delete_character_url = f"/{url_path_prefix}/tracker/delete-character"
 
@@ -121,7 +127,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             {
                 "player_name": player_name,
                 "sse_url": sse_url,
-                "set_initiative_url": set_initiative_url,
+                "add_character_url": add_character_url,
                 "has_high_severity_vulnerabilities": vuln_state.has_high_severity_vulnerabilities,
             },
         )
@@ -199,32 +205,61 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return err
         return await _tracker_sse(request)
 
-    @datastar_response
-    async def _set_initiative(
-        request: Request,
-    ) -> DatastarEvent | tuple[()]:
-        data = await request.json()
-        char_name: str = data.get("editchar", "")
-        initval: str = str(data.get("initval", "")).strip()
-
+    def _parse_initval(
+        initval: str,
+    ) -> tuple[int | None, DatastarEvent] | tuple[int | None, None]:
+        """Return (as_integer_or_None, None) on success, or (None, error_event) on failure."""
         if not initval:
-            return SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
-
-        as_integer: int | None = None
+            return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
         try:
             as_integer = int(initval)
             if as_integer < -99 or as_integer > 99:
-                return SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+                return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+            return as_integer, None
         except ValueError:
             try:
                 DiceExpression.create(initval)
+                return None, None
             except ValueError:
-                return SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+                return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
 
-        try:
-            char = state.characters.get_from_name(char_name)
-        except (TypeError, ValueError, KeyError):
-            return ()
+    @datastar_response
+    async def _add_character(
+        request: Request,
+    ) -> DatastarEvent | tuple[()]:
+        data = await request.json()
+        new_char_name: str = str(data.get("newcharname", "")).strip()
+        initval: str = str(data.get("initval", "")).strip()
+
+        as_integer, err = _parse_initval(initval)
+        if err is not None:
+            return err
+
+        if new_char_name:
+            if len(new_char_name) > _NAME_MAX_LEN:
+                return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_LEN})
+            discord_id: int | None = request.session.get("discord_id")
+            if discord_id is not None:
+                player = state.players.get_from_discord_id(discord_id)
+                if player is None:
+                    player = state.players.upsert(
+                        discord_id, request.session.get("player_name") or "Player"
+                    )
+            else:
+                player = state.players.upsert(_ADMIN_DISCORD_ID, _ADMIN_PLAYER_NAME)
+
+            try:
+                char = state.characters.add_store_and_get(
+                    NewCharacterData(name=new_char_name, player_id=player.id)
+                )
+            except ValueError:
+                return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_EXISTS})
+        else:
+            edit_char_name: str = data.get("editchar", "")
+            try:
+                char = state.characters.get_from_name(edit_char_name)
+            except (TypeError, ValueError, KeyError):
+                return ()
 
         if as_integer is not None:
             char.initiative = as_integer
@@ -232,12 +267,17 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             char.initiative_dice = initval
         char.last_used = int(time.time())
         state.characters.update_and_store(char)
-        return SSE.patch_signals({"editing": False, "editerror": ""})
+        return SSE.patch_signals({
+            "editing": False,
+            "creating": False,
+            "editerror": "",
+            "nameerror": "",
+        })
 
-    async def set_initiative(request: Request) -> Response:
+    async def add_character(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:
             return err
-        return await _set_initiative(request)
+        return await _add_character(request)
 
     @datastar_response
     async def _delete_character(
@@ -289,7 +329,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             routes=[
                 Route("/tracker/", tracker_page),
                 Route("/tracker/sse", tracker_sse),
-                Route("/tracker/set-initiative", set_initiative, methods=["POST"]),
+                Route("/tracker/add-character", add_character, methods=["POST"]),
                 Route(
                     "/tracker/roll-initiative/{char_name}",
                     roll_initiative,

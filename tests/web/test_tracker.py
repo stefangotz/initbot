@@ -226,7 +226,7 @@ def test_set_initiative_requires_auth(tmp_path):
     app, _, char_name = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": char_name, "initval": 10},
         )
         assert resp.status_code == 403
@@ -237,7 +237,7 @@ def test_set_initiative_updates_character(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": 17},
         )
         assert resp.status_code == 200
@@ -249,7 +249,7 @@ def test_set_initiative_unknown_character_returns_2xx_no_change(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "NoSuchCharacter", "initval": 5},
         )
         assert resp.status_code in (200, 204)
@@ -263,7 +263,7 @@ def test_set_initiative_out_of_range_returns_error_signal(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": 999},
         )
         assert resp.status_code in (200, 204)
@@ -276,7 +276,7 @@ def test_set_initiative_missing_initval_returns_error_signal(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "Aldric"},
         )
         assert resp.status_code in (200, 204)
@@ -288,7 +288,7 @@ def test_set_initiative_invalid_input_returns_error_signal(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": "notvalid"},
         )
         assert resp.status_code in (200, 204)
@@ -300,7 +300,7 @@ def test_set_initiative_dice_expression_stores_dice(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         resp = client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": "d20+5"},
         )
         assert resp.status_code == 200
@@ -315,7 +315,7 @@ def test_set_initiative_dice_expression_preserves_existing_initiative(tmp_path):
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/testsecret/{app.state.admin_token}/")
         client.post(
-            "/testsecret/tracker/set-initiative",
+            "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": "d20+5"},
         )
         updated = state.characters.get_from_name("Aldric")
