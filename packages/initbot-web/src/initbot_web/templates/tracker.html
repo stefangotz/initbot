@@ -219,21 +219,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       background: var(--color-row-alt);
     }
 
-    #edit-label {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--color-gold);
-      min-width: 6rem;
-    }
-
-    #edit-panel form {
+#edit-panel form {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    #edit-input {
+    #edit-input,
+    #name-input {
       width: 15rem;
       font-family: var(--font-main);
       font-size: 1rem;
@@ -299,6 +292,23 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       opacity: 1;
     }
 
+    /* ── Add-character button ────────────────────────────────── */
+    .add-btn {
+      display: block;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.55;
+      margin: 0.4rem 0 0.4rem 0;
+      padding: 0.1rem 0.2rem;
+    }
+
+    .add-btn:hover {
+      opacity: 1;
+    }
+
     /* ── Touch cancel button (hidden on pointer devices) ─────── */
     .cancel-touch {
       display: none;
@@ -359,8 +369,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <div id="security-alert">{% if has_high_severity_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
   <div data-init="@get('{{ sse_url }}')"
-       data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": ""}'>
-    <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='')">
+       data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": "", "creating": false, "newcharname": "", "nameerror": ""}'>
+    <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $creating=false, $editchar=evt.target.closest('.edit-btn').dataset.char, $initval='', $newcharname='', $editerror='', $nameerror='')">
       <table id="initiative-table">
         <thead>
           <tr><th>Character</th><th>Player</th><th>Init</th></tr>
@@ -371,14 +381,26 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       </table>
       <section class="char-section">
         <h2>Dramatis Personae</h2>
+        <button type="button" class="add-btn"
+                title="Add a new character to the tracker"
+                data-on:click="$editing=true, $creating=true, $editchar='', $initval='', $newcharname='', $editerror='', $nameerror=''">
+          &#x2795;
+        </button>
         <div id="edit-panel" data-show="$editing" style="display: none">
-          <span id="edit-label" data-text="$editchar"></span>
-          <form data-on:submit__prevent="@post('{{ set_initiative_url }}')"
-                data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
+          <form data-on:submit__prevent="@post('{{ add_character_url }}')"
+                data-effect="$editing && setTimeout(() => ($creating ? document.getElementById('name-input') : document.getElementById('edit-input'))?.focus(), 0)">
+            <input id="name-input" type="text" data-bind:newcharname
+                   maxlength="32"
+                   data-show="$creating" style="display:none"
+                   autocomplete="off" placeholder="Character name"
+                   data-on:keydown="evt.key==='Escape' && ($editing=false)"
+                   data-on:input="$nameerror=''">
+            <p id="name-error" data-show="$nameerror" data-text="$nameerror" style="display:none"></p>
             <input id="edit-input" type="text" data-bind:initval
                    autocomplete="off" placeholder="e.g. 17 or d20+3"
                    data-on:keydown="evt.key==='Escape' && ($editing=false)"
                    data-on:input="$editerror=''">
+            <button type="submit" style="display:none" aria-hidden="true"></button>
             <button type="button" class="cancel-touch"
                     data-on:click="$editing=false">&#x2717;</button>
             <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
