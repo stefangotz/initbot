@@ -19,6 +19,7 @@ from initbot_chat.config import CFG
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, is_eligible_for_pruning
 from initbot_core.models.roll import contains_dice_rolls, render_dice_rolls_in_text
+from initbot_core.notify import send_notification
 from initbot_core.security import get_vulnerabilities, is_high_severity
 from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import State
@@ -214,7 +215,10 @@ async def on_message(message: discord.Message) -> None:
 def run() -> None:
     for cmd in commands:
         bot.add_command(cmd)
-    bot.initbot_state = create_state_from_source(CFG.state)  # type: ignore
+    bot.initbot_state = create_state_from_source(  # type: ignore
+        CFG.state,
+        on_change=lambda: send_notification(CFG.notify_host, CFG.notify_port),
+    )
     bot.run(CFG.token)
     if _STARTUP_FAILED:
         sys.exit(1)

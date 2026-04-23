@@ -6,7 +6,6 @@ import html
 import logging
 import re
 import time
-from asyncio import sleep
 from collections.abc import AsyncGenerator, Sequence
 from datetime import datetime
 from typing import Final
@@ -27,7 +26,6 @@ from initbot_core.models.roll import DiceExpression
 from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
 
-POLL_INTERVAL = 1.5
 STALE_SECONDS = 24 * 3600
 SESSION_TTL: Final[int] = 8 * 3600
 _INITIATIVE_INPUT_ERROR = (
@@ -247,66 +245,71 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         )
         logged_in_player_id = logged_in_player.id if logged_in_player else None
 
-        while not await request.is_disconnected():
-            now = int(datetime.now().timestamp())
-            all_chars = state.characters.get_all()
+        notify_q = request.app.state.notifier.register()
+        notify_q.put_nowait(None)
+        try:
+            while not await request.is_disconnected():
+                await notify_q.get()
+                now = int(datetime.now().timestamp())
+                all_chars = state.characters.get_all()
 
-            chars = [
-                c
-                for c in all_chars
-                if c.initiative is not None
-                and c.last_used is not None
-                and c.last_used > now - STALE_SECONDS
-            ]
-            chars.sort(key=lambda c: c.initiative or 0, reverse=True)
-            chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
-            snapshot = tuple(
-                (c.name, c.initiative, c.initiative_dice) for c, _ in chars_with_names
-            )
-            if snapshot != last_snapshot:
-                last_snapshot = snapshot
-                yield SSE.patch_elements(_render_rows(chars_with_names))
-
-            my_chars = sorted(
-                [c for c in all_chars if c.player_id == logged_in_player_id],
-                key=lambda c: c.name,
-            )
-            other_chars = sorted(
-                [c for c in all_chars if c.player_id != logged_in_player_id],
-                key=lambda c: c.name,
-            )
-            all_chars_ordered = my_chars + other_chars
-            all_with_names = [
-                (c, _resolve_player_name(state, c)) for c in all_chars_ordered
-            ]
-            char_snapshot = tuple(
-                (c.name, c.initiative, c.initiative_dice, name)
-                for c, name in all_with_names
-            )
-            if char_snapshot != last_char_snapshot:
-                last_char_snapshot = char_snapshot
-                yield SSE.patch_elements(
-                    _render_char_rows(
-                        all_with_names,
-                        roll_initiative_url,
-                        delete_character_url,
-                        len(my_chars),
-                    )
+                chars = [
+                    c
+                    for c in all_chars
+                    if c.initiative is not None
+                    and c.last_used is not None
+                    and c.last_used > now - STALE_SECONDS
+                ]
+                chars.sort(key=lambda c: c.initiative or 0, reverse=True)
+                chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
+                snapshot = tuple(
+                    (c.name, c.initiative, c.initiative_dice)
+                    for c, _ in chars_with_names
                 )
+                if snapshot != last_snapshot:
+                    last_snapshot = snapshot
+                    yield SSE.patch_elements(_render_rows(chars_with_names))
 
-            all_players = state.players.get_all()
-            players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
-            player_snapshot = tuple((p.id, p.name) for p in players)
-            if player_snapshot != last_player_snapshot:
-                last_player_snapshot = player_snapshot
-                yield SSE.patch_elements(_render_player_select(players))
+                my_chars = sorted(
+                    [c for c in all_chars if c.player_id == logged_in_player_id],
+                    key=lambda c: c.name,
+                )
+                other_chars = sorted(
+                    [c for c in all_chars if c.player_id != logged_in_player_id],
+                    key=lambda c: c.name,
+                )
+                all_chars_ordered = my_chars + other_chars
+                all_with_names = [
+                    (c, _resolve_player_name(state, c)) for c in all_chars_ordered
+                ]
+                char_snapshot = tuple(
+                    (c.name, c.initiative, c.initiative_dice, name)
+                    for c, name in all_with_names
+                )
+                if char_snapshot != last_char_snapshot:
+                    last_char_snapshot = char_snapshot
+                    yield SSE.patch_elements(
+                        _render_char_rows(
+                            all_with_names,
+                            roll_initiative_url,
+                            delete_character_url,
+                            len(my_chars),
+                        )
+                    )
 
-            current_vuln = vuln_state.has_high_severity_vulnerabilities
-            if current_vuln != last_vuln:
-                last_vuln = current_vuln
-                yield SSE.patch_elements(_render_alert(current_vuln))
+                all_players = state.players.get_all()
+                players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
+                player_snapshot = tuple((p.id, p.name) for p in players)
+                if player_snapshot != last_player_snapshot:
+                    last_player_snapshot = player_snapshot
+                    yield SSE.patch_elements(_render_player_select(players))
 
-            await sleep(POLL_INTERVAL)
+                current_vuln = vuln_state.has_high_severity_vulnerabilities
+                if current_vuln != last_vuln:
+                    last_vuln = current_vuln
+                    yield SSE.patch_elements(_render_alert(current_vuln))
+        finally:
+            request.app.state.notifier.unregister(notify_q)
 
     async def tracker_sse(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:

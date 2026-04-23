@@ -36,6 +36,14 @@ class Settings(BaseSettings):
             "then right-click the desired channel and select 'Copy Channel ID'."
         ),
     )
+    notify_host: str = Field(
+        default="web",
+        description="Hostname of the web app to notify after state writes. In Docker Compose this is the service name.",
+    )
+    notify_port: int = Field(
+        default=9876,
+        description="UDP port on which the web app listens for change notifications.",
+    )
 
 
 CFG = Settings(

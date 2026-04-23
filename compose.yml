@@ -14,6 +14,8 @@ services:
         required: false
     environment:
       STATE: sqlite:/data/app.sqlite
+      NOTIFY_HOST: web
+      NOTIFY_PORT: "9876"
     volumes:
       - data:/data
 
@@ -29,6 +31,7 @@ services:
     environment:
       STATE: sqlite:/data/app.sqlite
       WEB_HOST: "0.0.0.0"
+      NOTIFY_PORT: "9876"
     volumes:
       - data:/data
 
