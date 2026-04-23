@@ -252,6 +252,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 await notify_q.get()
                 now = int(datetime.now().timestamp())
                 all_chars = state.characters.get_all()
+                all_players = state.players.get_all()
+                players_by_id = {p.id: p for p in all_players}
 
                 chars = [
                     c
@@ -261,7 +263,9 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                     and c.last_used > now - STALE_SECONDS
                 ]
                 chars.sort(key=lambda c: c.initiative or 0, reverse=True)
-                chars_with_names = [(c, _resolve_player_name(state, c)) for c in chars]
+                chars_with_names = [
+                    (c, _resolve_player_name(players_by_id, c)) for c in chars
+                ]
                 snapshot = tuple(
                     (c.name, c.initiative, c.initiative_dice)
                     for c, _ in chars_with_names
@@ -280,7 +284,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 )
                 all_chars_ordered = my_chars + other_chars
                 all_with_names = [
-                    (c, _resolve_player_name(state, c)) for c in all_chars_ordered
+                    (c, _resolve_player_name(players_by_id, c))
+                    for c in all_chars_ordered
                 ]
                 char_snapshot = tuple(
                     (c.name, c.initiative, c.initiative_dice, name)
@@ -297,7 +302,6 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                         )
                     )
 
-                all_players = state.players.get_all()
                 players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
                 player_snapshot = tuple((p.id, p.name) for p in players)
                 if player_snapshot != last_player_snapshot:
@@ -424,8 +428,11 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     ]
 
 
-def _resolve_player_name(state: State, cdi: CharacterData) -> str:
-    return state.players.get_from_id(cdi.player_id).name
+def _resolve_player_name(
+    players_by_id: dict[int, PlayerData], cdi: CharacterData
+) -> str:
+    player = players_by_id.get(cdi.player_id)
+    return player.name if player is not None else "?"
 
 
 def _render_alert(has_high_severity_vulnerabilities: bool) -> str:

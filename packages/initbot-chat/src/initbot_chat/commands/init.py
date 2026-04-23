@@ -9,7 +9,7 @@ from discord import Embed
 from discord.ext import commands
 
 from initbot_chat.commands.character import CharacterData, characters
-from initbot_chat.commands.utils import player_name, sync_player
+from initbot_chat.commands.utils import sync_player
 from initbot_core.models.roll import DiceExpression
 from initbot_core.utils import is_int
 
@@ -93,8 +93,9 @@ async def inis(ctx: commands.Context) -> None:
         key=lambda c: c.initiative or 0,
         reverse=True,
     )
+    players_by_id = {p.id: p for p in state.players.get_all()}
     desc: str = "\n".join(
-        f"{cdi.initiative}: **{cdi.name}** (*{player_name(state, cdi)}*)"
+        f"{cdi.initiative}: **{cdi.name}** (*{players_by_id[cdi.player_id].name}*)"
         for cdi in sorted_characters
     )
     embed = Embed(title="Initiative Order", description=desc)

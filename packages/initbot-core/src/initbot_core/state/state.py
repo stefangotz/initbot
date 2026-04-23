@@ -57,24 +57,30 @@ class CharacterState(ABC):
         create: bool = False,
         player_id: int | None = None,
     ) -> CharacterData:
+        all_chars = self.get_all()
         try:
             return get_exact_or_unique_prefix_match(
-                name, self.get_all(), lambda cdi: cdi.name
+                name, all_chars, lambda cdi: cdi.name
             )
         except KeyError as err:
             if create and player_id is not None:
                 return self.add_store_and_get(
-                    NewCharacterData(name=name, player_id=player_id)
+                    NewCharacterData(name=name, player_id=player_id),
+                    existing=all_chars,
                 )
             raise KeyError(f"Unable to find character with name '{name}'") from err
 
-    def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
+    def add_store_and_get(
+        self,
+        char_data: NewCharacterData,
+        existing: Sequence[CharacterData] | None = None,
+    ) -> CharacterData:
         validate_character_name(char_data.name)
         normalized = normalize_str(char_data.name)
-        for existing in self.get_all():
-            if normalize_str(existing.name) == normalized:
+        for char in existing if existing is not None else self.get_all():
+            if normalize_str(char.name) == normalized:
                 raise ValueError(
-                    f"A character named '{existing.name}' already exists "
+                    f"A character named '{char.name}' already exists "
                     f"(character names must be unique ignoring case)"
                 )
         return self._add_store_and_get(char_data)
