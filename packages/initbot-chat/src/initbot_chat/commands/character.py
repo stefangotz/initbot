@@ -123,8 +123,9 @@ async def chars(ctx: commands.Context) -> None:
     """Displays all characters known to the bot."""
     sync_player(ctx.bot.initbot_state, ctx)
     state = ctx.bot.initbot_state
+    players_by_id = {p.id: p for p in state.players.get_all()}
     parts = (
-        f"- {idx}: **{cdi.name}** (_{player_name(state, cdi)}_)\n"
+        f"- {idx}: **{cdi.name}** (_{players_by_id[cdi.player_id].name}_)\n"
         for idx, cdi in enumerate(state.characters.get_all())
     )
     await send_in_parts(ctx, parts)
@@ -176,7 +177,11 @@ async def unused(ctx: commands.Context, *args: str) -> None:
     if not eligible:
         await ctx.send("You don't seem to have any unused characters.", delete_after=5)
         return
-    parts = (f"- **{cdi.name}** (_{player_name(state, cdi)}_)\n" for cdi in eligible)
+    players_by_id = {p.id: p for p in state.players.get_all()}
+    parts = (
+        f"- **{cdi.name}** (_{players_by_id[cdi.player_id].name}_)\n"
+        for cdi in eligible
+    )
     await send_in_parts(ctx, parts)
 
 
