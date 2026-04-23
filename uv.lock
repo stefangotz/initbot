@@ -851,6 +851,12 @@ wheels = [
 ]
 
 [[package]]
+name = "grapheme"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/e7/bbaab0d2a33e07c8278910c1d0d8d4f3781293dfbc70b5c38197159046bf/grapheme-0.6.0.tar.gz", hash = "sha256:44c2b9f21bbe77cfb05835fec230bd435954275267fea1858013b102f8603cca", size = 207306, upload-time = "2020-03-07T17:13:55.492Z" }
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -934,6 +940,7 @@ name = "initbot-core"
 version = "0.1.0"
 source = { editable = "packages/initbot-core" }
 dependencies = [
+    { name = "grapheme" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
@@ -941,6 +948,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "grapheme", specifier = ">=0.6.0" },
     { name = "pydantic", specifier = "~=2.0" },
     { name = "pydantic-settings", specifier = "~=2.0" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4.12.2" },

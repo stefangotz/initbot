@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import html
 import logging
 import re
 import time
@@ -9,6 +10,7 @@ from asyncio import sleep
 from collections.abc import AsyncGenerator, Sequence
 from datetime import datetime
 from typing import Final
+from urllib.parse import quote
 
 from datastar_py import ServerSentEventGenerator as SSE
 from datastar_py.sse import DatastarEvent
@@ -18,6 +20,7 @@ from starlette.responses import RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.templating import Jinja2Templates
 
+from initbot_core.character_name import validate_character_name
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.models.roll import DiceExpression
@@ -32,10 +35,9 @@ _INITIATIVE_INPUT_ERROR = (
 )
 _ADMIN_DISCORD_ID: Final[int] = 0
 _ADMIN_PLAYER_NAME: Final[str] = "admin"
-_NAME_MAX_LEN: Final[int] = 32
 _NAME_INPUT_ERROR_EMPTY: Final[str] = "Enter a character name."
-_NAME_INPUT_ERROR_LEN: Final[str] = f"Name must be {_NAME_MAX_LEN} characters or fewer."
 _NAME_INPUT_ERROR_EXISTS: Final[str] = "A character with this name already exists."
+_NAME_INPUT_ERROR_INVALID: Final[str] = "Name contains characters that are not allowed."
 
 _log = logging.getLogger(__name__)
 
@@ -91,8 +93,10 @@ def _apply_edit(
 ) -> DatastarEvent | tuple[()] | CharacterData:
     """Validate and apply edit-mode changes; return char on success or a signal/no-op."""
     effective_name = new_char_name if new_char_name else edit_char_name
-    if len(effective_name) > _NAME_MAX_LEN:
-        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_LEN})
+    try:
+        effective_name = validate_character_name(effective_name)
+    except ValueError:
+        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_INVALID})
     as_integer, err = _parse_initval(initval, allow_empty=True)
     if err is not None:
         return err
@@ -129,8 +133,10 @@ def _apply_create(
     """Validate and create a new character; return char on success or a signal/no-op."""
     if not new_char_name:
         return ()
-    if len(new_char_name) > _NAME_MAX_LEN:
-        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_LEN})
+    try:
+        new_char_name = validate_character_name(new_char_name)
+    except ValueError:
+        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_INVALID})
     as_integer, err = _parse_initval(initval)
     if err is not None:
         return err
@@ -430,7 +436,7 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
 
 def _render_player_select(players: Sequence[PlayerData]) -> str:
     options = "".join(
-        f'<option value="{p.id}">{_safe_str(p.name)}</option>' for p in players
+        f'<option value="{p.id}">{html.escape(p.name)}</option>' for p in players
     )
     return (
         f'<select id="player-select" data-bind:editplayerid '
@@ -465,27 +471,27 @@ _DELETE_BTN_TITLE = (
 
 
 def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
-    safe = _safe_str(char_name)
+    encoded = quote(char_name, safe="")
     return (
         f'<button type="button" class="roll-btn" title="{_ROLL_BTN_TITLE}"'
-        f" data-on:click=\"@post('{roll_url_prefix}/{safe}')\">"
+        f" data-on:click=\"@post('{roll_url_prefix}/{encoded}')\">"
         f"\U0001f3b2</button>"
     )
 
 
 def _render_edit_button(char_name: str, player_id: int) -> str:
-    safe = _safe_str(char_name)
+    escaped = html.escape(char_name, quote=True)
     return (
         f'<button type="button" class="edit-btn" title="{_EDIT_BTN_TITLE}"'
-        f' data-char="{safe}" data-playerid="{player_id}">\U0001f58a</button>'
+        f' data-char="{escaped}" data-playerid="{player_id}">\U0001f58a</button>'
     )
 
 
 def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
-    safe = _safe_str(char_name)
+    encoded = quote(char_name, safe="")
     return (
         f'<button type="button" class="del-btn" title="{_DELETE_BTN_TITLE}"'
-        f" data-on:click=\"@post('{delete_url_prefix}/{safe}')\">"
+        f" data-on:click=\"@post('{delete_url_prefix}/{encoded}')\">"
         f"\U0001f5d1</button>"
     )
 
@@ -499,8 +505,8 @@ def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
         )
     rows = "".join(
         f'<tr id="r{i}">'
-        f"<td>{_safe_str(c.name)}</td>"
-        f"<td>{_safe_str(name)}</td>"
+        f"<td>{html.escape(c.name)}</td>"
+        f"<td>{html.escape(name)}</td>"
         f"<td>{_safe_int(c.initiative)}</td>"
         f"</tr>"
         for i, (c, name) in enumerate(chars_with_names)
@@ -524,8 +530,8 @@ def _render_char_rows(
         )
         rows.append(
             f"<tr{separator}>"
-            f"<td>{_safe_str(c.name)}</td>"
-            f"<td>{_safe_str(player_name)}</td>"
+            f"<td>{html.escape(c.name)}</td>"
+            f"<td>{html.escape(player_name)}</td>"
             f"<td>{_safe_int(c.initiative)}</td>"
             f"<td>{_safe_dice(c.initiative_dice)}</td>"
             f"<td>{_render_edit_button(c.name, c.player_id)}</td>"
@@ -546,7 +552,3 @@ def _safe_dice(value: str | None) -> str:
     if not value:
         return ""
     return re.sub(r"[^a-zA-Z0-9+\-*/() ]", "", value)
-
-
-def _safe_str(value: str) -> str:
-    return re.sub(r"[^a-zA-Z0-9\xc0-\xd6\xd8-\xf6\xf8-\xff ]", "", value)

@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from typing import Final
 
+from initbot_core.character_name import validate_character_name
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
 from initbot_core.utils import (
@@ -68,6 +69,7 @@ class CharacterState(ABC):
             raise KeyError(f"Unable to find character with name '{name}'") from err
 
     def add_store_and_get(self, char_data: NewCharacterData) -> CharacterData:
+        validate_character_name(char_data.name)
         normalized = normalize_str(char_data.name)
         for existing in self.get_all():
             if normalize_str(existing.name) == normalized:
@@ -80,6 +82,7 @@ class CharacterState(ABC):
     def rename_and_store(
         self, char_data: CharacterData, new_name: str
     ) -> CharacterData:
+        validate_character_name(new_name)
         normalized = normalize_str(new_name)
         for existing in self.get_all():
             if normalize_str(existing.name) == normalized:
