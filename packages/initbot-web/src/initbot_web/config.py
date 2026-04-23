@@ -25,3 +25,7 @@ class WebSettings(BaseSettings):
         default=8080,
         description="The port the web app listens on.",
     )
+    notify_port: int = Field(
+        default=9876,
+        description="UDP port on which the web app listens for change notifications from itself and from the chat bot.",
+    )

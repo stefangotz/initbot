@@ -5,7 +5,7 @@
 import secrets
 import sqlite3
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from initbot_core.config import CORE_CFG
@@ -55,8 +55,20 @@ CREATE TABLE IF NOT EXISTS _sqlsessionsecret (
 """
 
 
-class _SqlCharacterState(CharacterState):
-    def __init__(self, db: sqlite3.Connection) -> None:
+class _ChangeNotifyMixin:
+    def __init__(self, on_change: Callable[[], None] | None = None) -> None:
+        self._on_change = on_change
+
+    def _notify(self) -> None:
+        if self._on_change:
+            self._on_change()
+
+
+class _SqlCharacterState(_ChangeNotifyMixin, CharacterState):
+    def __init__(
+        self, db: sqlite3.Connection, on_change: Callable[[], None] | None = None
+    ) -> None:
+        super().__init__(on_change)
         self._db = db
 
     def get_all(self) -> Sequence[CharacterData]:
@@ -81,6 +93,7 @@ class _SqlCharacterState(CharacterState):
                 last_used,
             ),
         )
+        self._notify()
         return CharacterData(
             name=char_data.name,
             player_id=char_data.player_id,
@@ -96,6 +109,7 @@ class _SqlCharacterState(CharacterState):
             "UPDATE _sqlcharacterdata SET name=? WHERE name=?",
             (new_name, char_data.name),
         )
+        self._notify()
         return CharacterData(
             name=new_name,
             player_id=char_data.player_id,
@@ -117,16 +131,21 @@ class _SqlCharacterState(CharacterState):
                 char_data.name,
             ),
         )
+        self._notify()
 
     def remove_and_store(self, char_data: CharacterData) -> None:
         self._db.execute(
             "DELETE FROM _sqlcharacterdata WHERE name=?",
             (char_data.name,),
         )
+        self._notify()
 
 
-class _SqlPlayerState(PlayerState):
-    def __init__(self, db: sqlite3.Connection) -> None:
+class _SqlPlayerState(_ChangeNotifyMixin, PlayerState):
+    def __init__(
+        self, db: sqlite3.Connection, on_change: Callable[[], None] | None = None
+    ) -> None:
+        super().__init__(on_change)
         self._db = db
 
     def upsert(self, discord_id: int, name: str) -> PlayerData:
@@ -138,6 +157,7 @@ class _SqlPlayerState(PlayerState):
         ).fetchone()
         if row is None:
             raise RuntimeError("UPSERT into _sqlplayerdata returned no row")
+        self._notify()
         return PlayerData(*row)
 
     def get_from_id(self, player_id: int) -> PlayerData:
@@ -279,7 +299,9 @@ class _SqlSessionSecretState(SessionSecretState):
 
 
 class SqlState(State):
-    def __init__(self, source: str) -> None:
+    def __init__(
+        self, source: str, on_change: Callable[[], None] | None = None
+    ) -> None:
         state_type, state_source = source.split(":", maxsplit=1)
         if state_type != "sqlite":
             raise ValueError(f"Unsupported state type: {state_type}")
@@ -302,8 +324,8 @@ class SqlState(State):
 
         self._migrate(self._db)
 
-        self._characters = _SqlCharacterState(self._db)
-        self._players = _SqlPlayerState(self._db)
+        self._characters = _SqlCharacterState(self._db, on_change)
+        self._players = _SqlPlayerState(self._db, on_change)
         self._web_login_tokens = _SqlWebLoginTokenState(self._db)
         self._character_actions = _SqlCharacterActionState(self._db)
         self._session_secret = _SqlSessionSecretState(self._db)
