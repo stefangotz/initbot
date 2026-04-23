@@ -10,6 +10,7 @@ from datetime import datetime
 from discord.ext import commands
 
 from initbot_chat.commands.utils import player_name, send_in_parts, sync_player
+from initbot_core.character_name import validate_character_name
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import (
     CharacterData,
@@ -88,6 +89,7 @@ async def rename(ctx: commands.Context, *args: str) -> None:
         )
     new_name = tokens[-1]
     old_tokens = tokens[:-1]
+    validate_character_name(new_name)
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
         old_tokens, create=False, player_id=player.id
     )

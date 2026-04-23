@@ -59,6 +59,12 @@ ignore = [
     "S106",   # hardcoded passwords are fine in test fixtures
     "ANN",    # test fixtures and helpers — annotation completeness is low value here
 ]
+"packages/*/tests/**" = [
+    "S101",
+    "S105",
+    "S106",
+    "ANN",
+]
 "packages/initbot-core/src/initbot_core/state/local.py" = [
     "B006",   # MutableSequence default in pydantic model is safe; pydantic wraps mutable defaults
 ]
@@ -88,7 +94,7 @@ pytest_add_cli_args = ["--tb=no", "-q"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+testpaths = ["tests", "packages/initbot-core/tests"]
 pythonpath = [
     "packages/initbot-core/src",
     "packages/initbot-chat/src",
