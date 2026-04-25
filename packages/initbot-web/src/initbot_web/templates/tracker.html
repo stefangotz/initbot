@@ -408,7 +408,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </button>
         <div id="edit-panel" data-show="$editing" style="display: none">
           <form data-on:submit__prevent="@post('{{ add_character_url }}')"
-                data-effect="$editing && setTimeout(() => document.getElementById('name-input')?.focus(), 0)">
+                data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
             <input id="name-input" type="text" data-bind:newcharname
                    maxlength="32"
                    autocomplete="off" placeholder="Character name"
