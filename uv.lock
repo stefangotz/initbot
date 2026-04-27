@@ -19,7 +19,7 @@ constraints = [{ name = "aiohttp", specifier = ">=3.13.4" }]
 
 [manifest.dependency-groups]
 dev = [
-    { name = "check-python-versions", specifier = ">=0.24.0" },
+    { name = "check-python-versions", specifier = ">=0.24.2" },
     { name = "coverage", specifier = ">=7.13.5" },
     { name = "cyclonedx-bom", specifier = ">=7.3.0" },
     { name = "detect-secrets", specifier = ">=1.5" },
@@ -452,15 +452,15 @@ wheels = [
 
 [[package]]
 name = "check-python-versions"
-version = "0.24.0"
+version = "0.24.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
     { name = "tomlkit" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/e9/2fbfb6d4ae3cf6612803bdd5c2d94a39e186693cdfe2be937fc56e1440ae/check_python_versions-0.24.0.tar.gz", hash = "sha256:991232173aa68ec29668dd08407cb748becdb80b6fb7992b4a6d02a0706b78aa", size = 80266, upload-time = "2025-11-13T13:18:42.668Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/dd/ff551c66b5bbe7a8014c902658b1ed74a7a3af7071befd9fdbf3b67cba7c/check_python_versions-0.24.2.tar.gz", hash = "sha256:2dd1ca813e1f3ba9e8b57b3fdef2d375f99273106409e277ec9a34204fda3960", size = 80577, upload-time = "2026-04-14T19:34:49.4Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/2e/afa8a6cd880cd0d39e9d71bbc1e93b17c3d0a8b718bf1df8414dd083c9f9/check_python_versions-0.24.0-py3-none-any.whl", hash = "sha256:2474f3d5b8c68aad583e8c74a42bcd96979c97066aae379484b5e29b883ad24b", size = 57672, upload-time = "2025-11-13T13:18:39.6Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/84/0d565117a3c10b5d283751ab6944e91dfd454de566d2bd30a223acbca91d/check_python_versions-0.24.2-py3-none-any.whl", hash = "sha256:782f063c54844b158f39cf0af443391be87429502df0faa015e298b989725ac0", size = 57784, upload-time = "2026-04-14T19:34:47.559Z" },
 ]
 
 [[package]]
