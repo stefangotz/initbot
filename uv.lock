@@ -639,11 +639,11 @@ validation = [
 
 [[package]]
 name = "datastar-py"
-version = "0.8.0"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e9/e3/28f8b1ba914302378fdec7050a11ca69e937f000ba16b9c9f8aaf8f8667e/datastar_py-0.8.0.tar.gz", hash = "sha256:a6893608da32378ae22640c115c80e50b2e905db1a2adca840d1ee6b1009b308", size = 137445, upload-time = "2025-12-19T19:43:53.802Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/72/da4a226b6654535483303e50748a8389560ea1bf415a6b6f2c4511eb43d0/datastar_py-1.0.0.tar.gz", hash = "sha256:ca8b4d464c1177f8f0b2c3e3b25b3ee6c9b391793907dd1ad2fce73859ce1fb8", size = 127075, upload-time = "2026-04-17T00:09:03.516Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/9c/2d805013718a5e90e1574e54b5eef6e64955c7c0f319d1ef9fc4dcdd6a79/datastar_py-0.8.0-py3-none-any.whl", hash = "sha256:637b557d163ad31d1b1c8ecf13c02ae33cd5134ec3f606ed38d0cefcac675d54", size = 19023, upload-time = "2025-12-19T19:43:52.626Z" },
+    { url = "https://files.pythonhosted.org/packages/18/0a/8f36ea369918e71f6a30fa7108e6cceb9cd23add905e89c576a46cc3ec47/datastar_py-1.0.0-py3-none-any.whl", hash = "sha256:0c99b1871f6152d30518142fba4546ee4cf52f650e243eb97bdbef96776c9e74", size = 19161, upload-time = "2026-04-17T00:09:04.907Z" },
 ]
 
 [[package]]
@@ -969,7 +969,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "datastar-py", specifier = ">=0.8.0" },
+    { name = "datastar-py", specifier = ">=1.0.0" },
     { name = "initbot-core", editable = "packages/initbot-core" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "jinja2", specifier = ">=3.1" },
