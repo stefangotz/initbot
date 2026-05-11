@@ -107,6 +107,43 @@ window.fetch = async (url, opts) => { window._bodies.push(opts?.body); return or
 ```
 Then check `window._bodies` in a follow-up `browser_evaluate`. Server logs show status codes only, not bodies.
 
+## Dependency Management
+
+### Dependabot and uv workspaces
+
+Dependabot's uv ecosystem support does not propagate version-bump commits into
+workspace-member `packages/*/pyproject.toml` files. When Dependabot updates a
+dependency that is declared in a workspace member (e.g. `datastar-py` in
+`packages/initbot-web/pyproject.toml`), it updates only `uv.lock`. This leaves
+the lockfile's `[package.metadata] requires-dist` table inconsistent with the
+actual `pyproject.toml`, causing `uv lock --check` — and therefore the `test`
+CI jobs — to fail on every such Dependabot PR.
+
+Dependabot PRs for dependencies in the **root** `pyproject.toml` (like `ty`)
+are unaffected: Dependabot correctly updates both `pyproject.toml` and
+`uv.lock` in that case.
+
+#### Fixing a failing Dependabot PR
+
+Check out the branch and run the fix script, which reads the target specifiers
+from the Dependabot-updated `uv.lock` and writes them back into the affected
+`pyproject.toml` files:
+
+```sh
+gh pr checkout <pr-number>
+uv run tools/fix_workspace_deps.py
+uv lock
+git add packages/*/pyproject.toml uv.lock
+git commit -m "Align workspace pyproject.toml with Dependabot lockfile update"
+git push
+```
+
+Use `--dry-run` to preview changes without writing:
+
+```sh
+uv run tools/fix_workspace_deps.py --dry-run
+```
+
 ## Implementation Workflow
 
 Use feature branches and pull requests.

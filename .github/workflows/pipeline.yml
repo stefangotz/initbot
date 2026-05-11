@@ -26,13 +26,30 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.11.7"
-          checksum: "6681d691eb7f9c00ac6a3af54252f7ab29ae72f0c8f95bdc7f9d1401c23ea868"  # pragma: allowlist secret
+          version: "0.11.13"
+          checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
           python-version: ${{ matrix.python-version }}
           cache-python: true
           prune-cache: false
       - name: Check uv lock file is up to date
-        run: uv lock --check
+        run: |
+          if uv lock --check; then
+            exit 0
+          fi
+          echo "::group::Diff — what 'uv lock' would change"
+          cp uv.lock uv.lock.before
+          uv lock --quiet || true
+          diff -u uv.lock.before uv.lock || true
+          rm -f uv.lock.before
+          echo "::endgroup::"
+          echo "::group::Dependency constraints in workspace pyproject.toml files"
+          git ls-files 'pyproject.toml' 'packages/*/pyproject.toml' | while read -r f; do
+            echo "--- $f"
+            grep -nE '"[A-Za-z0-9_.-]+[><=!~]' "$f" || true
+          done
+          echo "::endgroup::"
+          echo "::error::uv.lock is out of date. See diff and pyproject.toml listings above."
+          exit 1
       - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }}
       - name: ruff
@@ -76,8 +93,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.11.7"
-          checksum: "6681d691eb7f9c00ac6a3af54252f7ab29ae72f0c8f95bdc7f9d1401c23ea868"  # pragma: allowlist secret
+          version: "0.11.13"
+          checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
           python-version: "3.14"
           cache-python: true
           prune-cache: false
@@ -103,8 +120,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.11.7"
-          checksum: "6681d691eb7f9c00ac6a3af54252f7ab29ae72f0c8f95bdc7f9d1401c23ea868"  # pragma: allowlist secret
+          version: "0.11.13"
+          checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
           python-version: "3.14"
           cache-python: true
           prune-cache: false
@@ -149,18 +166,10 @@ jobs:
         run: hadolint Dockerfile
       - name: Build Docker images
         run: |
-          docker buildx build \
-            --target chat \
-            --cache-from type=local,src=/tmp/.buildx-cache/chat \
-            --cache-from type=local,src=/tmp/.buildx-cache/web \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new/chat,mode=max \
-            --load -t initbot-chat .
-          docker buildx build \
-            --target web \
-            --cache-from type=local,src=/tmp/.buildx-cache/chat \
-            --cache-from type=local,src=/tmp/.buildx-cache/web \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new/web,mode=max \
-            --load -t initbot-web .
+          docker buildx bake -f docker-bake.hcl \
+            --allow=fs.read=/tmp/.buildx-cache/chat \
+            --allow=fs.read=/tmp/.buildx-cache/web \
+            --allow=fs.write=/tmp
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: "Trivy: scan initbot-chat"
