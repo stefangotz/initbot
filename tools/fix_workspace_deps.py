@@ -1,6 +1,11 @@
+#!/usr/bin/env -S uv run
 # SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
+
+# /// script
+# requires-python = ">=3.11"
+# ///
 
 """Sync workspace pyproject.toml dependency specifiers with uv.lock.
 
