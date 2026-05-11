@@ -12,6 +12,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && uv build --package initbot-web --wheel
 
 # Stage 2: shared OS configuration (no packages)
+# builder and runtime-base are shared layers. Building chat and web in two
+# separate `docker buildx build` calls causes a race: the background cache
+# export from the first call holds a write lock on these layers when the second
+# call starts, failing with a "failed to get lease" error. Use
+# `docker buildx bake -f docker-bake.hcl` to build both targets in a single
+# BuildKit session, which eliminates the contention.
 FROM ghcr.io/astral-sh/uv:python3.14-alpine@sha256:5f5ac95b3d254601fc6d6035f26abe48cfbe8775c132e4890748f881434859a5 AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
