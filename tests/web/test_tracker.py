@@ -409,6 +409,24 @@ def test_roll_initiative_invalid_dice_returns_2xx_no_change(tmp_path):
         assert state.characters.get_from_name("Aldric").initiative is None
 
 
+# ── resort-initiative endpoint ───────────────────────────────────────────────
+
+
+def test_resort_requires_auth(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        resp = client.post("/testsecret/tracker/resort")
+        assert resp.status_code == 403
+
+
+def test_resort_returns_2xx_when_authed(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post("/testsecret/tracker/resort")
+        assert resp.status_code in (200, 204)
+
+
 # ── Edit character name and player ────────────────────────────────────────────
 
 

@@ -36,6 +36,7 @@ _ADMIN_PLAYER_NAME: Final[str] = "admin"
 _NAME_INPUT_ERROR_EMPTY: Final[str] = "Enter a character name."
 _NAME_INPUT_ERROR_EXISTS: Final[str] = "A character with this name already exists."
 _NAME_INPUT_ERROR_INVALID: Final[str] = "Name contains characters that are not allowed."
+_STALE_INIT: Final[str] = "⏳"  # ⏳
 
 _log = logging.getLogger(__name__)
 
@@ -157,6 +158,20 @@ def _apply_create(
     return char
 
 
+def _is_initiative_eligible(char: CharacterData, now: int) -> bool:
+    return (
+        char.initiative is not None
+        and char.last_used is not None
+        and char.last_used > now - STALE_SECONDS
+    )
+
+
+def _compute_desired_ranked(all_chars: Sequence[CharacterData], now: int) -> list[str]:
+    eligible = [c for c in all_chars if _is_initiative_eligible(c, now)]
+    eligible.sort(key=lambda c: c.initiative, reverse=True)  # type: ignore[arg-type]
+    return [c.name for c in eligible]
+
+
 def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     state: State,
     templates: Jinja2Templates,
@@ -169,6 +184,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     add_character_url = f"/{url_path_prefix}/tracker/add-character"
     roll_initiative_url = f"/{url_path_prefix}/tracker/roll-initiative"
     delete_character_url = f"/{url_path_prefix}/tracker/delete-character"
+    resort_url = f"/{url_path_prefix}/tracker/resort"
+    sort_state: list[int] = [0]
 
     async def login_page(request: Request) -> Response:
         """GET: validate token without consuming it; render auto-submit login form.
@@ -232,18 +249,12 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
     @datastar_response
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
-        last_snapshot: tuple[tuple[str, int | None, str | None], ...] = ()
-        last_char_snapshot: tuple[tuple[str, int | None, str | None, str], ...] = ()
+        display_ranked: list[str] = []
+        displayed_sort_version: int = -1
+        last_is_stale: bool = False
+        last_table_snapshot: tuple = ()
         last_player_snapshot: tuple[tuple[int, str], ...] = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
-
-        discord_id: int | None = request.session.get("discord_id")
-        logged_in_player = (
-            state.players.get_from_discord_id(discord_id)
-            if discord_id is not None
-            else None
-        )
-        logged_in_player_id = logged_in_player.id if logged_in_player else None
 
         notify_q = request.app.state.notifier.register()
         notify_q.put_nowait(None)
@@ -254,52 +265,62 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 all_chars = state.characters.get_all()
                 all_players = state.players.get_all()
                 players_by_id = {p.id: p for p in all_players}
+                chars_by_name = {c.name: c for c in all_chars}
 
-                chars = [
-                    c
-                    for c in all_chars
-                    if c.initiative is not None
-                    and c.last_used is not None
-                    and c.last_used > now - STALE_SECONDS
-                ]
-                chars.sort(key=lambda c: c.initiative or 0, reverse=True)
-                chars_with_names = [
-                    (c, _resolve_player_name(players_by_id, c)) for c in chars
-                ]
-                snapshot = tuple(
-                    (c.name, c.initiative, c.initiative_dice)
-                    for c, _ in chars_with_names
-                )
-                if snapshot != last_snapshot:
-                    last_snapshot = snapshot
-                    yield SSE.patch_elements(_render_rows(chars_with_names))
+                desired_ranked = _compute_desired_ranked(all_chars, now)
 
-                my_chars = sorted(
-                    [c for c in all_chars if c.player_id == logged_in_player_id],
-                    key=lambda c: c.name,
+                if sort_state[0] > displayed_sort_version:
+                    display_ranked = list(desired_ranked)
+                    displayed_sort_version = sort_state[0]
+                    is_stale = False
+                else:
+                    display_ranked = [
+                        n
+                        for n in display_ranked
+                        if n in chars_by_name
+                        and _is_initiative_eligible(chars_by_name[n], now)
+                    ]
+                    is_stale = display_ranked != desired_ranked
+
+                ranked_set = set(display_ranked)
+                bottom = sorted(
+                    [c for c in all_chars if c.name not in ranked_set],
+                    key=lambda c: c.last_used or 0,
+                    reverse=True,
                 )
-                other_chars = sorted(
-                    [c for c in all_chars if c.player_id != logged_in_player_id],
-                    key=lambda c: c.name,
+                ranked_count = len(display_ranked)
+                full_order: list[tuple[CharacterData, str]] = [
+                    (
+                        chars_by_name[n],
+                        _resolve_player_name(players_by_id, chars_by_name[n]),
+                    )
+                    for n in display_ranked
+                ] + [(c, _resolve_player_name(players_by_id, c)) for c in bottom]
+
+                table_snapshot: tuple = (
+                    tuple(display_ranked),
+                    is_stale,
+                    tuple(
+                        (c.name, c.initiative, c.initiative_dice, pname)
+                        for c, pname in full_order
+                    ),
                 )
-                all_chars_ordered = my_chars + other_chars
-                all_with_names = [
-                    (c, _resolve_player_name(players_by_id, c))
-                    for c in all_chars_ordered
-                ]
-                char_snapshot = tuple(
-                    (c.name, c.initiative, c.initiative_dice, name)
-                    for c, name in all_with_names
-                )
-                if char_snapshot != last_char_snapshot:
-                    last_char_snapshot = char_snapshot
+                if table_snapshot != last_table_snapshot:
+                    last_table_snapshot = table_snapshot
                     yield SSE.patch_elements(
-                        _render_char_rows(
-                            all_with_names,
+                        _render_combined_rows(
+                            full_order,
+                            ranked_count,
+                            is_stale,
                             roll_initiative_url,
                             delete_character_url,
-                            len(my_chars),
                         )
+                    )
+
+                if is_stale != last_is_stale:
+                    last_is_stale = is_stale
+                    yield SSE.patch_elements(
+                        _render_sort_indicator(is_stale, resort_url)
                     )
 
                 players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
@@ -399,6 +420,19 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return err
         return await _roll_initiative(request)
 
+    @datastar_response
+    async def _resort_initiative(
+        request: Request,
+    ) -> DatastarEvent | tuple[()]:
+        sort_state[0] += 1
+        request.app.state.notifier.notify_all()
+        return ()
+
+    async def resort_initiative(request: Request) -> Response:
+        if (err := _require_auth(request)) is not None:
+            return err
+        return await _resort_initiative(request)
+
     async def logout(request: Request) -> Response:
         request.session.clear()
         return Response(status_code=200)
@@ -420,6 +454,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                     delete_character,
                     methods=["POST"],
                 ),
+                Route("/tracker/resort", resort_initiative, methods=["POST"]),
                 Route("/logout", logout),
                 Route("/{token}/", login_page, methods=["GET"]),
                 Route("/{token}/", login_post, methods=["POST"]),
@@ -466,12 +501,12 @@ def _has_valid_dice(initiative_dice: str | None) -> bool:
 
 
 _ROLL_BTN_TITLE = (
-    "Roll initiative using this character\u2019s dice formula. "
+    "Roll initiative using this character's dice formula. "
     "Requires initiative dice to be set (e.g. d20+3). "
     "Equivalent to $init without specifying a value."
 )
 _EDIT_BTN_TITLE = (
-    "Set this character\u2019s initiative. "
+    "Set this character's initiative. "
     "Enter a number (e.g. 17) or a dice formula (e.g. d20+3). "
     "Equivalent to the $init command."
 )
@@ -506,33 +541,31 @@ def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
     )
 
 
-def _render_rows(chars_with_names: list[tuple[CharacterData, str]]) -> str:
-    if not chars_with_names:
-        return (
-            '<tbody id="initiative-rows">'
-            '<tr><td colspan="3">Alea nondum iacta est\u2026</td></tr>'
-            "</tbody>"
-        )
-    rows = "".join(
-        f'<tr id="r{i}">'
-        f"<td>{html.escape(c.name)}</td>"
-        f"<td>{html.escape(name)}</td>"
-        f"<td>{_safe_int(c.initiative)}</td>"
-        f"</tr>"
-        for i, (c, name) in enumerate(chars_with_names)
+def _render_sort_indicator(is_stale: bool, resort_url: str) -> str:
+    if not is_stale:
+        return '<div id="sort-indicator"></div>'
+    return (
+        f'<div id="sort-indicator">'
+        f'<button type="button" class="resort-btn"'
+        f" data-on:click=\"@post('{resort_url}')\">"
+        f"⚔️ Initiative order has changed — click to re-sort"
+        f"</button>"
+        f"</div>"
     )
-    return f'<tbody id="initiative-rows">{rows}</tbody>'
 
 
-def _render_char_rows(
+def _render_combined_rows(
     chars_with_names: list[tuple[CharacterData, str]],
+    ranked_count: int,
+    is_stale: bool,
     roll_url_prefix: str,
     delete_url_prefix: str,
-    my_chars_count: int,
 ) -> str:
     rows = []
     for i, (c, player_name) in enumerate(chars_with_names):
-        separator = ' class="group-separator"' if i == my_chars_count > 0 else ""
+        separator = ' class="group-separator"' if i == ranked_count > 0 else ""
+        in_ranked = i < ranked_count
+        init_cell = _STALE_INIT if (is_stale and in_ranked) else _safe_int(c.initiative)
         roll_btn = (
             _render_roll_button(c.name, roll_url_prefix)
             if _has_valid_dice(c.initiative_dice)
@@ -542,7 +575,7 @@ def _render_char_rows(
             f"<tr{separator}>"
             f"<td>{html.escape(c.name)}</td>"
             f"<td>{html.escape(player_name)}</td>"
-            f"<td>{_safe_int(c.initiative)}</td>"
+            f"<td>{init_cell}</td>"
             f"<td>{_safe_dice(c.initiative_dice)}</td>"
             f"<td>{_render_edit_button(c.name, c.player_id)}</td>"
             f"<td>{roll_btn}</td>"
