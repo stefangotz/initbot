@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import socket
 import time
 
 import pytest
@@ -16,9 +17,17 @@ from initbot_web.app import create_app
 from initbot_web.config import WebSettings
 
 
+def _free_udp_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
+
+
 @pytest.fixture(name="app")
 def _app(tmp_path):
-    settings = WebSettings(state=f"sqlite:{tmp_path / 'test.db'}")
+    settings = WebSettings(
+        state=f"sqlite:{tmp_path / 'test.db'}", notify_port=_free_udp_port()
+    )
     return create_app(settings, web_url_path_prefix="testsecret")
 
 
@@ -55,7 +64,7 @@ def test_login_get_does_not_consume_token(tmp_path):
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
         resp_get = client.get(f"/admintoken/{token}/")
@@ -107,7 +116,7 @@ def test_tracker_page_shows_player_name(tmp_path):
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/admintoken/{token}/")
@@ -140,7 +149,7 @@ def test_per_player_token_creates_session(tmp_path):
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
         resp = client.post(f"/admintoken/{token}/")
@@ -158,7 +167,7 @@ def test_used_token_returns_403(tmp_path):
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="admintoken")
     with TestClient(app, follow_redirects=False) as client:
         client.post(f"/admintoken/{token}/")  # first use — consumes the token
@@ -192,7 +201,9 @@ def test_logout_clears_session(authed_client):
 
 def test_session_survives_restart(tmp_path):
     """Session cookies remain valid when a new app instance reuses the unexpired secret."""
-    settings = WebSettings(state=f"sqlite:{tmp_path / 'test.db'}")
+    settings = WebSettings(
+        state=f"sqlite:{tmp_path / 'test.db'}", notify_port=_free_udp_port()
+    )
     app1 = create_app(settings, web_url_path_prefix="testsecret")
     with TestClient(app1, follow_redirects=False) as client1:
         client1.post(f"/testsecret/{app1.state.admin_token}/")
@@ -217,7 +228,7 @@ def _make_app_with_character(tmp_path):
     char = state.characters.add_store_and_get(
         NewCharacterData(name="Aldric", player_id=player.id)
     )
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="testsecret")
     return app, state, char.name
 
@@ -330,7 +341,9 @@ def test_set_initiative_dice_expression_preserves_existing_initiative(tmp_path):
 
 def test_session_invalidated_after_secret_expiry(tmp_path, monkeypatch):
     """Sessions are invalidated when the signing secret has expired and is rotated."""
-    settings = WebSettings(state=f"sqlite:{tmp_path / 'test.db'}")
+    settings = WebSettings(
+        state=f"sqlite:{tmp_path / 'test.db'}", notify_port=_free_udp_port()
+    )
     app1 = create_app(settings, web_url_path_prefix="testsecret")
     with TestClient(app1, follow_redirects=False) as client1:
         client1.post(f"/testsecret/{app1.state.admin_token}/")
@@ -360,7 +373,7 @@ def _make_app_with_dice(tmp_path, initiative_dice: str | None):
             name="Aldric", player_id=player.id, initiative_dice=initiative_dice
         )
     )
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="testsecret")
     return app, state, char.name
 
@@ -439,7 +452,7 @@ def _make_app_with_two_players(tmp_path):
     char = state.characters.add_store_and_get(
         NewCharacterData(name="Gandalf", player_id=player1.id)
     )
-    settings = WebSettings(state=f"sqlite:{db_path}")
+    settings = WebSettings(state=f"sqlite:{db_path}", notify_port=_free_udp_port())
     app = create_app(settings, web_url_path_prefix="testsecret")
     return app, state, char, player1, player2
 
