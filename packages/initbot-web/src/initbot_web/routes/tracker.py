@@ -5,6 +5,7 @@
 import html
 import logging
 import re
+import secrets
 import time
 from collections.abc import AsyncGenerator, Sequence
 from datetime import datetime
@@ -59,6 +60,7 @@ def _write_session(
     request.session["discord_id"] = discord_id
     request.session["player_name"] = player_name
     request.session["expires_at"] = int(time.time()) + SESSION_TTL
+    request.session["session_key"] = secrets.token_urlsafe(16)
 
 
 def _parse_initval(
@@ -186,10 +188,10 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     delete_character_url = f"/{url_path_prefix}/tracker/delete-character"
     resort_url = f"/{url_path_prefix}/tracker/resort"
     sort_state: list[int] = [0]
-    # Per-session sort versions: incremented when a session makes an initiative change.
-    # Keyed by discord_id (None for admin sessions). Lets the originating session
-    # auto-sort without showing the stale indicator to its own user.
-    session_sort_versions: dict[int | None, int] = {}
+    # Per-browser-session sort versions: keyed by session_key (a random token
+    # assigned at login). Incremented when a session makes an initiative change so
+    # the originating browser auto-sorts without showing the stale indicator.
+    session_sort_versions: dict[str, int] = {}
 
     async def login_page(request: Request) -> Response:
         """GET: validate token without consuming it; render auto-submit login form.
@@ -253,7 +255,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
     @datastar_response
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
-        discord_id: int | None = request.session.get("discord_id")
+        session_key: str = request.session.get("session_key", "")
         display_ranked: list[str] = []
         displayed_sort_version: int = -1
         displayed_session_version: int = -1
@@ -275,7 +277,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
                 desired_ranked = _compute_desired_ranked(all_chars, now)
 
-                own_version = session_sort_versions.get(discord_id, 0)
+                own_version = session_sort_versions.get(session_key, 0)
                 if (
                     own_version > displayed_session_version
                     or sort_state[0] > displayed_sort_version
@@ -389,8 +391,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return result
         result.last_used = int(time.time())
         state.characters.update_and_store(result)
-        _did = request.session.get("discord_id")
-        session_sort_versions[_did] = session_sort_versions.get(_did, 0) + 1
+        _sk = request.session.get("session_key", "")
+        session_sort_versions[_sk] = session_sort_versions.get(_sk, 0) + 1
         return SSE.patch_signals({
             "editing": False,
             "creating": False,
@@ -436,8 +438,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         char.initiative = DiceExpression.create(initiative_dice).roll_one()
         char.last_used = int(time.time())
         state.characters.update_and_store(char)
-        _did = request.session.get("discord_id")
-        session_sort_versions[_did] = session_sort_versions.get(_did, 0) + 1
+        _sk = request.session.get("session_key", "")
+        session_sort_versions[_sk] = session_sort_versions.get(_sk, 0) + 1
         return ()
 
     async def roll_initiative(request: Request) -> Response:
