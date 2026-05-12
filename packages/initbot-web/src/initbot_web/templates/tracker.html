@@ -184,7 +184,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
     /* ── Sort indicator ───────────────────────────────────────── */
     #sort-indicator {
-      margin-bottom: 1rem;
+      margin-top: 1rem;
     }
 
     .resort-btn {
@@ -218,7 +218,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      margin-bottom: 1rem;
+      margin-top: 1rem;
       padding: 0.6rem 1rem;
       border-left: 4px solid var(--color-gold);
       background: var(--color-row-alt);
@@ -326,7 +326,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       line-height: 1;
       cursor: pointer;
       opacity: 0.55;
-      margin: 0.4rem 0 0.4rem 0;
+      margin: 0.75rem 0 0 0;
       padding: 0.1rem 0.2rem;
     }
 
@@ -376,42 +376,40 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <h1>Initiative Order</h1>
   <div data-init="@get('{{ sse_url }}')"
        data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": "", "creating": false, "newcharname": "", "nameerror": "", "editplayerid": ""}'>
-    <div id="sort-indicator"></div>
-    <div data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $creating=false, $editchar=evt.target.closest('.edit-btn').dataset.char, $newcharname=evt.target.closest('.edit-btn').dataset.char, $editplayerid=evt.target.closest('.edit-btn').dataset.playerid, $initval='', $editerror='', $nameerror='')">
-      <button type="button" class="add-btn"
-              title="Add a new character to the tracker"
-              data-on:click="$editing=true, $creating=true, $editchar='', $initval='', $newcharname='', $editplayerid='', $editerror='', $nameerror=''">
-        &#x2795;
-      </button>
-      <div id="edit-panel" data-show="$editing" style="display: none">
-        <form data-on:submit__prevent="@post('{{ add_character_url }}')"
-              data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
-          <input id="name-input" type="text" data-bind:newcharname
-                 maxlength="32"
-                 autocomplete="off" placeholder="Character name"
-                 data-on:keydown="evt.key==='Escape' && ($editing=false)"
-                 data-on:input="$nameerror=''">
-          <p id="name-error" data-show="$nameerror" data-text="$nameerror" style="display:none"></p>
-          <input id="edit-input" type="text" data-bind:initval
-                 autocomplete="off" placeholder="e.g. 17 or d20+3"
-                 data-on:keydown="evt.key==='Escape' && ($editing=false)"
-                 data-on:input="$editerror=''">
-          <select id="player-select" data-bind:editplayerid
-                  data-show="!$creating" style="display:none">
-          </select>
-          <button type="submit" style="display:none" aria-hidden="true"></button>
-          <button type="button" class="cancel-touch"
-                  data-on:click="$editing=false">&#x2717;</button>
-          <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
-        </form>
-      </div>
-      <table>
-        <thead>
-          <tr><th>Character</th><th>Player</th><th>Init</th><th>Dice</th><th></th><th></th><th></th></tr>
-        </thead>
-        <tbody id="char-rows"></tbody>
-      </table>
+    <table data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $creating=false, $editchar=evt.target.closest('.edit-btn').dataset.char, $newcharname=evt.target.closest('.edit-btn').dataset.char, $editplayerid=evt.target.closest('.edit-btn').dataset.playerid, $initval='', $editerror='', $nameerror='')">
+      <thead>
+        <tr><th>Character</th><th>Player</th><th>Init</th><th>Dice</th><th></th><th></th><th></th></tr>
+      </thead>
+      <tbody id="char-rows"></tbody>
+    </table>
+    <button type="button" class="add-btn"
+            title="Add a new character to the tracker"
+            data-on:click="$editing=true, $creating=true, $editchar='', $initval='', $newcharname='', $editplayerid='', $editerror='', $nameerror=''">
+      &#x2795;
+    </button>
+    <div id="edit-panel" data-show="$editing" style="display: none">
+      <form data-on:submit__prevent="@post('{{ add_character_url }}')"
+            data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
+        <input id="name-input" type="text" data-bind:newcharname
+               maxlength="32"
+               autocomplete="off" placeholder="Character name"
+               data-on:keydown="evt.key==='Escape' && ($editing=false)"
+               data-on:input="$nameerror=''">
+        <p id="name-error" data-show="$nameerror" data-text="$nameerror" style="display:none"></p>
+        <input id="edit-input" type="text" data-bind:initval
+               autocomplete="off" placeholder="e.g. 17 or d20+3"
+               data-on:keydown="evt.key==='Escape' && ($editing=false)"
+               data-on:input="$editerror=''">
+        <select id="player-select" data-bind:editplayerid
+                data-show="!$creating" style="display:none">
+        </select>
+        <button type="submit" style="display:none" aria-hidden="true"></button>
+        <button type="button" class="cancel-touch"
+                data-on:click="$editing=false">&#x2717;</button>
+        <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
+      </form>
     </div>
+    <div id="sort-indicator"></div>
   </div>
 </body>
 </html>
