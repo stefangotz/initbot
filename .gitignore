@@ -11,6 +11,9 @@ dist
 package-lock.json
 build
 initbot.egg-info
+*.db
+*.db-shm
+*.db-wal
 TODO
 .mutmut-cache
 mutants/
