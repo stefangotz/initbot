@@ -186,6 +186,10 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     delete_character_url = f"/{url_path_prefix}/tracker/delete-character"
     resort_url = f"/{url_path_prefix}/tracker/resort"
     sort_state: list[int] = [0]
+    # Per-session sort versions: incremented when a session makes an initiative change.
+    # Keyed by discord_id (None for admin sessions). Lets the originating session
+    # auto-sort without showing the stale indicator to its own user.
+    session_sort_versions: dict[int | None, int] = {}
 
     async def login_page(request: Request) -> Response:
         """GET: validate token without consuming it; render auto-submit login form.
@@ -249,8 +253,10 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
     @datastar_response
     async def _tracker_sse(request: Request) -> AsyncGenerator[DatastarEvent, None]:
+        discord_id: int | None = request.session.get("discord_id")
         display_ranked: list[str] = []
         displayed_sort_version: int = -1
+        displayed_session_version: int = -1
         last_is_stale: bool = False
         last_table_snapshot: tuple = ()
         last_player_snapshot: tuple[tuple[int, str], ...] = ()
@@ -269,10 +275,16 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
                 desired_ranked = _compute_desired_ranked(all_chars, now)
 
-                if sort_state[0] > displayed_sort_version:
+                own_version = session_sort_versions.get(discord_id, 0)
+                if (
+                    own_version > displayed_session_version
+                    or sort_state[0] > displayed_sort_version
+                ):
                     display_ranked = list(desired_ranked)
                     displayed_sort_version = sort_state[0]
+                    displayed_session_version = own_version
                     is_stale = False
+                    stale_names: frozenset[str] = frozenset()
                 else:
                     display_ranked = [
                         n
@@ -281,6 +293,15 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                         and _is_initiative_eligible(chars_by_name[n], now)
                     ]
                     is_stale = display_ranked != desired_ranked
+                    if is_stale:
+                        desired_index = {n: i for i, n in enumerate(desired_ranked)}
+                        stale_names = frozenset(
+                            n
+                            for i, n in enumerate(display_ranked)
+                            if desired_index.get(n, -1) != i
+                        )
+                    else:
+                        stale_names = frozenset()
 
                 ranked_set = set(display_ranked)
                 bottom = sorted(
@@ -299,7 +320,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
 
                 table_snapshot: tuple = (
                     tuple(display_ranked),
-                    is_stale,
+                    stale_names,
                     tuple(
                         (c.name, c.initiative, c.initiative_dice, pname)
                         for c, pname in full_order
@@ -311,7 +332,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                         _render_combined_rows(
                             full_order,
                             ranked_count,
-                            is_stale,
+                            stale_names,
                             roll_initiative_url,
                             delete_character_url,
                         )
@@ -368,6 +389,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             return result
         result.last_used = int(time.time())
         state.characters.update_and_store(result)
+        _did = request.session.get("discord_id")
+        session_sort_versions[_did] = session_sort_versions.get(_did, 0) + 1
         return SSE.patch_signals({
             "editing": False,
             "creating": False,
@@ -413,6 +436,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         char.initiative = DiceExpression.create(initiative_dice).roll_one()
         char.last_used = int(time.time())
         state.characters.update_and_store(char)
+        _did = request.session.get("discord_id")
+        session_sort_versions[_did] = session_sort_versions.get(_did, 0) + 1
         return ()
 
     async def roll_initiative(request: Request) -> Response:
@@ -548,7 +573,7 @@ def _render_sort_indicator(is_stale: bool, resort_url: str) -> str:
         f'<div id="sort-indicator">'
         f'<button type="button" class="resort-btn"'
         f" data-on:click=\"@post('{resort_url}')\">"
-        f"⚔️ Initiative order has changed — click to re-sort"
+        f"Update initiatives"
         f"</button>"
         f"</div>"
     )
@@ -557,15 +582,14 @@ def _render_sort_indicator(is_stale: bool, resort_url: str) -> str:
 def _render_combined_rows(
     chars_with_names: list[tuple[CharacterData, str]],
     ranked_count: int,
-    is_stale: bool,
+    stale_names: frozenset[str],
     roll_url_prefix: str,
     delete_url_prefix: str,
 ) -> str:
     rows = []
     for i, (c, player_name) in enumerate(chars_with_names):
         separator = ' class="group-separator"' if i == ranked_count > 0 else ""
-        in_ranked = i < ranked_count
-        init_cell = _STALE_INIT if (is_stale and in_ranked) else _safe_int(c.initiative)
+        init_cell = _STALE_INIT if c.name in stale_names else _safe_int(c.initiative)
         roll_btn = (
             _render_roll_button(c.name, roll_url_prefix)
             if _has_valid_dice(c.initiative_dice)
