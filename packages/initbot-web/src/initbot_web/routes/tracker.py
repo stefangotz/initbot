@@ -39,6 +39,19 @@ _NAME_INPUT_ERROR_EXISTS: Final[str] = "A character with this name already exist
 _NAME_INPUT_ERROR_INVALID: Final[str] = "Name contains characters that are not allowed."
 _STALE_INIT: Final[str] = "⏳"  # ⏳
 
+# Datastar signal name constants — must match the keys in tracker.html data-signals
+# and data-bind attributes.
+_SIG_EDITCHAR: Final[str] = "editchar"
+_SIG_EDITINGFIELD: Final[str] = "editingfield"
+_SIG_NEXTCHAR: Final[str] = "nextchar"
+_SIG_NEXTFIELD: Final[str] = "nextfield"
+_SIG_INITVAL: Final[str] = "initval"
+_SIG_EDITERROR: Final[str] = "editerror"
+_SIG_NAMEERROR: Final[str] = "nameerror"
+_SIG_EDITPLAYERID: Final[str] = "editplayerid"
+_SIG_CREATING: Final[str] = "creating"
+_SIG_NEWCHARNAME: Final[str] = "newcharname"
+
 _log = logging.getLogger(__name__)
 
 
@@ -71,18 +84,18 @@ def _parse_initval(
     if not initval:
         if allow_empty:
             return None, None
-        return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+        return None, SSE.patch_signals({_SIG_EDITERROR: _INITIATIVE_INPUT_ERROR})
     try:
         as_integer = int(initval)
         if as_integer < -99 or as_integer > 99:
-            return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+            return None, SSE.patch_signals({_SIG_EDITERROR: _INITIATIVE_INPUT_ERROR})
         return as_integer, None
     except ValueError:
         try:
             DiceExpression.create(initval)
             return None, None
         except ValueError:
-            return None, SSE.patch_signals({"editerror": _INITIATIVE_INPUT_ERROR})
+            return None, SSE.patch_signals({_SIG_EDITERROR: _INITIATIVE_INPUT_ERROR})
 
 
 def _apply_edit(
@@ -97,7 +110,7 @@ def _apply_edit(
     try:
         effective_name = validate_character_name(effective_name)
     except ValueError:
-        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_INVALID})
+        return SSE.patch_signals({_SIG_NAMEERROR: _NAME_INPUT_ERROR_INVALID})
     as_integer, err = _parse_initval(initval, allow_empty=True)
     if err is not None:
         return err
@@ -109,7 +122,7 @@ def _apply_edit(
         try:
             char = state.characters.rename_and_store(char, effective_name)
         except ValueError:
-            return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_EXISTS})
+            return SSE.patch_signals({_SIG_NAMEERROR: _NAME_INPUT_ERROR_EXISTS})
     if editplayerid_str:
         try:
             new_player_id = int(editplayerid_str)
@@ -137,7 +150,7 @@ def _apply_create(
     try:
         new_char_name = validate_character_name(new_char_name)
     except ValueError:
-        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_INVALID})
+        return SSE.patch_signals({_SIG_NAMEERROR: _NAME_INPUT_ERROR_INVALID})
     as_integer, err = _parse_initval(initval)
     if err is not None:
         return err
@@ -152,7 +165,7 @@ def _apply_create(
             NewCharacterData(name=new_char_name, player_id=player.id)
         )
     except ValueError:
-        return SSE.patch_signals({"nameerror": _NAME_INPUT_ERROR_EXISTS})
+        return SSE.patch_signals({_SIG_NAMEERROR: _NAME_INPUT_ERROR_EXISTS})
     if as_integer is not None:
         char.initiative = as_integer
     else:
@@ -261,7 +274,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         displayed_session_version: int = -1
         last_is_stale: bool = False
         last_table_snapshot: tuple = ()
-        last_player_snapshot: tuple[tuple[int, str], ...] = ()
+        last_player_snapshot: tuple = ()
         last_vuln = vuln_state.has_high_severity_vulnerabilities
 
         notify_q = request.app.state.notifier.register()
@@ -320,6 +333,9 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                     for n in display_ranked
                 ] + [(c, _resolve_player_name(players_by_id, c)) for c in bottom]
 
+                players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
+                player_snapshot = tuple((p.id, p.name) for p in players)
+
                 table_snapshot: tuple = (
                     tuple(display_ranked),
                     stale_names,
@@ -328,8 +344,12 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                         for c, pname in full_order
                     ),
                 )
-                if table_snapshot != last_table_snapshot:
+                if (
+                    table_snapshot != last_table_snapshot
+                    or player_snapshot != last_player_snapshot
+                ):
                     last_table_snapshot = table_snapshot
+                    last_player_snapshot = player_snapshot
                     yield SSE.patch_elements(
                         _render_combined_rows(
                             full_order,
@@ -337,6 +357,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                             stale_names,
                             roll_initiative_url,
                             delete_character_url,
+                            players,
+                            add_character_url,
                         )
                     )
 
@@ -345,12 +367,6 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                     yield SSE.patch_elements(
                         _render_sort_indicator(is_stale, resort_url)
                     )
-
-                players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
-                player_snapshot = tuple((p.id, p.name) for p in players)
-                if player_snapshot != last_player_snapshot:
-                    last_player_snapshot = player_snapshot
-                    yield SSE.patch_elements(_render_player_select(players))
 
                 current_vuln = vuln_state.has_high_severity_vulnerabilities
                 if current_vuln != last_vuln:
@@ -369,14 +385,14 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         request: Request,
     ) -> DatastarEvent | tuple[()]:
         data = await request.json()
-        edit_char_name: str = str(data.get("editchar", "")).strip()
-        initval: str = str(data.get("initval", "")).strip()
+        edit_char_name: str = str(data.get(_SIG_EDITCHAR, "")).strip()
+        initval: str = str(data.get(_SIG_INITVAL, "")).strip()
         if edit_char_name:
             result = _apply_edit(
                 state,
                 edit_char_name,
-                str(data.get("newcharname", "")).strip(),
-                str(data.get("editplayerid", "")).strip(),
+                str(data.get(_SIG_NEWCHARNAME, "")).strip(),
+                str(data.get(_SIG_EDITPLAYERID, "")).strip(),
                 initval,
             )
         else:
@@ -384,7 +400,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 state,
                 request.session.get("discord_id"),
                 request.session.get("player_name"),
-                str(data.get("newcharname", "")).strip(),
+                str(data.get(_SIG_NEWCHARNAME, "")).strip(),
                 initval,
             )
         if not isinstance(result, CharacterData):
@@ -393,11 +409,45 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         state.characters.update_and_store(result)
         _sk = request.session.get("session_key", "")
         session_sort_versions[_sk] = session_sort_versions.get(_sk, 0) + 1
+        nextchar: str = str(data.get(_SIG_NEXTCHAR, "")).strip()
+        nextfield: str = str(data.get(_SIG_NEXTFIELD, "")).strip()
+        if nextfield:
+            try:
+                next_c = (
+                    state.characters.get_from_name(nextchar) if nextchar else result
+                )
+            except (KeyError, ValueError, TypeError):
+                next_c = result
+            extra: dict[str, str] = {}
+            if nextfield == "player":
+                extra[_SIG_EDITPLAYERID] = str(next_c.player_id)
+            elif nextfield == "init":
+                extra[_SIG_INITVAL] = (
+                    str(next_c.initiative) if next_c.initiative is not None else ""
+                )
+            elif nextfield == "dice":
+                extra[_SIG_INITVAL] = next_c.initiative_dice or ""
+            elif nextfield == "name":
+                extra[_SIG_NEWCHARNAME] = next_c.name
+            return SSE.patch_signals(
+                {
+                    _SIG_EDITCHAR: next_c.name,
+                    _SIG_EDITINGFIELD: nextfield,
+                    _SIG_NEXTCHAR: "",
+                    _SIG_NEXTFIELD: "",
+                    _SIG_EDITERROR: "",
+                    _SIG_NAMEERROR: "",
+                }
+                | extra
+            )
         return SSE.patch_signals({
-            "editing": False,
-            "creating": False,
-            "editerror": "",
-            "nameerror": "",
+            _SIG_EDITCHAR: "",
+            _SIG_EDITINGFIELD: "",
+            _SIG_CREATING: False,
+            _SIG_NEXTCHAR: "",
+            _SIG_NEXTFIELD: "",
+            _SIG_EDITERROR: "",
+            _SIG_NAMEERROR: "",
         })
 
     async def add_character(request: Request) -> Response:
@@ -506,14 +556,9 @@ def _render_alert(has_high_severity_vulnerabilities: bool) -> str:
     return f'<div id="security-alert">{content}</div>'
 
 
-def _render_player_select(players: Sequence[PlayerData]) -> str:
-    options = "".join(
+def _render_player_options(players: Sequence[PlayerData]) -> str:
+    return "".join(
         f'<option value="{p.id}">{html.escape(p.name)}</option>' for p in players
-    )
-    return (
-        f'<select id="player-select" data-bind:editplayerid '
-        f'data-show="!$creating" style="display:none">'
-        f"{options}</select>"
     )
 
 
@@ -532,11 +577,6 @@ _ROLL_BTN_TITLE = (
     "Requires initiative dice to be set (e.g. d20+3). "
     "Equivalent to $init without specifying a value."
 )
-_EDIT_BTN_TITLE = (
-    "Set this character's initiative. "
-    "Enter a number (e.g. 17) or a dice formula (e.g. d20+3). "
-    "Equivalent to the $init command."
-)
 _DELETE_BTN_TITLE = (
     "Remove this character from the tracker. Equivalent to the $remove command."
 )
@@ -544,26 +584,30 @@ _DELETE_BTN_TITLE = (
 
 def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
     encoded = quote(char_name, safe="")
+    tab = "evt.key==='Tab'&&(evt.preventDefault(),el.closest('tr').querySelector('.del-btn')?.focus())"
     return (
         f'<button type="button" class="roll-btn" title="{_ROLL_BTN_TITLE}"'
-        f" data-on:click=\"@post('{roll_url_prefix}/{encoded}')\">"
+        f" data-on:click=\"@post('{roll_url_prefix}/{encoded}')\""
+        f' data-on:keydown="{tab}"'
+        f" data-on:focus=\"$editchar=''\">"
         f"\U0001f3b2</button>"
-    )
-
-
-def _render_edit_button(char_name: str, player_id: int) -> str:
-    escaped = html.escape(char_name, quote=True)
-    return (
-        f'<button type="button" class="edit-btn" title="{_EDIT_BTN_TITLE}"'
-        f' data-char="{escaped}" data-playerid="{player_id}">\U0001f58a</button>'
     )
 
 
 def _render_delete_button(char_name: str, delete_url_prefix: str) -> str:
     encoded = quote(char_name, safe="")
+    tab = (
+        "evt.key==='Tab'&&(evt.preventDefault(),"
+        "$editchar=el.closest('tr').dataset.char,"
+        "$editingfield='init',"
+        "$initval=el.closest('tr').dataset.initval,"
+        "$newcharname='',$editplayerid='',$editerror='',$nameerror='',$creating=false)"
+    )
     return (
         f'<button type="button" class="del-btn" title="{_DELETE_BTN_TITLE}"'
-        f" data-on:click=\"@post('{delete_url_prefix}/{encoded}')\">"
+        f" data-on:click=\"@post('{delete_url_prefix}/{encoded}')\""
+        f' data-on:keydown="{tab}"'
+        f" data-on:focus=\"$editchar=''\">"
         f"\U0001f5d1</button>"
     )
 
@@ -581,32 +625,245 @@ def _render_sort_indicator(is_stale: bool, resort_url: str) -> str:
     )
 
 
-def _render_combined_rows(
+def _inline_click_switch(next_field: str, add_url: str, direct_open: str) -> str:
+    """Return a data-on:click expression for clicking a cell while another may be open.
+
+    If an edit is active the click saves it first (POST), then opens next_field.
+    The guard `!($editingfield==='name'&&$newcharname==='')` skips the POST when
+    the name input is open but empty — matching the Escape-without-save semantics
+    that apply to empty name edits.  In all other cases (including empty init/dice)
+    the POST is sent and the server decides whether to accept or reject the value.
+    """
+    save_and_switch = (
+        f"($nextchar=el.closest('tr').dataset.char,"
+        f"$nextfield='{next_field}',@post('{add_url}'))"
+    )
+    return (
+        f"$editchar!==''&&!($editingfield==='name'&&$newcharname==='')"
+        f"?{save_and_switch}"
+        f":{direct_open}"
+    )
+
+
+def _inline_blur(field: str) -> str:
+    """Return a data-on:blur expression that cancels the edit only when this field is active.
+
+    The $nextfield==='' guard prevents cancellation during a save-and-switch sequence,
+    where focus temporarily leaves the input while the POST is in flight.
+    """
+    return (
+        f"setTimeout(()=>{{"
+        f"if(el.closest('tr').dataset.char===$editchar"
+        f"&&$editingfield==='{field}'"
+        f"&&$nextfield===''"
+        f"&&!el.closest('td').contains(document.activeElement))"
+        f"{{$editchar='';$editingfield='';$editerror='';$nameerror='';}}"
+        f"}},0)"
+    )
+
+
+def _render_inline_name_cell(char_name: str, add_url: str) -> str:
+    safe_name = html.escape(char_name)
+    field = "name"
+    span_show = f"el.closest('tr').dataset.char!==$editchar||$editingfield!=='{field}'"
+    input_show = f"el.closest('tr').dataset.char===$editchar&&$editingfield==='{field}'"
+    direct_open = (
+        f"($editchar=el.closest('tr').dataset.char,$editingfield='{field}',"
+        f"$newcharname=el.closest('tr').dataset.char,$initval='',"
+        f"$editplayerid='',$editerror='',$nameerror='',$creating=false)"
+    )
+    click = _inline_click_switch(field, add_url, direct_open)
+    keydown = (
+        f"evt.key==='Escape'?($editchar='',$editingfield='',$editerror='',$nameerror=''):"
+        f"evt.key==='Tab'?(evt.preventDefault(),"
+        f"$newcharname===''?"
+        f"($editingfield='player',$editplayerid=el.closest('tr').dataset.playerid):"
+        f"($editingfield='player',$editplayerid=el.closest('tr').dataset.playerid,"
+        f"$nextfield='player',@post('{add_url}'))):"
+        f"(evt.key==='Enter'&&($newcharname===''?"
+        f"($editchar='',$editingfield='',$editerror='',$nameerror=''):"
+        f"@post('{add_url}')))"
+    )
+    blur = _inline_blur(field)
+    effect = f"({input_show})&&setTimeout(()=>el.focus(),0)"
+    error_show = f"{input_show}&&$nameerror"
+    return (
+        f"<td>"
+        f'<span class="editable" data-show="{span_show}" data-on:click="{click}">'
+        f"{safe_name}</span>"
+        f'<input class="inline-input" type="text" data-bind:newcharname'
+        f' data-show="{input_show}" style="display:none"'
+        f' maxlength="32" autocomplete="off" placeholder="Character name"'
+        f' data-effect="{effect}"'
+        f' data-on:keydown="{keydown}"'
+        f' data-on:blur="{blur}">'
+        f'<span class="field-error" data-show="{error_show}"'
+        f' data-text="$nameerror" style="display:none"></span>'
+        f"</td>"
+    )
+
+
+def _render_inline_player_cell(
+    player_name: str,
+    players: Sequence[PlayerData],
+    add_url: str,
+) -> str:
+    safe_player = html.escape(player_name)
+    options = _render_player_options(players)
+    field = "player"
+    span_show = f"el.closest('tr').dataset.char!==$editchar||$editingfield!=='{field}'"
+    select_show = (
+        f"el.closest('tr').dataset.char===$editchar&&$editingfield==='{field}'"
+    )
+    direct_open = (
+        f"($editchar=el.closest('tr').dataset.char,$editingfield='{field}',"
+        f"$editplayerid=el.closest('tr').dataset.playerid,"
+        f"$newcharname='',$initval='',$editerror='',$nameerror='',$creating=false)"
+    )
+    click = _inline_click_switch(field, add_url, direct_open)
+    # Tab moves to dice; $initval is left empty here and pre-filled by the server
+    # response (nextfield='dice' causes the server to return initval=dice formula).
+    select_keydown = (
+        f"evt.key==='Tab'&&$editchar!==''?(evt.preventDefault(),"
+        f"$editingfield='dice',"
+        f"$nextfield='dice',@post('{add_url}')):"
+        f"(evt.key==='Escape'&&($editchar='',$editingfield=''))"
+    )
+    blur = (
+        f"setTimeout(()=>{{"
+        f"if(el.closest('tr').dataset.char===$editchar"
+        f"&&$editingfield==='{field}'"
+        f"&&$nextfield===''"
+        f"&&!el.closest('td').contains(document.activeElement))"
+        f"{{$editchar='';$editingfield='';}}"
+        f"}},0)"
+    )
+    effect = f"({select_show})&&setTimeout(()=>el.focus(),0)"
+    return (
+        f"<td>"
+        f'<span class="editable" data-show="{span_show}" data-on:click="{click}">'
+        f"{safe_player}</span>"
+        f'<select class="inline-select" data-bind:editplayerid'
+        f' data-show="{select_show}" style="display:none"'
+        f' data-effect="{effect}"'
+        f" data-on:change=\"@post('{add_url}')\""
+        f' data-on:keydown="{select_keydown}"'
+        f' data-on:blur="{blur}">'
+        f"{options}</select>"
+        f"</td>"
+    )
+
+
+def _render_inline_init_cell(init_display: str, add_url: str) -> str:
+    field = "init"
+    span_class = "editable editable-empty" if init_display == "—" else "editable"
+    span_show = f"el.closest('tr').dataset.char!==$editchar||$editingfield!=='{field}'"
+    input_show = f"el.closest('tr').dataset.char===$editchar&&$editingfield==='{field}'"
+    direct_open = (
+        f"($editchar=el.closest('tr').dataset.char,$editingfield='{field}',"
+        f"$initval=el.closest('tr').dataset.initval,"
+        f"$newcharname='',$editplayerid='',$editerror='',$nameerror='',$creating=false)"
+    )
+    click = _inline_click_switch(field, add_url, direct_open)
+    keydown = (
+        f"evt.key==='Escape'?($editchar='',$editingfield='',$editerror=''):"
+        f"evt.key==='Tab'?(evt.preventDefault(),"
+        f"$editingfield='name',$newcharname=el.closest('tr').dataset.char,"
+        f"$nextfield='name',@post('{add_url}')):"
+        f"(evt.key==='Enter'&&@post('{add_url}'))"
+    )
+    blur = _inline_blur(field)
+    effect = f"({input_show})&&setTimeout(()=>el.focus(),0)"
+    error_show = f"{input_show}&&$editerror"
+    return (
+        f"<td>"
+        f'<span class="{span_class}" data-show="{span_show}" data-on:click="{click}">'
+        f"{init_display}</span>"
+        f'<input class="inline-input" type="text" data-bind:initval'
+        f' data-show="{input_show}" style="display:none"'
+        f' autocomplete="off" placeholder="e.g. 17 or d20+3"'
+        f' data-effect="{effect}"'
+        f' data-on:keydown="{keydown}"'
+        f' data-on:blur="{blur}">'
+        f'<span class="field-error" data-show="{error_show}"'
+        f' data-text="$editerror" style="display:none"></span>'
+        f"</td>"
+    )
+
+
+def _render_inline_dice_cell(initiative_dice: str | None, add_url: str) -> str:
+    display = _safe_dice(initiative_dice) or "—"
+    field = "dice"
+    span_class = "editable editable-empty" if display == "—" else "editable"
+    span_show = f"el.closest('tr').dataset.char!==$editchar||$editingfield!=='{field}'"
+    input_show = f"el.closest('tr').dataset.char===$editchar&&$editingfield==='{field}'"
+    direct_open = (
+        f"($editchar=el.closest('tr').dataset.char,$editingfield='{field}',"
+        f"$initval=el.closest('tr').dataset.diceval,"
+        f"$newcharname='',$editplayerid='',$editerror='',$nameerror='',$creating=false)"
+    )
+    click = _inline_click_switch(field, add_url, direct_open)
+    keydown = (
+        f"evt.key==='Escape'?($editchar='',$editingfield='',$editerror=''):"
+        f"evt.key==='Tab'?(evt.preventDefault(),"
+        f"$editingfield='',"
+        f"@post('{add_url}'),"
+        f"setTimeout(()=>(el.closest('tr').querySelector('.roll-btn')"
+        f"||el.closest('tr').querySelector('.del-btn'))?.focus(),0)):"
+        f"(evt.key==='Enter'&&@post('{add_url}'))"
+    )
+    blur = _inline_blur(field)
+    effect = f"({input_show})&&setTimeout(()=>el.focus(),0)"
+    error_show = f"{input_show}&&$editerror"
+    return (
+        f"<td>"
+        f'<span class="{span_class}" data-show="{span_show}" data-on:click="{click}">'
+        f"{display}</span>"
+        f'<input class="inline-input" type="text" data-bind:initval'
+        f' data-show="{input_show}" style="display:none"'
+        f' autocomplete="off" placeholder="e.g. d20+3"'
+        f' data-effect="{effect}"'
+        f' data-on:keydown="{keydown}"'
+        f' data-on:blur="{blur}">'
+        f'<span class="field-error" data-show="{error_show}"'
+        f' data-text="$editerror" style="display:none"></span>'
+        f"</td>"
+    )
+
+
+def _render_combined_rows(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     chars_with_names: list[tuple[CharacterData, str]],
     ranked_count: int,
     stale_names: frozenset[str],
     roll_url_prefix: str,
     delete_url_prefix: str,
+    players: Sequence[PlayerData],
+    add_character_url: str,
 ) -> str:
     rows = []
     for i, (c, player_name) in enumerate(chars_with_names):
         separator = ' class="group-separator"' if i == ranked_count > 0 else ""
-        init_cell = _STALE_INIT if c.name in stale_names else _safe_int(c.initiative)
+        init_display = (
+            _STALE_INIT if c.name in stale_names else (_safe_int(c.initiative) or "—")
+        )
         roll_btn = (
             _render_roll_button(c.name, roll_url_prefix)
             if _has_valid_dice(c.initiative_dice)
             else ""
         )
         rows.append(
-            f"<tr{separator}>"
-            f"<td>{html.escape(c.name)}</td>"
-            f"<td>{html.escape(player_name)}</td>"
-            f"<td>{init_cell}</td>"
-            f"<td>{_safe_dice(c.initiative_dice)}</td>"
-            f"<td>{_render_edit_button(c.name, c.player_id)}</td>"
-            f"<td>{roll_btn}</td>"
-            f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
-            f"</tr>"
+            f"<tr{separator}"
+            f' data-char="{html.escape(c.name, quote=True)}"'
+            f' data-playerid="{c.player_id}"'
+            f' data-initval="{_safe_int(c.initiative) or ""}"'
+            f' data-diceval="{html.escape(_safe_dice(c.initiative_dice), quote=True)}">'
+            + _render_inline_init_cell(init_display, add_character_url)
+            + _render_inline_name_cell(c.name, add_character_url)
+            + _render_inline_player_cell(player_name, players, add_character_url)
+            + _render_inline_dice_cell(c.initiative_dice, add_character_url)
+            + f"<td>{roll_btn}</td>"
+            + f"<td>{_render_delete_button(c.name, delete_url_prefix)}</td>"
+            + "</tr>"
         )
     return f'<tbody id="char-rows">{"".join(rows)}</tbody>'
 

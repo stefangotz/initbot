@@ -133,28 +133,27 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     /* ── Column styles ──────────────────────────────────────────── */
-    /* Character name column: absorb remaining width */
-    thead th:first-child,
+    /* Init value — gold, bold */
     #char-rows td:first-child {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--color-gold);
+    }
+
+    /* Character name column: absorb remaining width, bold */
+    thead th:nth-child(2),
+    #char-rows td:nth-child(2) {
       width: 100%;
     }
 
-    /* Character name — bold */
-    #char-rows td:first-child {
+    #char-rows td:nth-child(2) {
       font-weight: 700;
     }
 
     /* Player name — muted */
-    #char-rows td:nth-child(2) {
+    #char-rows td:nth-child(3) {
       color: rgba(26, 18, 9, 0.65);
       font-size: 0.9rem;
-    }
-
-    /* Init value — gold, bold */
-    #char-rows td:nth-child(3) {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: var(--color-gold);
     }
 
     /* Dice expression — muted */
@@ -163,10 +162,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-size: 0.9rem;
     }
 
-    /* Action columns (edit, die, delete) — narrow, centred */
+    /* Action columns (roll, delete) — narrow, centred */
     #char-rows td:nth-child(5),
-    #char-rows td:nth-child(6),
-    #char-rows td:nth-child(7) {
+    #char-rows td:nth-child(6) {
+      width: 2rem;
+      text-align: center;
+      padding: 0.6rem 0.25rem;
+    }
+
+    /* Create row action column */
+    #create-row td:nth-child(6) {
       width: 2rem;
       text-align: center;
       padding: 0.6rem 0.25rem;
@@ -213,55 +218,52 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       50%       { box-shadow: 0 0 0 8px rgba(184, 134, 11, 0); }
     }
 
-    /* ── Edit panel ───────────────────────────────────────────── */
-    #edit-panel {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-top: 1rem;
-      padding: 0.6rem 1rem;
-      border-left: 4px solid var(--color-gold);
-      background: var(--color-row-alt);
+    /* ── Inline editing ───────────────────────────────────────── */
+    .editable {
+      display: block;
+      cursor: pointer;
+      border-radius: 2px;
     }
 
-#edit-panel form {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .editable:hover {
+      background: rgba(184, 134, 11, 0.12);
     }
 
-    #edit-input,
-    #name-input,
-    #player-select {
+    .editable-empty {
+      color: rgba(26, 18, 9, 0.3);
+      font-style: italic;
+    }
+
+    .inline-input {
       font-family: var(--font-main);
-      font-size: 1rem;
+      font-size: inherit;
       color: var(--color-gold);
       background: transparent;
       border: none;
       border-bottom: 2px solid var(--color-gold);
-      padding: 0.15rem 0.25rem;
+      padding: 0.1rem 0.2rem;
       outline: none;
+      width: 100%;
+      min-width: 4rem;
     }
 
-    #edit-input,
-    #name-input {
-      width: 15rem;
-      text-align: center;
-    }
-
-    #player-select {
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c9a84c'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.25rem center;
-      padding-right: 1.25rem;
+    .inline-select {
+      font-family: var(--font-main);
+      font-size: 0.9rem;
+      color: var(--color-gold);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--color-gold);
+      outline: none;
       cursor: pointer;
     }
 
-    #player-select option {
-      background: var(--color-bg, #1a1a2e);
-      color: var(--color-gold);
+    .field-error {
+      display: block;
+      font-size: 0.78rem;
+      color: #c0392b;
+      margin-top: 0.15rem;
+      font-family: var(--font-main);
     }
 
     /* ── Delete button ────────────────────────────────────────── */
@@ -284,22 +286,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     thead th:last-child {
       width: 2.5rem;
       text-align: center;
-    }
-
-    /* ── Edit button ──────────────────────────────────────────── */
-    .edit-btn {
-      background: none;
-      border: none;
-      padding: 0 0.25rem;
-      color: var(--color-gold);
-      opacity: 0.45;
-      cursor: pointer;
-      font-size: 0.85rem;
-      line-height: 1;
-    }
-
-    .edit-btn:hover {
-      opacity: 1;
     }
 
     /* ── Roll button ──────────────────────────────────────────── */
@@ -375,40 +361,44 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <div id="security-alert">{% if has_high_severity_vulnerabilities %}<p>This application needs to receive a security update.</p>{% endif %}</div>
   <h1>Initiative Order</h1>
   <div data-init="@get('{{ sse_url }}')"
-       data-signals='{"editing": false, "editchar": "", "initval": "", "editerror": "", "creating": false, "newcharname": "", "nameerror": "", "editplayerid": ""}'>
-    <table data-on:click="evt.target.closest('.edit-btn') && ($editing=true, $creating=false, $editchar=evt.target.closest('.edit-btn').dataset.char, $newcharname=evt.target.closest('.edit-btn').dataset.char, $editplayerid=evt.target.closest('.edit-btn').dataset.playerid, $initval='', $editerror='', $nameerror='')">
+       data-signals='{"editchar": "", "editingfield": "", "nextchar": "", "nextfield": "", "initval": "", "editerror": "", "creating": false, "newcharname": "", "nameerror": "", "editplayerid": ""}'>
+    <table>
       <thead>
-        <tr><th>Character</th><th>Player</th><th>Init</th><th>Dice</th><th></th><th></th><th></th></tr>
+        <tr><th>Init</th><th>Character</th><th>Player</th><th>Dice</th><th></th><th></th></tr>
       </thead>
       <tbody id="char-rows"></tbody>
+      <tbody id="create-row" data-show="$creating" style="display:none">
+        <tr>
+          <td>
+            <input id="create-init-input" class="inline-input" type="text" data-bind:initval
+                   autocomplete="off" placeholder="e.g. 17 or d20+3"
+                   data-on:keydown="evt.key==='Tab' ? (evt.preventDefault(),document.getElementById('create-name-input')?.focus()) : (evt.key==='Escape' ? ($creating=false,$initval='',$editerror='',$nameerror='') : (evt.key==='Enter' && @post('{{ add_character_url }}')))"
+                   data-on:blur="setTimeout(() => { if(!document.querySelector('#create-row').contains(document.activeElement)){$creating=false;$initval='';$editerror='';$nameerror='';} }, 0)">
+            <span class="field-error" data-show="$editerror" data-text="$editerror" style="display:none"></span>
+          </td>
+          <td>
+            <input id="create-name-input" class="inline-input" type="text" data-bind:newcharname
+                   maxlength="32" autocomplete="off" placeholder="Character name"
+                   data-effect="$creating && setTimeout(() => el.focus(), 0)"
+                   data-on:keydown="evt.key==='Tab' ? (evt.preventDefault(),document.getElementById('create-init-input')?.focus()) : (evt.key==='Escape' ? ($creating=false,$newcharname='',$editerror='',$nameerror='') : (evt.key==='Enter' && @post('{{ add_character_url }}')))"
+                   data-on:blur="setTimeout(() => { if(!document.querySelector('#create-row').contains(document.activeElement)){$creating=false;$newcharname='';$editerror='';$nameerror='';} }, 0)">
+            <span class="field-error" data-show="$nameerror" data-text="$nameerror" style="display:none"></span>
+          </td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>
+            <button type="button" class="cancel-touch"
+                    data-on:click="$creating=false,$newcharname='',$initval='',$editerror='',$nameerror=''">&#x2717;</button>
+          </td>
+        </tr>
+      </tbody>
     </table>
     <button type="button" class="add-btn"
             title="Add a new character to the tracker"
-            data-on:click="$editing=true, $creating=true, $editchar='', $initval='', $newcharname='', $editplayerid='', $editerror='', $nameerror=''">
+            data-on:click="$creating=true,$editchar='',$editingfield='',$initval='',$newcharname='',$editplayerid='',$editerror='',$nameerror=''">
       &#x2795;
     </button>
-    <div id="edit-panel" data-show="$editing" style="display: none">
-      <form data-on:submit__prevent="@post('{{ add_character_url }}')"
-            data-effect="$editing && setTimeout(() => document.getElementById('edit-input')?.focus(), 0)">
-        <input id="name-input" type="text" data-bind:newcharname
-               maxlength="32"
-               autocomplete="off" placeholder="Character name"
-               data-on:keydown="evt.key==='Escape' && ($editing=false)"
-               data-on:input="$nameerror=''">
-        <p id="name-error" data-show="$nameerror" data-text="$nameerror" style="display:none"></p>
-        <input id="edit-input" type="text" data-bind:initval
-               autocomplete="off" placeholder="e.g. 17 or d20+3"
-               data-on:keydown="evt.key==='Escape' && ($editing=false)"
-               data-on:input="$editerror=''">
-        <select id="player-select" data-bind:editplayerid
-                data-show="!$creating" style="display:none">
-        </select>
-        <button type="submit" style="display:none" aria-hidden="true"></button>
-        <button type="button" class="cancel-touch"
-                data-on:click="$editing=false">&#x2717;</button>
-        <p id="edit-error" data-show="$editerror" data-text="$editerror" style="display:none"></p>
-      </form>
-    </div>
     <div id="sort-indicator"></div>
   </div>
 </body>
