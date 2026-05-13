@@ -10,11 +10,33 @@ from starlette.testclient import TestClient
 
 import initbot_core.state.state as state_module
 import initbot_web.routes.tracker as tracker_module
-from initbot_core.data.character import NewCharacterData
+from initbot_core.data.character import CharacterData, NewCharacterData
+from initbot_core.data.player import PlayerData
 from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import _SESSION_SECRET_TTL
 from initbot_web.app import create_app
 from initbot_web.config import WebSettings
+from initbot_web.routes.tracker import (
+    _STALE_INIT,
+    _compute_desired_ranked,
+    _has_valid_dice,
+    _inline_blur,
+    _inline_click_switch,
+    _is_initiative_eligible,
+    _render_alert,
+    _render_combined_rows,
+    _render_delete_button,
+    _render_inline_dice_cell,
+    _render_inline_init_cell,
+    _render_inline_name_cell,
+    _render_inline_player_cell,
+    _render_player_options,
+    _render_roll_button,
+    _render_sort_indicator,
+    _resolve_player_name,
+    _safe_dice,
+    _safe_int,
+)
 
 
 def _free_udp_port() -> int:
@@ -539,3 +561,420 @@ def test_rename_and_change_player_together(tmp_path):
         updated = state.characters.get_from_name("Gandalf the White")
         assert updated is not None
         assert updated.player_id == player2.id
+
+
+# ── Create character ──────────────────────────────────────────────────────────
+
+
+def test_create_character_creates_new_character(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "", "newcharname": "Fenix", "initval": "12"},
+        )
+        assert resp.status_code == 200
+        names = [c.name for c in state.characters.get_all()]
+        assert "Fenix" in names
+
+
+def test_create_character_with_dice_expression(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "", "newcharname": "Fenix", "initval": "d20+3"},
+        )
+        assert resp.status_code == 200
+        char = state.characters.get_from_name("Fenix")
+        assert char.initiative_dice == "d20+3"
+
+
+def test_create_character_empty_name_is_noop(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    count_before = len(state.characters.get_all())
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "", "newcharname": "", "initval": "5"},
+        )
+        assert resp.status_code in (200, 204)
+        assert len(state.characters.get_all()) == count_before
+
+
+def test_create_character_invalid_name_returns_error(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        # Control characters are invalid per validate_character_name
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "", "newcharname": "Bad\x00Name", "initval": "5"},
+        )
+        assert resp.status_code in (200, 204)
+        assert "nameerror" in resp.text
+
+
+def test_create_character_duplicate_name_returns_error(tmp_path):
+    app, _, char_name = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "", "newcharname": char_name, "initval": "5"},
+        )
+        assert resp.status_code in (200, 204)
+        assert "nameerror" in resp.text
+
+
+def test_create_character_invalid_init_returns_error(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "", "newcharname": "Fenix", "initval": "notvalid"},
+        )
+        assert resp.status_code in (200, 204)
+        assert "editerror" in resp.text
+
+
+# ── Delete character ──────────────────────────────────────────────────────────
+
+
+def test_delete_character_requires_auth(tmp_path):
+    app, _, char_name = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        resp = client.post(f"/testsecret/tracker/delete-character/{char_name}")
+        assert resp.status_code == 403
+
+
+def test_delete_character_removes_character(tmp_path):
+    app, state, char_name = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(f"/testsecret/tracker/delete-character/{char_name}")
+        assert resp.status_code in (200, 204)
+        names = [c.name for c in state.characters.get_all()]
+        assert char_name not in names
+
+
+def test_delete_character_unknown_is_noop(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    count_before = len(state.characters.get_all())
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post("/testsecret/tracker/delete-character/NoSuchCharacter")
+        assert resp.status_code in (200, 204)
+        assert len(state.characters.get_all()) == count_before
+
+
+# ── nextfield / Tab-cycling server response ───────────────────────────────────
+
+
+def test_nextfield_player_returns_editplayerid(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    char = state.characters.get_from_name("Aldric")
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={
+                "editchar": "Aldric",
+                "initval": "15",
+                "nextchar": "Aldric",
+                "nextfield": "player",
+            },
+        )
+        assert resp.status_code == 200
+        assert "editingfield" in resp.text
+        assert "player" in resp.text
+        assert str(char.player_id) in resp.text
+
+
+def test_nextfield_init_returns_initval(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    char = state.characters.get_from_name("Aldric")
+    char.initiative = 17
+    state.characters.update_and_store(char)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={
+                "editchar": "Aldric",
+                "initval": "18",
+                "nextchar": "Aldric",
+                "nextfield": "init",
+            },
+        )
+        assert resp.status_code == 200
+        assert "initval" in resp.text
+        assert "18" in resp.text  # next char now has init 18
+
+
+def test_nextfield_dice_returns_initval(tmp_path):
+    app, state, _ = _make_app_with_character(tmp_path)
+    char = state.characters.get_from_name("Aldric")
+    char.initiative = 10
+    char.initiative_dice = "d20+2"
+    state.characters.update_and_store(char)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={
+                "editchar": "Aldric",
+                "initval": "12",
+                "nextchar": "Aldric",
+                "nextfield": "dice",
+            },
+        )
+        assert resp.status_code == 200
+        assert "initval" in resp.text
+        assert "d20+2" in resp.text
+
+
+def test_nextfield_name_returns_newcharname(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={
+                "editchar": "Aldric",
+                "initval": "10",
+                "nextchar": "Aldric",
+                "nextfield": "name",
+            },
+        )
+        assert resp.status_code == 200
+        assert "newcharname" in resp.text
+        assert "Aldric" in resp.text
+
+
+def test_nextfield_unknown_nextchar_falls_back_to_result(tmp_path):
+    app, _, _ = _make_app_with_character(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={
+                "editchar": "Aldric",
+                "initval": "10",
+                "nextchar": "NoSuchCharacter",
+                "nextfield": "name",
+            },
+        )
+        assert resp.status_code == 200
+        assert "newcharname" in resp.text
+
+
+# ── Helper function unit tests ─────────────────────────────────────────────────
+
+
+def test_is_initiative_eligible_with_valid_data():
+    now = int(time.time())
+    char = CharacterData(name="X", player_id=1, initiative=10, last_used=now - 100)
+    assert _is_initiative_eligible(char, now) is True
+
+
+def test_is_initiative_eligible_no_initiative():
+    now = int(time.time())
+    char = CharacterData(name="X", player_id=1, initiative=None, last_used=now - 100)
+    assert _is_initiative_eligible(char, now) is False
+
+
+def test_compute_desired_ranked_sorts_descending():
+    now = int(time.time())
+    chars = [
+        CharacterData(name="A", player_id=1, initiative=5, last_used=now),
+        CharacterData(name="B", player_id=1, initiative=15, last_used=now),
+        CharacterData(name="C", player_id=1, initiative=10, last_used=now),
+    ]
+    assert _compute_desired_ranked(chars, now) == ["B", "C", "A"]
+
+
+def test_resolve_player_name_found():
+    player = PlayerData(id=1, discord_id=100, name="Alice")
+    char = CharacterData(name="X", player_id=1)
+    assert _resolve_player_name({1: player}, char) == "Alice"
+
+
+def test_resolve_player_name_not_found():
+    char = CharacterData(name="X", player_id=99)
+    assert _resolve_player_name({}, char) == "?"
+
+
+def test_render_alert_with_vulnerability():
+    html_out = _render_alert(True)
+    assert "security-alert" in html_out
+    assert "security update" in html_out
+
+
+def test_render_alert_without_vulnerability():
+    html_out = _render_alert(False)
+    assert "security-alert" in html_out
+    assert "security update" not in html_out
+
+
+def test_render_player_options():
+    players = [
+        PlayerData(id=1, discord_id=10, name="Alice"),
+        PlayerData(id=2, discord_id=20, name="Bob & Carol"),
+    ]
+    html_out = _render_player_options(players)
+    assert 'value="1"' in html_out
+    assert "Alice" in html_out
+    assert "Bob &amp; Carol" in html_out
+
+
+def test_has_valid_dice():
+    assert _has_valid_dice("d20+3") is True
+    assert _has_valid_dice("notdice") is False
+    assert _has_valid_dice(None) is False
+    assert _has_valid_dice("") is False
+
+
+def test_render_roll_button_contains_char_name():
+    html_out = _render_roll_button("Aldric", "/prefix")
+    assert "roll-btn" in html_out
+    assert "Aldric" in html_out
+    assert "/prefix/" in html_out
+
+
+def test_render_delete_button_contains_char_name():
+    html_out = _render_delete_button("Brother Thog", "/del")
+    assert "del-btn" in html_out
+    assert "Brother%20Thog" in html_out
+
+
+def test_render_sort_indicator_stale():
+    html_out = _render_sort_indicator(True, "/resort")
+    assert "resort-btn" in html_out
+    assert "/resort" in html_out
+
+
+def test_render_sort_indicator_not_stale():
+    html_out = _render_sort_indicator(False, "/resort")
+    assert "resort-btn" not in html_out
+    assert "sort-indicator" in html_out
+
+
+def test_inline_click_switch_contains_fields():
+    expr = _inline_click_switch("init", "/add", "direct")
+    assert "nextfield" in expr
+    assert "'init'" in expr
+    assert "direct" in expr
+
+
+def test_inline_blur_contains_field():
+    expr = _inline_blur("name")
+    assert "$editingfield==='name'" in expr
+    assert "setTimeout" in expr
+
+
+def test_render_inline_name_cell():
+    html_out = _render_inline_name_cell("Aldric", "/add")
+    assert "Aldric" in html_out
+    assert "editable" in html_out
+    assert "newcharname" in html_out
+    assert "/add" in html_out
+
+
+def test_render_inline_name_cell_escapes_html():
+    html_out = _render_inline_name_cell("<Scary>", "/add")
+    assert "&lt;Scary&gt;" in html_out
+
+
+def test_render_inline_player_cell():
+    players = [PlayerData(id=1, discord_id=10, name="Alice")]
+    html_out = _render_inline_player_cell("Alice", players, "/add")
+    assert "Alice" in html_out
+    assert "inline-select" in html_out
+    assert "editplayerid" in html_out
+
+
+def test_render_inline_init_cell_with_value():
+    html_out = _render_inline_init_cell("15", "/add")
+    assert "15" in html_out
+    assert "initval" in html_out
+    assert "editable-empty" not in html_out
+
+
+def test_render_inline_init_cell_empty():
+    assert "editable-empty" in _render_inline_init_cell("—", "/add")
+
+
+def test_render_inline_dice_cell_with_value():
+    html_out = _render_inline_dice_cell("d20+3", "/add")
+    assert "d20+3" in html_out
+    assert "editable-empty" not in html_out
+
+
+def test_render_inline_dice_cell_empty():
+    html_out = _render_inline_dice_cell(None, "/add")
+    assert "—" in html_out
+    assert "editable-empty" in html_out
+
+
+def test_safe_int_and_dice():
+    assert _safe_int(42) == "42"
+    assert _safe_int(None) == ""
+    assert _safe_dice("d20+3") == "d20+3"
+    assert _safe_dice(None) == ""
+    assert _safe_dice("") == ""
+
+
+def test_render_combined_rows_produces_tbody():
+    now = int(time.time())
+    players = [PlayerData(id=1, discord_id=10, name="Alice")]
+    chars = [
+        (
+            CharacterData(name="Aldric", player_id=1, initiative=18, last_used=now),
+            "Alice",
+        ),
+        (
+            CharacterData(name="Tara", player_id=1, initiative=None, last_used=now),
+            "Alice",
+        ),
+    ]
+    html_out = _render_combined_rows(
+        chars, 1, frozenset(), "/roll", "/del", players, "/add"
+    )
+    assert 'id="char-rows"' in html_out
+    assert "Aldric" in html_out
+    assert "Tara" in html_out
+    assert "group-separator" in html_out
+
+
+def test_render_combined_rows_stale_init():
+    now = int(time.time())
+    players = [PlayerData(id=1, discord_id=10, name="Alice")]
+    chars = [
+        (
+            CharacterData(name="Aldric", player_id=1, initiative=18, last_used=now),
+            "Alice",
+        )
+    ]
+    html_out = _render_combined_rows(
+        chars, 1, frozenset({"Aldric"}), "/roll", "/del", players, "/add"
+    )
+    assert _STALE_INIT in html_out
+
+
+def test_rename_character_invalid_name_returns_error(tmp_path):
+    app, state, _, _, _ = _make_app_with_two_players(tmp_path)
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(f"/testsecret/{app.state.admin_token}/")
+        # Control characters are invalid per validate_character_name
+        resp = client.post(
+            "/testsecret/tracker/add-character",
+            json={"editchar": "Gandalf", "newcharname": "Bad\x00Name"},
+        )
+        assert resp.status_code in (200, 204)
+        assert "nameerror" in resp.text
+        assert state.characters.get_from_name("Gandalf") is not None
