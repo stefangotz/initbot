@@ -6,11 +6,10 @@ An RPG Discord chat bot and a companion web app.
 
 ## Quick Start
 
-1. Clone and set up:
+1. Clone and configure:
    ```sh
    git clone https://github.com/stefangotz/initbot.git
    cd initbot
-   ./tools/set_up_dev.sh   # installs uv and Python dependencies
    ./tools/configure.sh    # guided setup: bot token, deployment mode, .env files
    ```
 2. Start the bot:
