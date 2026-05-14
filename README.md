@@ -24,8 +24,12 @@ An RPG Discord chat bot and a companion web app.
    # or
    ./tools/run_compose.sh         # Docker Compose (Caddy or ngrok)
    ```
-   > **Note:** Players log in to the web tracker via the `$web` Discord command,
-   > so the chat bot must also be running for anyone to access the tracker.
+
+   **For players in a game session:** Players log in via the `$web` Discord command,
+   which the chat bot handles. The bot must be running.
+
+   **To try out the tracker as an operator:** The web app prints a direct access URL
+   to the terminal at startup — no Discord bot required for that single-user URL.
 
 ## Screenshots
 
