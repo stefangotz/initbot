@@ -109,7 +109,8 @@ For the web app and its login flow to work, operators must ensure:
 
 ## Application Setup & Execution
 
-To run the chat bot application, you first need to [create a Discord bot token](https://duckduckgo.com/?q=how+to+create+a+discord+bot+token).
+To run the chat bot application, you first need a Discord bot token.
+See [Setting Up a Discord Bot](docs/discord-bot-setup.md) for step-by-step instructions.
 
 ### Test / One-Off
 
