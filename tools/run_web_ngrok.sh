@@ -20,8 +20,12 @@ NGROK_PID=""
 WEB_PID=""
 
 cleanup() {
-    [ -n "$NGROK_PID" ] && kill "$NGROK_PID" 2>/dev/null || true
-    [ -n "$WEB_PID" ] && kill "$WEB_PID" 2>/dev/null || true
+    if [ -n "$NGROK_PID" ]; then
+        kill "$NGROK_PID" 2>/dev/null || true
+    fi
+    if [ -n "$WEB_PID" ]; then
+        kill "$WEB_PID" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT INT TERM
 
