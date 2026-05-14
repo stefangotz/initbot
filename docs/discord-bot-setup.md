@@ -49,10 +49,18 @@ Prefix commands like `$init` require the bot to read message content.
 2. Select the server you want to add the bot to and click **Continue**.
 3. Confirm the permissions and click **Authorize**.
 
-## Next Step
+## Next Steps
 
 Run the setup wizard to enter your bot token and configure the app:
 
 ```sh
 ./tools/configure.sh
 ```
+
+Then start the chat bot:
+
+```sh
+./tools/run_chat.sh
+```
+
+Type `$help` in any Discord channel the bot has joined or in a DM to the bot to see available commands.
