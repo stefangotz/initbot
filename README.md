@@ -115,8 +115,8 @@ See [Setting Up a Discord Bot](docs/discord-bot-setup.md) for step-by-step instr
 ### Test / One-Off
 
 1. Clone git repository or download repository contents
-1. Run chat bot: `sh ./tools/run_chat.sh`
-1. Run web app: `sh ./tools/run_web_standalone.sh`
+1. Run chat bot: `./tools/run_chat.sh`
+1. Run web app: `./tools/run_web_standalone.sh`
 
 ### Docker Compose Services
 
@@ -133,7 +133,7 @@ Setup steps:
 
 1. Clone git repository or download repository contents
 1. Create `.env` with `DOMAIN=<your-domain>` and `.env.chat` with `token=<discord-bot-token>` in the repository
-1. Set up a systemd service: `sh ./tools/set_up_systemd.sh compose`
+1. Set up a systemd service: `./tools/set_up_systemd.sh compose`
    The script installs the service unit file and prompts whether to enable and start it.
 
 `web_url_path_prefix` is auto-generated if not set.
@@ -144,7 +144,7 @@ The web app is reachable at `https://<DOMAIN>/<web_url_path_prefix>/`.
 First off, you can run the initbot applications without configuring them ahead of time.
 They will simply prompt for required configuration data.
 
-You can run that configuration mode explicitly at any time with the command `sh ./tools/configure.sh`
+You can run that configuration mode explicitly at any time with the command `./tools/configure.sh`
 
 The initbot applications accept their configuration parameters in any combination of command-line options, environment variables, and `.env` files.
 
