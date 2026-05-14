@@ -22,7 +22,7 @@ You need a Discord account and a server where you have the *Manage Server* permi
 > **Keep this token secret.** Anyone who has it can control your bot.
 > If it leaks, return here and reset it immediately.
 
-You will paste this token into `sh ./tools/configure.sh` in the next section.
+You will paste this token into `./tools/configure.sh` in the next section.
 
 ## 4. Enable the Message Content Intent
 
@@ -54,5 +54,5 @@ Prefix commands like `$init` require the bot to read message content.
 Run the setup wizard to enter your bot token and configure the app:
 
 ```sh
-sh ./tools/configure.sh
+./tools/configure.sh
 ```
