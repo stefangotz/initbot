@@ -36,6 +36,7 @@ services:
       - data:/data
 
   caddy:
+    profiles: ["caddy"]
     image: caddy:alpine
     env_file:
       - path: .env
@@ -50,6 +51,18 @@ services:
       - caddy_config:/config
     depends_on:
       - web
+
+  ngrok:
+    profiles: ["ngrok"]
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command: http web:8080 --url https://${DOMAIN}
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    depends_on:
+      - web
+    ports:
+      - "4040:4040"
 
 volumes:
   data:
