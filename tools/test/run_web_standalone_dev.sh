@@ -8,7 +8,7 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/../..
 
-tools/run_web_dev.sh &
+tools/run_web_standalone_dev.sh &
 WEB_PID=$!
 trap 'kill "$WEB_PID" 2>/dev/null || true; wait "$WEB_PID" 2>/dev/null || true' EXIT
 

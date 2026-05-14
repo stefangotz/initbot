@@ -115,7 +115,7 @@ To run the chat bot application, you first need to [create a Discord bot token](
 
 1. Clone git repository or download repository contents
 1. Run chat bot: `sh ./tools/run_chat.sh`
-1. Run web app: `sh ./tools/run_web.sh`
+1. Run web app: `sh ./tools/run_web_standalone.sh`
 
 ### Docker Compose Services
 
@@ -167,7 +167,7 @@ Supported parameters are listed in
 - [`packages/initbot-chat/src/initbot_chat/config.py`](packages/initbot-chat/src/initbot_chat/config.py)
 - [`packages/initbot-web/src/initbot_web/config.py`](packages/initbot-web/src/initbot_web/config.py).
 
-You can also run `./tools/run_chat.sh --help` or `./tools/run_web.sh --help`.
+You can also run `./tools/run_chat.sh --help` or `./tools/run_web_standalone.sh --help`.
 
 ### Containers
 

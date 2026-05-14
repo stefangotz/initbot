@@ -104,10 +104,10 @@ jobs:
         run: shellcheck -x tools/*.sh tools/test/*.sh
       - name: run_chat.sh smoke test
         run: sh ./tools/run_chat.sh --help
-      - name: run_web.sh smoke test
-        run: sh ./tools/run_web.sh --help
-      - name: run_web_dev.sh smoke test
-        run: sh tools/test/run_web_dev.sh
+      - name: run_web_standalone.sh smoke test
+        run: sh ./tools/run_web_standalone.sh --help
+      - name: run_web_standalone_dev.sh smoke test
+        run: sh tools/test/run_web_standalone_dev.sh
       - name: set_up_systemd.sh dry-run
         run: sh ./tools/set_up_systemd.sh --dry-run
 
