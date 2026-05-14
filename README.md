@@ -4,6 +4,30 @@
 
 An RPG Discord chat bot and a companion web app.
 
+## Quick Start
+
+1. Clone and set up:
+   ```sh
+   git clone https://github.com/stefangotz/initbot.git
+   cd initbot
+   ./tools/set_up_dev.sh   # installs uv and Python dependencies
+   ./tools/configure.sh    # guided setup: bot token, deployment mode, .env files
+   ```
+2. Start the bot:
+   ```sh
+   ./tools/run_chat.sh
+   ```
+3. (Optional) Start the web tracker:
+   ```sh
+   ./tools/run_web_ngrok.sh       # publicly accessible via ngrok tunnel
+   # or
+   ./tools/run_web_standalone.sh  # local only
+   # or
+   ./tools/run_compose.sh         # Docker Compose (Caddy or ngrok)
+   ```
+
+Don't have a Discord bot token yet? See [Setting Up a Discord Bot](docs/discord-bot-setup.md).
+
 ## Applications
 
 ### initbot-chat — Discord chat bot
@@ -144,7 +168,7 @@ The web app is reachable at `https://<DOMAIN>/<web_url_path_prefix>/`.
 First off, you can run the initbot applications without configuring them ahead of time.
 They will simply prompt for required configuration data.
 
-You can run that configuration mode explicitly at any time with the command `./tools/configure.sh`
+Run `./tools/configure.sh` at any time to update your configuration. It guides you through Discord token setup, deployment mode selection, and `.env` file generation.
 
 The initbot applications accept their configuration parameters in any combination of command-line options, environment variables, and `.env` files.
 
