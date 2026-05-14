@@ -6,6 +6,7 @@
 
 set -ue
 
+# Starts the web app and an ngrok tunnel together. Docker Compose alternative: run_compose.sh.
 cd "$(dirname "$(realpath "${0}")")"/..
 
 # shellcheck source=/dev/null
@@ -59,7 +60,7 @@ fi
 
 printf 'Tunnel: %s\n' "$TUNNEL_URL"
 
-sh ./tools/run_web.sh &
+sh ./tools/run_web_standalone.sh &
 WEB_PID=$!
 
 wait "$WEB_PID"

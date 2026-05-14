@@ -6,5 +6,6 @@
 
 set -ue
 
+# Local-only web server. For public access use run_web_ngrok.sh or run_compose.sh.
 cd "$(dirname "$(realpath "${0}")")"/..
 exec sh ./tools/run.sh initbot-web "$@"

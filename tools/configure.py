@@ -287,7 +287,7 @@ def _print_next_steps(web: _WebConfig) -> None:
 
     if web.mode == 1:
         print("Start the web tracker (local access):")
-        print("  sh ./tools/run_web.sh")
+        print("  sh ./tools/run_web_standalone.sh")
     elif web.mode == 2:
         print("Start everything with Docker Compose:")
         print("  sh ./tools/run_compose.sh")

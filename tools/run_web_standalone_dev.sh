@@ -6,6 +6,7 @@
 
 set -ue
 
+# Dev server with synthetic sample data. Not for production use.
 cd "$(dirname "$(realpath "${0}")")"/..
 
 mkdir -p dev-state

@@ -60,7 +60,7 @@ This starts `@playwright/mcp` on `http://localhost:8931/sse`. Claude Code connec
 
 Start with:
 ```
-tools/run_web_dev.sh
+tools/run_web_standalone_dev.sh
 ```
 
 This generates 5 sample characters with fresh initiative timestamps, exports them to `dev-state/dev.sqlite`, and starts the server. The server prints the session URL to stdout:
@@ -91,7 +91,7 @@ The tracker uses Datastar v1.0.0-RC.8. Several things differ from what documenta
 
 ### Design iteration workflow
 
-1. Start the dev server in the background: `tools/run_web_dev.sh &>/tmp/initbot-web-dev.log &`
+1. Start the dev server in the background: `tools/run_web_standalone_dev.sh &>/tmp/initbot-web-dev.log &`
 2. Read the URL from the log: `grep '^URL:' /tmp/initbot-web-dev.log`
 3. Use Playwright MCP to navigate to that URL and take a screenshot
 4. Edit `packages/initbot-web/src/initbot_web/templates/tracker.html`
