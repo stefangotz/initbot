@@ -50,6 +50,7 @@ class _WebConfig:
     mode: int = 1  # 1=local, 2=own domain, 3=ngrok
     domain: str = ""
     prefix: str = ""
+    ngrok_authtoken: str = ""
 
 
 def read_env(path: Path) -> dict[str, str]:
@@ -156,7 +157,8 @@ def _configure_token() -> str:
     return token
 
 
-def _configure_ngrok(current_domain: str) -> str:
+def _configure_ngrok(current_domain: str) -> tuple[str, str]:
+    """Configure ngrok and return (domain, authtoken)."""
     ngrok = shutil.which("ngrok")
     if not ngrok:
         print("\nError: ngrok is not installed.")
@@ -166,17 +168,20 @@ def _configure_ngrok(current_domain: str) -> str:
         sys.exit(1)
 
     check = subprocess.run([ngrok, "config", "check"], capture_output=True)  # noqa: S603
+    current_authtoken = read_env(_ENV_FILE).get("NGROK_AUTHTOKEN", "")
+
+    print("\n  ngrok authtoken — used for both standalone and Docker Compose.")
+    print(
+        "  https://dashboard.ngrok.com/get-started/your-authtoken"
+    )  # pragma: allowlist secret
+    authtoken = _prompt(
+        "  ngrok authtoken", default=current_authtoken, secret=True
+    )  # pragma: allowlist secret
+    if not authtoken:
+        print("Error: ngrok authtoken is required.")
+        sys.exit(1)
+
     if check.returncode != 0:
-        print("\n  ngrok needs an authtoken. Find yours at:")
-        print(
-            "  https://dashboard.ngrok.com/get-started/your-authtoken"
-        )  # pragma: allowlist secret
-        authtoken = _prompt(
-            "  ngrok authtoken", secret=True
-        )  # pragma: allowlist secret
-        if not authtoken:
-            print("Error: ngrok authtoken is required.")
-            sys.exit(1)
         subprocess.run(  # noqa: S603  user is providing their own authtoken
             [ngrok, "config", "add-authtoken", authtoken],  # pragma: allowlist secret
             check=True,
@@ -194,7 +199,7 @@ def _configure_ngrok(current_domain: str) -> str:
     if not domain:
         print("Error: a domain is required for ngrok mode.")
         sys.exit(1)
-    return domain
+    return domain, authtoken
 
 
 def _configure_web() -> _WebConfig:
@@ -231,8 +236,10 @@ def _configure_web() -> _WebConfig:
         return _WebConfig(enabled=True, mode=2, domain=domain, prefix=prefix)
 
     # mode == 3: ngrok
-    domain = _configure_ngrok(current_domain)
-    return _WebConfig(enabled=True, mode=3, domain=domain, prefix=prefix)
+    domain, authtoken = _configure_ngrok(current_domain)
+    return _WebConfig(
+        enabled=True, mode=3, domain=domain, prefix=prefix, ngrok_authtoken=authtoken
+    )
 
 
 def _write_config(token: str, web: _WebConfig) -> None:
@@ -242,6 +249,10 @@ def _write_config(token: str, web: _WebConfig) -> None:
     if web.enabled:
         if web.domain:
             env_updates["DOMAIN"] = web.domain
+        if web.ngrok_authtoken:
+            env_updates["NGROK_AUTHTOKEN"] = (
+                web.ngrok_authtoken
+            )  # pragma: allowlist secret
         if web.prefix:
             env_updates["web_url_path_prefix"] = web.prefix
 
@@ -250,7 +261,8 @@ def _write_config(token: str, web: _WebConfig) -> None:
     if env_updates:
         print("\n  .env:")
         for k, v in env_updates.items():
-            print(f"    {k} = {v}")
+            masked = k in ("NGROK_AUTHTOKEN",)
+            print(f"    {k} = {_mask(v) if masked else v}")
     print("\n  .env.chat:")
     print(f"    token = {_mask(token)}")
 
