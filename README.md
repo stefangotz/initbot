@@ -28,6 +28,15 @@ An RPG Discord chat bot and a companion web app.
 
 Don't have a Discord bot token yet? See [Setting Up a Discord Bot](docs/discord-bot-setup.md).
 
+## Screenshots
+
+### Web initiative tracker
+
+![Initiative tracker](docs/screenshots/tracker.png)
+
+The tracker updates live as the chat bot receives `$init` commands.
+Players access it through a personal login link sent by `$web`.
+
 ## Applications
 
 ### initbot-chat — Discord chat bot
