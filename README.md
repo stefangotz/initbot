@@ -149,14 +149,8 @@ For the web app and its login flow to work, operators must ensure:
 
 ## Application Setup & Execution
 
-To run the chat bot application, you first need a Discord bot token.
-See [Setting Up a Discord Bot](docs/discord-bot-setup.md) for step-by-step instructions.
-
-### Test / One-Off
-
-1. Clone git repository or download repository contents
-1. Run chat bot: `./tools/run_chat.sh`
-1. Run web app: `./tools/run_web_standalone.sh`
+See the [Quick Start](#quick-start) section above for the recommended setup path.
+Run `./tools/configure.sh` at any time to update your configuration.
 
 ### Docker Compose Services
 
