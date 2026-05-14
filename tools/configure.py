@@ -264,7 +264,7 @@ def _write_config(token: str, web: _WebConfig) -> None:
             masked = k in ("NGROK_AUTHTOKEN",)
             print(f"    {k} = {_mask(v) if masked else v}")
     print("\n  .env.chat:")
-    print(f"    token = {_mask(token)}")
+    print("    token = [set]")
 
     if _prompt("\nWrite these settings?", default="Y").lower() not in ("y", "yes"):
         print("Aborted. No files written.")
