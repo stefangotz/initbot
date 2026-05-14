@@ -37,8 +37,8 @@ printf 'Waiting for ngrok tunnel...\n'
 ATTEMPTS=0
 TUNNEL_URL=""
 while [ "$ATTEMPTS" -lt 30 ]; do
-    TUNNEL_URL=$(curl -s http://localhost:4040/api/tunnels 2>/dev/null \
-        | python3 -c "
+    RESPONSE=$(curl -s http://localhost:4040/api/tunnels 2>/dev/null || true)
+    TUNNEL_URL=$(printf '%s' "$RESPONSE" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 for t in data.get('tunnels', []):
