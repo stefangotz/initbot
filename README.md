@@ -12,7 +12,7 @@ An RPG Discord chat bot and a companion web app.
    cd initbot
    ./tools/configure.sh    # guided setup: bot token, deployment mode, .env files
    ```
-2. Start the bot:
+2. Start the Discord bot:
    ```sh
    ./tools/run_chat.sh
    ```
@@ -24,8 +24,8 @@ An RPG Discord chat bot and a companion web app.
    # or
    ./tools/run_compose.sh         # Docker Compose (Caddy or ngrok)
    ```
-
-Don't have a Discord bot token yet? See [Setting Up a Discord Bot](docs/discord-bot-setup.md).
+   > **Note:** Players log in to the web tracker via the `$web` Discord command,
+   > so the chat bot must also be running for anyone to access the tracker.
 
 ## Screenshots
 
@@ -138,6 +138,10 @@ For the web app and its login flow to work, operators must ensure:
    server privacy settings allow members to block DMs from other server members, which also
    blocks bot DMs. Players who do not receive the login link should check their Discord
    privacy settings under *Server Privacy Defaults* or *Privacy & Safety*.
+
+5. **Chat bot running.** Players currently access the web tracker exclusively via the `$web`
+   Discord command, which the chat bot handles. The web tracker has no standalone login page,
+   so the bot must be running for anyone to log in.
 
 ## Application Setup & Execution
 

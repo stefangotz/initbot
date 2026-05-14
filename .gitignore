@@ -19,3 +19,4 @@ TODO
 mutants/
 dev-state/
 .playwright-mcp/
+.DS_Store
