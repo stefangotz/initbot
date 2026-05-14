@@ -280,8 +280,9 @@ def _print_next_steps(web: _WebConfig) -> None:
         print("Start everything with Docker Compose:")
         print("  sh ./tools/run_compose.sh")
     else:
-        print("Start the web tracker with ngrok (in a separate terminal):")
-        print("  sh ./tools/run_with_ngrok.sh")
+        print("Start the web tracker with ngrok:")
+        print("  sh ./tools/run_web_ngrok.sh      (standalone)")
+        print("  sh ./tools/run_compose.sh         (Docker Compose)")
 
 
 def main() -> None:
