@@ -12,6 +12,7 @@ path = [
     "uv.lock",
     ".secrets.baseline",
     ".python-version",
+    ".DS_Store",
     "LICENSE",
 ]
 precedence = "override"
