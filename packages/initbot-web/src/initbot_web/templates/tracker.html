@@ -340,7 +340,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
     /* ── Group separator row ──────────────────────────────────── */
     tr.group-separator td {
-      border-top: 2px solid rgba(74, 71, 66, 0.4);
+      border-top: 3px solid var(--color-offset);
+    }
+
+    /* ── Idle rows ────────────────────────────────────────────── */
+    tr.idle {
+      opacity: 0.5;
+    }
+
+    tbody tr.idle:nth-child(even) {
+      background-color: var(--color-bg);
     }
 
     /* ── Responsive ───────────────────────────────────────────── */
