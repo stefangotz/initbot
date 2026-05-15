@@ -4,6 +4,16 @@
 
 An RPG Discord chat bot and a companion web app.
 
+![Discord chat bot](docs/screenshots/discord.png)
+
+Players can manage character initiatives in Discord, along with a few other
+RPG-related chat bot features.
+
+![Web app](docs/screenshots/tracker.png)
+
+The web app does the same thing in a browser and stays in sync with Discord.
+Players access it through a personal login link sent by the `$web` chat-bot command.
+
 ## Quick Start
 
 1. Clone and configure:
@@ -16,29 +26,20 @@ An RPG Discord chat bot and a companion web app.
    ```sh
    ./tools/run_chat.sh
    ```
-3. (Optional) Start the web tracker:
+3. Start the web app:
    ```sh
    ./tools/run_web_ngrok.sh       # publicly accessible via ngrok tunnel
    # or
    ./tools/run_web_standalone.sh  # local only
    # or
-   ./tools/run_compose.sh         # Docker Compose (Caddy or ngrok)
+   ./tools/run_compose.sh         # Docker Compose (ngrok as above or Caddy for your own domain)
    ```
 
-   **For players in a game session:** Players log in via the `$web` Discord command,
-   which the chat bot handles. The bot must be running.
-
-   **To try out the tracker as an operator:** The web app prints a direct access URL
+   **To try out the web app stand-alone:** The web app prints a direct access URL
    to the terminal at startup — no Discord bot required for that single-user URL.
 
-## Screenshots
-
-### Web initiative tracker
-
-![Initiative tracker](docs/screenshots/tracker.png)
-
-The tracker updates live as the chat bot receives `$init` commands.
-Players access it through a personal login link sent by `$web`.
+   **For players in a game session:** The chat bot is currently mandatory. Players
+   log into the web app via the `$web` chat-bot command.
 
 ## Applications
 
@@ -64,7 +65,7 @@ Get more information on any of the commands with `$help`, e.g., `$help init`.
 
 ### initbot-web — companion web app
 
-The web app shows the current initiative order in a live-updating browser view — useful for
+With the web app, players can see and manage initiatives in a live-updating browser — useful for
 displaying on a shared screen or a second monitor during play.
 
 #### Logging in
