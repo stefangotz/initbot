@@ -842,7 +842,12 @@ def _render_combined_rows(  # pylint: disable=too-many-arguments,too-many-positi
 ) -> str:
     rows = []
     for i, (c, player_name) in enumerate(chars_with_names):
-        separator = ' class="group-separator"' if i == ranked_count > 0 else ""
+        if i == ranked_count > 0:
+            row_class = ' class="group-separator idle"'
+        elif i > ranked_count > 0:
+            row_class = ' class="idle"'
+        else:
+            row_class = ""
         init_display = (
             _STALE_INIT if c.name in stale_names else (_safe_int(c.initiative) or "—")
         )
@@ -852,7 +857,7 @@ def _render_combined_rows(  # pylint: disable=too-many-arguments,too-many-positi
             else ""
         )
         rows.append(
-            f"<tr{separator}"
+            f"<tr{row_class}"
             f' data-char="{html.escape(c.name, quote=True)}"'
             f' data-playerid="{c.player_id}"'
             f' data-initval="{_safe_int(c.initiative) or ""}"'
