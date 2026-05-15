@@ -11,6 +11,7 @@ import pytest
 
 from initbot_core.models.roll import (
     DiceExpression,
+    KeepExpression,
     render_dice_rolls,
     render_dice_rolls_in_text,
 )
@@ -178,3 +179,175 @@ class TestDiceExpressionCreate(unittest.TestCase):
 
     def test_is_valid_spec_false(self):
         assert not DiceExpression.is_valid_spec("hello")
+
+
+class TestKeepExpressionCreate(unittest.TestCase):
+    def test_adv_basic(self):
+        expr = KeepExpression.create("d20adv")
+        assert expr.keep_highest is True
+        assert expr.count == 2
+        assert expr.keep == 1
+
+    def test_dis_basic(self):
+        expr = KeepExpression.create("d20dis")
+        assert expr.keep_highest is False
+        assert expr.count == 2
+        assert expr.keep == 1
+
+    def test_adv_with_modifier(self):
+        expr = KeepExpression.create("d20+5adv")
+        assert expr.keep_highest is True
+        assert str(expr.base) == "d20+5"
+
+    def test_adv_compound(self):
+        expr = KeepExpression.create("d20+d8adv")
+        assert expr.keep_highest is True
+        assert str(expr.base) == "d20+d8"
+
+    def test_kh_basic(self):
+        expr = KeepExpression.create("2d20kh1")
+        assert expr.count == 2
+        assert expr.sides == 20
+        assert expr.keep == 1
+        assert expr.keep_highest is True
+
+    def test_kl_multi_keep(self):
+        expr = KeepExpression.create("3d6kl2")
+        assert expr.count == 3
+        assert expr.sides == 6
+        assert expr.keep == 2
+        assert expr.keep_highest is False
+
+    def test_kh_no_leading_count_invalid(self):
+        with pytest.raises(ValueError, match="d20kh1"):
+            KeepExpression.create("d20kh1")
+
+    def test_kh_count_one_invalid(self):
+        with pytest.raises(ValueError, match="count >= 2"):
+            KeepExpression.create("1d20kh1")
+
+    def test_kh_keep_equals_count_invalid(self):
+        with pytest.raises(ValueError, match="keep"):
+            KeepExpression.create("2d20kh2")
+
+    def test_kh_keep_zero_invalid(self):
+        with pytest.raises(ValueError, match="keep"):
+            KeepExpression.create("2d20kh0")
+
+    def test_a_alias_for_adv(self):
+        expr = KeepExpression.create("d20a")
+        assert expr.keep_highest is True
+        assert expr.count == 2
+
+    def test_d_alias_for_dis(self):
+        expr = KeepExpression.create("d20d")
+        assert expr.keep_highest is False
+        assert expr.count == 2
+
+    def test_alias_canonicalises_to_long_form(self):
+        assert str(KeepExpression.create("d20+5a")) == "d20+5adv"
+        assert str(KeepExpression.create("d20d")) == "d20dis"
+
+    def test_invalid_base_invalid(self):
+        with pytest.raises(ValueError, match=r"namedis|name"):
+            KeepExpression.create("namedis")
+
+    def test_plain_dice_invalid(self):
+        with pytest.raises(ValueError, match="d20"):
+            KeepExpression.create("d20")
+
+
+class TestKeepExpressionRollOne(unittest.TestCase):
+    def test_kh_keeps_highest(self):
+        expr = KeepExpression.create("2d20kh1")
+        with patch("random.randint", side_effect=[8, 14]):
+            assert expr.roll_one() == 14
+
+    def test_kl_sums_lowest(self):
+        expr = KeepExpression.create("3d6kl2")
+        with patch("random.randint", side_effect=[4, 1, 6]):
+            assert expr.roll_one() == 5  # 1 + 4
+
+    def test_adv_keeps_highest(self):
+        expr = KeepExpression.create("d20adv")
+        with patch("random.randint", side_effect=[8, 14]):
+            assert expr.roll_one() == 14
+
+    def test_dis_keeps_lowest(self):
+        expr = KeepExpression.create("d20dis")
+        with patch("random.randint", side_effect=[19, 13]):
+            assert expr.roll_one() == 13
+
+    def test_roll_one_returns_int(self):
+        expr = KeepExpression.create("d20adv")
+        assert isinstance(expr.roll_one(), int)
+
+
+class TestKeepExpressionRoll(unittest.TestCase):
+    def test_adv_kept_shown_plain_dropped_struck(self):
+        expr = KeepExpression.create("d20adv")
+        with patch("random.randint", side_effect=[14, 8]):
+            assert expr.roll() == "14 ~~8~~"
+
+    def test_dis_dropped_shown_struck(self):
+        expr = KeepExpression.create("d20dis")
+        with patch("random.randint", side_effect=[19, 13]):
+            assert expr.roll() == "~~19~~ 13"
+
+    def test_kh_strikethrough_on_dropped(self):
+        expr = KeepExpression.create("2d20kh1")
+        with patch("random.randint", side_effect=[8, 14]):
+            assert expr.roll() == "~~8~~ 14"
+
+    def test_kh_natural_max_highlighted(self):
+        expr = KeepExpression.create("2d20kh1")
+        with patch("random.randint", side_effect=[1, 20]):
+            result = expr.roll()
+        assert "**20** \U0001f3af" in result
+        assert "~~1~~" in result
+
+    def test_kl_multi_keep_shows_sum(self):
+        expr = KeepExpression.create("3d6kl2")
+        with patch("random.randint", side_effect=[4, 1, 6]):
+            result = expr.roll()
+        # 1 is the natural min for d6, so it gets highlighted; 6 is dropped (struck through)
+        assert re.search(r"\*\*1\*\* .", result)
+        assert "~~6~~" in result
+        assert result.endswith("=5")
+
+    def test_adv_tie_keeps_first(self):
+        expr = KeepExpression.create("d20adv")
+        with patch("random.randint", side_effect=[15, 15]):
+            assert expr.roll() == "15 ~~15~~"
+
+    def test_adv_natural_max_highlighted(self):
+        expr = KeepExpression.create("d20adv")
+        with patch("random.randint", side_effect=[20, 8]):
+            result = expr.roll()
+        assert "**20** \U0001f3af" in result
+
+
+class TestKeepExpressionStr(unittest.TestCase):
+    def test_str_adv(self):
+        assert str(KeepExpression.create("d20adv")) == "d20adv"
+
+    def test_str_dis_with_modifier(self):
+        assert str(KeepExpression.create("d20+5dis")) == "d20+5dis"
+
+    def test_str_kh(self):
+        assert str(KeepExpression.create("2d20kh1")) == "2d20kh1"
+
+    def test_str_kl(self):
+        assert str(KeepExpression.create("3d6kl2")) == "3d6kl2"
+
+
+class TestKeepExpressionInText(unittest.TestCase):
+    def test_render_adv_in_text(self):
+        result = render_dice_rolls_in_text("roll d20adv for initiative")
+        assert "d20adv" not in result
+        assert re.search(r"roll .+ for initiative", result)
+
+    def test_render_kh_in_text(self):
+        result = render_dice_rolls_in_text("roll 2d20kh1 to attack")
+        assert "2d20kh1" not in result
+        assert re.search(r"roll .+ to attack", result)

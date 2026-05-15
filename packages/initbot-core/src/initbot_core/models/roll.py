@@ -13,6 +13,8 @@ _CRITICAL_FAILURE_EMOJIS: Final = ("😭", "😱", "💩", "🚽", "💔")
 
 _DIE_TERM_PATTERN: Final = re.compile(r"^([0-9]*)d([0-9]+)$", re.IGNORECASE)
 _REPEAT_PREFIX_PATTERN: Final = re.compile(r"^([0-9]+)x(.+)$", re.IGNORECASE)
+_KH_KL_PATTERN: Final = re.compile(r"^([0-9]+)d([0-9]+)(kh|kl)([0-9]+)$", re.IGNORECASE)
+_ADV_DIS_PATTERN: Final = re.compile(r"^(.+?)(adv|dis|a|d)$", re.IGNORECASE)
 
 # Characters stripped from word boundaries when scanning prose for dice specs.
 # Parentheses are intentionally excluded: they are part of the Nx(expr) syntax
@@ -83,6 +85,10 @@ def _try_to_render_dice_roll(word: str) -> str:
 class _DiceRoll(ABC):
     @abstractmethod
     def roll(self) -> str:
+        pass
+
+    @abstractmethod
+    def roll_one(self) -> int:
         pass
 
     @classmethod
@@ -178,7 +184,7 @@ class DiceExpression(_DiceRoll):
             s * (t.max_value if isinstance(t, _DieTerm) else t) for s, t in self.terms
         )
 
-    def _format_single(self, value: int) -> str:
+    def format_value(self, value: int) -> str:
         if self._is_single_die():
             if value == self._expression_min():
                 return f"**{value}** {random.choice(_CRITICAL_FAILURE_EMOJIS)}"
@@ -188,9 +194,9 @@ class DiceExpression(_DiceRoll):
 
     def roll(self) -> str:
         if self.repeat == 1:
-            return self._format_single(self.roll_one())
+            return self.format_value(self.roll_one())
         raw = [self.roll_one() for _ in range(self.repeat)]
-        parts = [self._format_single(v) for v in raw]
+        parts = [self.format_value(v) for v in raw]
         return "+".join(parts) + f"={sum(raw)}"
 
     def __str__(self) -> str:
@@ -258,4 +264,99 @@ class DiceExpression(_DiceRoll):
         return DiceExpression(terms=tuple(terms), repeat=repeat)
 
 
-_DICE_ROLL_CLASSES: Set[type[_DiceRoll]] = frozenset((DiceExpression,))
+@dataclass(frozen=True)
+class KeepExpression(_DiceRoll):
+    """Roll an expression multiple times and keep the highest or lowest results.
+
+    Supports adv/dis suffix on any DiceExpression (d20+5adv, d20+d8dis) and
+    kh/kl notation on a single die type (2d20kh1, 3d6kl2).
+    """
+
+    base: DiceExpression
+    count: int
+    keep: int
+    keep_highest: bool
+    sides: int | None = None  # None for adv/dis; die sides for kh/kl (used in __str__)
+
+    def roll_one(self) -> int:
+        results = sorted(
+            [self.base.roll_one() for _ in range(self.count)],
+            reverse=self.keep_highest,
+        )
+        return sum(results[: self.keep])
+
+    def roll(self) -> str:
+        results = [self.base.roll_one() for _ in range(self.count)]
+        indexed = sorted(
+            range(self.count),
+            key=lambda i: results[i],
+            reverse=self.keep_highest,
+        )
+        kept_indices = set(indexed[: self.keep])
+        parts = [
+            self.base.format_value(v) if i in kept_indices else f"~~{v}~~"
+            for i, v in enumerate(results)
+        ]
+        result = " ".join(parts)
+        if self.keep > 1:
+            result += f"={sum(results[i] for i in kept_indices)}"
+        return result
+
+    def __str__(self) -> str:
+        if self.sides is None:
+            suffix = "adv" if self.keep_highest else "dis"
+            return f"{self.base}{suffix}"
+        mode = "kh" if self.keep_highest else "kl"
+        return f"{self.count}d{self.sides}{mode}{self.keep}"
+
+    @staticmethod
+    def create(spec: str) -> "KeepExpression":
+        """Parse a kh/kl or adv/dis spec. Raises ValueError on failure."""
+        kh_kl_match = _KH_KL_PATTERN.match(spec)
+        if kh_kl_match:
+            count = int(kh_kl_match.group(1))
+            sides = int(kh_kl_match.group(2))
+            mode = kh_kl_match.group(3).lower()
+            keep = int(kh_kl_match.group(4))
+            if count < 2:
+                raise ValueError(f"'{spec}': kh/kl requires count >= 2 (got {count})")
+            if keep < 1 or keep >= count:
+                raise ValueError(
+                    f"'{spec}': keep must be >= 1 and < count (keep={keep}, count={count})"
+                )
+            base = DiceExpression.create(f"d{sides}")
+            return KeepExpression(
+                base=base,
+                count=count,
+                keep=keep,
+                keep_highest=(mode == "kh"),
+                sides=sides,
+            )
+
+        adv_dis_match = _ADV_DIS_PATTERN.match(spec)
+        if adv_dis_match:
+            base_spec = adv_dis_match.group(1)
+            suffix = adv_dis_match.group(2).lower()
+            base = DiceExpression.create(base_spec)
+            return KeepExpression(
+                base=base,
+                count=2,
+                keep=1,
+                keep_highest=(suffix in ("adv", "a")),
+                sides=None,
+            )
+
+        raise ValueError(f"'{spec}' is not a valid keep expression")
+
+
+def parse_dice_spec(spec: str) -> _DiceRoll:
+    """Parse any supported dice spec; raise ValueError if none match."""
+    for cls in _DICE_ROLL_CLASSES:
+        try:
+            return cls.create(spec)
+        except ValueError:
+            continue
+    raise ValueError(f"'{spec}' is not a valid dice spec")
+
+
+_DICE_ROLL_CLASSES: Set[type[_DiceRoll]] = frozenset((DiceExpression, KeepExpression))

@@ -21,6 +21,11 @@ async def roll(ctx: commands.Context, *words: str) -> None:
     To evaluate an expression several times and see each result separately, add [rolls]x: 3xd6 rolls d6 three times, and 2x(d20+d8) evaluates d20+d8 twice.
     This generates a reply showing each result and the total, for example, 4+13=17.
 
+    Add *adv* (or *a*) to roll with advantage — roll twice and take the higher result: d20+5adv.
+    Add *dis* (or *d*) to roll with disadvantage — roll twice and take the lower result: d20+5dis.
+    You can also use *kh* and *kl* to keep the highest or lowest of several rolls: 2d20kh1 keeps the highest of two d20s, and 3d6kl2 rolls three d6s and keeps the two lowest.
+    Dropped dice are shown with strikethrough so you can see all the rolls.
+
     The bot just replaces anything that looks like a dice roll in your message with the result of the roll.
     For example, "roll d20+5 to attack the construct for 1d6+3 damage" will generate a reply like "Mediocre Mel rolled 15 to attack the construct for 7 damage".
     """
