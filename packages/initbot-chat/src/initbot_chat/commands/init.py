@@ -10,7 +10,7 @@ from discord.ext import commands
 
 from initbot_chat.commands.character import CharacterData, characters
 from initbot_chat.commands.utils import sync_player
-from initbot_core.models.roll import DiceExpression
+from initbot_core.models.roll import parse_dice_spec
 from initbot_core.utils import is_int
 
 
@@ -56,7 +56,7 @@ async def init(ctx: commands.Context, *args: str) -> None:
     )
     if initiative is None:
         if cdi.initiative_dice is not None:
-            initiative = DiceExpression.create(cdi.initiative_dice).roll_one()
+            initiative = parse_dice_spec(cdi.initiative_dice).roll_one()
         else:
             raise ValueError(
                 f"No initiative dice set for {cdi.name}. Use `$init_dice {cdi.name} d20+3` first."

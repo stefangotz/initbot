@@ -23,14 +23,14 @@ from starlette.templating import Jinja2Templates
 from initbot_core.character_name import validate_character_name
 from initbot_core.data.character import CharacterData, NewCharacterData
 from initbot_core.data.player import PlayerData
-from initbot_core.models.roll import DiceExpression
+from initbot_core.models.roll import parse_dice_spec
 from initbot_core.security import VulnerabilityState
 from initbot_core.state.state import State
 
 STALE_SECONDS = 24 * 3600
 SESSION_TTL: Final[int] = 8 * 3600
 _INITIATIVE_INPUT_ERROR = (
-    "Enter a number from \u221299 to 99, or a dice formula like d20+5."
+    "Enter a number from \u221299 to 99, or a dice formula like d20+5 or d20adv."
 )
 _ADMIN_DISCORD_ID: Final[int] = 0
 _ADMIN_PLAYER_NAME: Final[str] = "admin"
@@ -92,7 +92,7 @@ def _parse_initval(
         return as_integer, None
     except ValueError:
         try:
-            DiceExpression.create(initval)
+            parse_dice_spec(initval)
             return None, None
         except ValueError:
             return None, SSE.patch_signals({_SIG_EDITERROR: _INITIATIVE_INPUT_ERROR})
@@ -485,7 +485,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         initiative_dice = char.initiative_dice
         if not initiative_dice or not _has_valid_dice(initiative_dice):
             return ()
-        char.initiative = DiceExpression.create(initiative_dice).roll_one()
+        char.initiative = parse_dice_spec(initiative_dice).roll_one()
         char.last_used = int(time.time())
         state.characters.update_and_store(char)
         _sk = request.session.get("session_key", "")
@@ -566,7 +566,7 @@ def _has_valid_dice(initiative_dice: str | None) -> bool:
     if not initiative_dice:
         return False
     try:
-        DiceExpression.create(initiative_dice)
+        parse_dice_spec(initiative_dice)
         return True
     except ValueError:
         return False
@@ -574,7 +574,7 @@ def _has_valid_dice(initiative_dice: str | None) -> bool:
 
 _ROLL_BTN_TITLE = (
     "Roll initiative using this character's dice formula. "
-    "Requires initiative dice to be set (e.g. d20+3). "
+    "Requires initiative dice to be set (e.g. d20+3 or d20adv). "
     "Equivalent to $init without specifying a value."
 )
 _DELETE_BTN_TITLE = (
@@ -781,7 +781,7 @@ def _render_inline_init_cell(init_display: str, add_url: str) -> str:
         f"{init_display}</span>"
         f'<input class="inline-input" type="text" data-bind:initval'
         f' data-show="{input_show}" style="display:none"'
-        f' autocomplete="off" placeholder="e.g. 17 or d20+3"'
+        f' autocomplete="off" placeholder="e.g. 17, d20+3, or d20adv"'
         f' data-effect="{effect}"'
         f' data-on:keydown="{keydown}"'
         f' data-on:blur="{blur}">'
@@ -821,7 +821,7 @@ def _render_inline_dice_cell(initiative_dice: str | None, add_url: str) -> str:
         f"{display}</span>"
         f'<input class="inline-input" type="text" data-bind:initval'
         f' data-show="{input_show}" style="display:none"'
-        f' autocomplete="off" placeholder="e.g. d20+3"'
+        f' autocomplete="off" placeholder="e.g. d20+3 or d20adv"'
         f' data-effect="{effect}"'
         f' data-on:keydown="{keydown}"'
         f' data-on:blur="{blur}">'

@@ -16,7 +16,7 @@ from initbot_core.data.character import (
     CharacterData,
     is_eligible_for_pruning,
 )
-from initbot_core.models.roll import DiceExpression
+from initbot_core.models.roll import parse_dice_spec
 from initbot_core.state.state import State
 
 
@@ -34,6 +34,9 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
     Examples:
     - `$init_dice d20` — roll a plain d20
     - `$init_dice d20+3` — roll d20 and add 3
+    - `$init_dice d20adv` — roll d20 twice and take the higher result (advantage)
+    - `$init_dice d20dis` — roll d20 twice and take the lower result (disadvantage)
+    - `$init_dice 2d20kh1` — same as advantage using keep-highest notation
     - `$init_dice Alfalfa d20+3` — set spec for the named character
 
     If the Discord user manages only a single character, the character name is
@@ -53,10 +56,10 @@ async def init_dice(ctx: commands.Context, *args: str) -> None:
     name = tokens[:-1]
 
     try:
-        DiceExpression.create(spec)
+        parse_dice_spec(spec)
     except ValueError as exc:
         raise ValueError(
-            f"'{spec}' is not a valid dice spec. Use a format like d20, d20+3, or 2d6-1."
+            f"'{spec}' is not a valid dice spec. Use a format like d20, d20+3, 2d6-1, or d20adv."
         ) from exc
 
     cdi: CharacterData = ctx.bot.initbot_state.characters.get_from_tokens(
