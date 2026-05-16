@@ -18,8 +18,8 @@ async def web(ctx: commands.Context) -> None:
     if player.discord_id is None:
         raise RuntimeError("sync_player returned a player without a discord_id")
     token = ctx.bot.initbot_state.web_login_tokens.create(discord_id=player.discord_id)
-    if CORE_CFG.domain:
-        url = f"https://{CORE_CFG.domain}/{CORE_CFG.web_url_path_prefix}/{token}/"
+    if CORE_CFG.web_hostname:
+        url = f"https://{CORE_CFG.web_hostname}/{CORE_CFG.web_url_path_prefix}/{token}/"
     else:
         url = f"http://localhost:8080/{CORE_CFG.web_url_path_prefix}/{token}/"
     await ctx.author.send(

@@ -119,7 +119,7 @@ def create_app(
     # Key rotation would be desirable (itsdangerous supports it via a list of secrets)
     # but Starlette's SessionMiddleware only accepts a single secret_key at this point.
     session_secret = state.session_secret.get_or_rotate()
-    https_only = bool(CORE_CFG.domain)
+    https_only = bool(CORE_CFG.web_hostname)
     app = Starlette(
         routes=make_routes(state, templates, url_path_prefix, vuln_state),
         middleware=[
@@ -141,9 +141,9 @@ def run() -> None:
     cfg = WebSettings(_cli_parse_args=True)  # type: ignore
     app = create_app(cfg)
     prefix = app.state.url_path_prefix
-    print(f"Join URL: http://localhost:{cfg.web_port}/{prefix}/join/")
-    if CORE_CFG.domain:
-        print(f"External Join URL: https://{CORE_CFG.domain}/{prefix}/join/")
+    print(f"Join link: http://localhost:{cfg.web_port}/{prefix}/join/")
+    if CORE_CFG.web_hostname:
+        print(f"External join link: https://{CORE_CFG.web_hostname}/{prefix}/join/")
     uvicorn.run(
         app,
         host=cfg.web_host,

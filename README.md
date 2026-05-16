@@ -2,235 +2,195 @@
 
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/12602/baseline)](https://www.bestpractices.dev/projects/12602)
 
-An RPG Discord chat bot and a companion web app.
+An RPG initiative tracker: a Discord chat bot and a companion web app that help with some chores during RPG sessions.
 
 ![Discord chat bot](docs/screenshots/discord.png)
 
-Players can manage character initiatives in Discord, along with a few other
-RPG-related chat bot features.
-
 ![Web app](docs/screenshots/tracker.png)
 
-The web app does the same thing in a browser and stays in sync with Discord.
-Players access it by visiting a shared join URL and entering a display name, or via a
-personal login link sent by the `$web` chat-bot command.
+---
 
-## Quick Start
+## For Players
+
+### What it does
+
+Initbot helps your group to stay on top of the initiative order during combat and a few other things. You can:
+
+- Set your character's initiative, or have the bot roll it for you
+- See all characters in initiative order, live-updated as others make changes
+- Create, rename, and remove characters (including NPCs)
+- Roll virtual dice
+
+**Discord bot** — type commands in any channel the bot is in, or send it a direct message.
+Type `$help` to see everything it can do.
+
+**Web app** — view and manage the initiative order and characters on all your preferred devices without Discord.
+
+### Either application works on its own
+
+You don't need both. If your group only uses Discord, the chat bot alone is fine. If your
+group prefers a browser view, the web app can run without the bot. When both are running,
+they share the same data automatically — a change made in one shows up in the other instantly.
+
+### Accessing the web app
+
+You can get into the web app in two ways:
+
+- **Admin** — the admin (who runs initbot on some computer) shares a link with you - you open it, enter your display name, and you're in.
+  (Keep that join link secret - anyone who has it can join)
+- **Chat bot** — if your group uses both the chat bot and the web app, type `$web` in Discord. The bot sends you a DM with a private,
+  single-use join link.
+
+---
+
+## For Admins
+
+You can run the chat bot, the web app, or both — they work independently or in tandem.
+
+| What you run | What players can use |
+|---|---|
+| Chat bot only | All chat bot commands |
+| Web app only | Web interface (share join link with players) |
+| Both together | Both interfaces work in tandem; changes sync automatically |
+
+### Quick Start
 
 1. Clone and configure:
    ```sh
    git clone https://github.com/stefangotz/initbot.git
    cd initbot
-   ./tools/configure.sh    # guided setup: bot token, deployment mode, .env files
+   ./tools/configure.sh
    ```
-2. Start the Discord bot:
+   The setup wizard asks you which application(s) you want to run and how.
+
+2. Start initbot (requires Docker):
    ```sh
-   ./tools/run_chat.sh
-   ```
-3. Start the web app:
-   ```sh
-   ./tools/run_web_ngrok.sh       # publicly accessible via ngrok tunnel
-   # or
-   ./tools/run_web_standalone.sh  # local only
-   # or
-   ./tools/run_compose.sh         # Docker Compose (ngrok as above or Caddy for your own domain)
+   ./tools/run.sh
    ```
 
-   **Standalone (no bot required):** The web app prints a Join URL at startup.
-   Share it with your players — anyone who visits `/join/` and enters a display name
-   gets immediate access to the tracker.
 
-   **With the Discord bot:** Players can also log in via the `$web` chat-bot command,
-   which sends each player a personal, single-use link via DM.
+### Sharing access with players
 
-## Applications
+When the web app starts, it prints a **Join link**. Share this link with your players — anyone
+who visits it can enter a display name and access the tracker. The link contains a
+hard-to-guess "secret" that acts as the access key, so share it only with players you trust.
 
-### initbot-chat — Discord chat bot
+Players who use the Discord `$web` command receive their own private link via DM; no action
+is needed from you beyond having both the bot and the web app running.
 
-The chat bot manages RPG character initiatives.
-Commands can be sent in any channel the bot user is a member of or as DMs.
-Type `$help` to see what the bot can do for you.
+### Deployment modes
 
-#### Initiative
+Deployment modes reflect which parts of initbot you want to run and how you want to run them.
 
-The typical flow during a game session is:
+Select the mode by running `configure.sh` and then start the application(s) with `./tools/run.sh`.
 
-1. The Judge declares initiative to be rolled
-2. Player A rolls an initiative value of 10 and types `$init Alfalfa 10` to create their character *Alfalfa* (if it doesn't exist yet) and set their initiative to 10.
-3. All other players do the same for their characters and the Judge for all NPCs.
-4. The Judge types `$inis` to obtain all characters and NPCs in initiative order.
-5. Departed characters and NPCs can be removed with, e.g., `$remove Alfalfa` at any time.
+#### Chat bot modes
 
-Note that anyone (i.e., any Discord user on a given server) can update the initiative of or remove the character of any other player.
+The chat bot has really only two "modes": on and off.
 
-Get more information on any of the commands with `$help`, e.g., `$help init`.
+#### Web app modes
 
-### initbot-web — companion web app
+The deployment modes of the web app say who can access it and how it's set up.
 
-With the web app, players can see and manage initiatives in a live-updating browser — useful for
-displaying on a shared screen or a second monitor during play.
+**Off**: you decide to not run the web app at all.
 
-#### Logging in
+**Local mode:**
+- access limited to you yourself on your own system (laptop, ...) at
+`http://localhost:8080`
+- you run web app on your own local system
 
-The web app supports two login flows:
+**ngrok mode:**
+- players access web app from anywhere like any other web site
+- you run web app on your own local system (laptop, ...)
+- uses ngrok tunnel service & requires free ngrok account
+- static ngrok hostname recommended
+- `configure.sh` asks for you ngrok auth token
 
-- **Standalone join** — visit `/<prefix>/join/`, enter a display name, click **Join**.
-  No Discord bot required. Returning players who use the same name get the same player record.
-- **Discord `$web` command** — type `$web` in any channel the bot is in or in a DM to it.
-  The bot sends a private, single-use login link via DM; click it to open the tracker.
+**Webserver mode:**
+- players access web app from anywhere like any other web site
+- you run web app on a "web server" with ports 80 and 443 exposed and some DNS host name pointing at that server
+- server can be your laptop, a home server, or some remote server or cloud VM
+- `configure.sh` asks for your DNS host name
+- internally uses Caddy and Let's Encrypt for TLS/HTTPS
 
-Sessions last eight hours. See [docs/web-sessions.md](docs/web-sessions.md) for full detail
-on login flows, player identity, session lifetime, and the session signing key.
-
-### Chat bot and web app integration
-
-#### How they are connected
-
-The two applications share a single SQLite database file. They do not communicate directly
-with each other over a network. The chat bot writes initiative data and login tokens to the
-database; the web app reads from the same database. This keeps the architecture simple and
-avoids the need for any additional infrastructure between the two processes.
-
-#### Security design
-
-All web app endpoints sit under a hard-to-guess URL prefix (`web_url_path_prefix`), making
-the application invisible to port scanners and opportunistic probes. Discord login tokens are
-single-use and expire in 60 seconds, so an intercepted link cannot be replayed. Sessions are
-signed cookies valid for eight hours; see [docs/web-sessions.md](docs/web-sessions.md) for
-details.
-
-#### Prerequisites for the web app
-
-The standalone join flow only requires the web app itself to be running. The prerequisites
-below apply to the Discord `$web` integration, which additionally needs the chat bot.
-
-1. **Shared state.** Both applications must be configured with the same SQLite URI:
-   `state=sqlite:/path/to/app.sqlite`. In the Docker Compose setup this is handled
-   automatically via a shared named volume.
-
-2. **Public domain.** The `DOMAIN` setting must be set to the publicly reachable domain name
-   of the web app (e.g. `example.com`). The bot uses this to construct the login URL it sends
-   to players. Without it the `$web` command is not registered and no login links are issued.
-
-3. **URL path prefix.** The `web_url_path_prefix` setting must be set to a stable,
-   hard-to-guess value in `.env` or `.env.web` (e.g. a long random string). If it is left
-   unset the web app generates a random prefix at startup, but the `$web` command will not be
-   registered — the bot only registers the command when both `DOMAIN` and
-   `web_url_path_prefix` are explicitly configured. A prefix that changes on every restart
-   would also invalidate any bookmarks players have saved.
-
-4. **Discord DM permissions.** The bot must be able to send DMs to players. Some Discord
-   server privacy settings allow members to block DMs from other server members, which also
-   blocks bot DMs. Players who do not receive the login link should check their Discord
-   privacy settings under *Server Privacy Defaults* or *Privacy & Safety*.
-
-## Application Setup & Execution
-
-See the [Quick Start](#quick-start) section above for the recommended setup path.
-Run `./tools/configure.sh` at any time to update your configuration.
-
-### Docker Compose Services
-
-This setup always runs both applications together with a Caddy reverse proxy that serves the web app over HTTPS.
-
-Required configuration:
-
-| File | Setting | Description |
-| --- | --- | --- |
-| `.env` | `DOMAIN=<your-domain>` | Domain name Caddy uses for TLS and routing |
-| `.env.chat` | `token=<discord-bot-token>` | Discord bot token |
-
-Setup steps:
-
-1. Clone git repository or download repository contents
-1. Create `.env` with `DOMAIN=<your-domain>` and `.env.chat` with `token=<discord-bot-token>` in the repository
-1. Set up a systemd service: `./tools/set_up_systemd.sh compose`
-   The script installs the service unit file and prompts whether to enable and start it.
-
-`web_url_path_prefix` is auto-generated if not set.
-The web app is reachable at `https://<DOMAIN>/<web_url_path_prefix>/`.
+To run as a persistent background service on Linux: `./tools/set_up_systemd.sh compose` installs a
+systemd unit and prompts whether to enable and start it.
 
 ### Configuration
 
-First off, you can run the initbot applications without configuring them ahead of time.
-They will simply prompt for required configuration data.
-
-Run `./tools/configure.sh` at any time to update your configuration. It guides you through Discord token setup, deployment mode selection, and `.env` file generation.
-
-The initbot applications accept their configuration parameters in any combination of command-line options, environment variables, and `.env` files.
-
-Configuration parameters are loaded from layered `.env` files.
-Each app reads the shared `.env` first, then its own app-specific file (which takes precedence):
+Run `./tools/configure.sh` to update your configuration and then restart the applications. Settings are stored in
+`.env` files:
 
 | File | Used by | Typical contents |
-| --- | --- | --- |
-| `.env` | both | `state=` (SQLite URI) |
-| `.env.chat` | initbot-chat | `token=`, `command_prefixes=` |
-| `.env.web` | initbot-web | `web_url_path_prefix=`, `web_port=` |
+|---|---|---|
+| `.env` | both | `state=` (SQLite path) |
+| `.env.chat` | chat bot | `token=`, `command_prefixes=` |
+| `.env.web` | web app | `web_url_path_prefix=`, `web_port=` |
 
-In addition to `.env` files, parameters can be supplied via:
+You can also pass any setting as a command-line option or environment variable;
+see the config files linked in the developer section for the full list.
 
-- command line options: `./tools/run_chat.sh --token 123`
-- environment variables: `export token=123; ./tools/run_chat.sh`
+---
 
-Supported parameters are listed in
+## For Developers
 
-- [`packages/initbot-core/src/initbot_core/config.py`](packages/initbot-core/src/initbot_core/config.py)
-- [`packages/initbot-chat/src/initbot_chat/config.py`](packages/initbot-chat/src/initbot_chat/config.py)
-- [`packages/initbot-web/src/initbot_web/config.py`](packages/initbot-web/src/initbot_web/config.py).
+### Architecture
 
-You can also run `./tools/run_chat.sh --help` or `./tools/run_web_standalone.sh --help`.
+Two independent Python applications share a SQLite database file:
+
+- **initbot-chat** (`packages/initbot-chat/`) — Discord bot built on `discord.py`. Writes
+  character and initiative data to SQLite. Optionally writes single-use login tokens so the
+  web app can authenticate Discord players.
+- **initbot-web** (`packages/initbot-web/`) — Starlette ASGI app. Serves the tracker via
+  SSE using [Datastar](https://data-star.dev/). Reads from SQLite and pushes live updates to
+  browsers. Handles two login flows: standalone join (display name only) and Discord token
+  (one-time link from `$web`).
+- **initbot-core** (`packages/initbot-core/`) — shared data models, state abstractions, and
+  the SQLite state layer used by both apps.
+
+The two apps have no direct network communication. SQLite is the only shared state.
+
+### Development setup
+
+```sh
+./tools/set_up_dev.sh               # uv, venv, pre-commit hooks
+./tools/run_web_standalone_dev.sh   # web app with 5 sample characters
+```
+
+The dev server prints `Join link: http://localhost:8080/dev/join/` at startup.
+
+### Web frontend
+
+The tracker is a single Jinja2 template (`tracker.html`) driven by Datastar RC.8 SSE
+signals. `AGENTS.md` documents Datastar-specific gotchas: attribute colon format, lowercase
+signal names, `data-on:click` / `data-init` conflicts, and POST interception patterns.
 
 ### Containers
 
-The repository defines two Docker images built from the same `Dockerfile`:
+Two Docker images are built from the same `Dockerfile`:
 
 | Target | Image | Entrypoint |
-| --- | --- | --- |
+|---|---|---|
 | `chat` | `initbot-chat` | `/app/bin/initbot` |
 | `web` | `initbot-web` | `/app/bin/initbot-web` |
-
-Build them individually:
 
 ```sh
 docker build --target chat -t initbot-chat .
 docker build --target web  -t initbot-web  .
+docker compose up --build  # starts services per COMPOSE_PROFILES in .env
 ```
 
-Or use Docker Compose to build and run both together with a shared volume for state:
+### Configuration system
 
-```sh
-docker compose up --build
-```
+Parameters load from layered `.env` files (shared → app-specific) with environment variables
+and CLI flags taking precedence. Supported parameters are defined in:
 
-The compose file mounts a named volume `data` at `/data` in both containers and sets `STATE=sqlite:/data/app.sqlite` so they share the same database.
-App-specific configuration goes in `.env.chat` (token, prefixes) and `.env.web` (secret, port).
-Shared configuration goes in `.env*` files.
-None of these files are required — the compose file won't error if they're absent.
+- [`packages/initbot-core/src/initbot_core/config.py`](packages/initbot-core/src/initbot_core/config.py)
+- [`packages/initbot-chat/src/initbot_chat/config.py`](packages/initbot-chat/src/initbot_chat/config.py)
+- [`packages/initbot-web/src/initbot_web/config.py`](packages/initbot-web/src/initbot_web/config.py)
 
-To run a single image manually:
+### Workflow
 
-```sh
-# Chat bot — interactive (prompts for token if not set)
-docker run -it initbot-chat
-
-# Chat bot — with env files
-docker run --env-file .env --env-file .env.chat initbot-chat
-
-# Chat bot — with token on the command line and an sqlite datastore in a named docker volume
-docker run initbot-chat --token 123 -e STATE=sqlite:/data/app.sqlite -v mydata:/data
-
-# Web app — with an sqlite datastore in a named docker volume
-docker run -e STATE=sqlite:/data/app.sqlite -v mydata:/data initbot-web
-```
-
-## Development
-
-To get started on Linux or MacOS and set up everything you need for development, run `./tools/set_up_dev.sh`.
-That script boils down to:
-
-- setting up `uv`
-- setting up a Python virtual environment with the Python dependencies
-- setting up pre-commit hooks
-
-On Windows, the script won't run as such, but the commands it contains should translate quite easily.
+See `AGENTS.md` for branch/PR conventions, commit workflow, CI monitoring, and the
+Dependabot/uv workspace quirk where Dependabot only updates `uv.lock` but not
+`pyproject.toml` for workspace members.

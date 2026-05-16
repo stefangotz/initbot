@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
 # Stage 3a: chat bot image (core + chat wheels only)
 FROM runtime-base AS chat
 COPY --from=builder /root/dist/initbot_core-*.whl /root/dist/initbot_chat-*.whl /tmp/
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv venv /app \
     && VIRTUAL_ENV=/app uv pip install --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
@@ -40,7 +40,7 @@ ENTRYPOINT ["/app/bin/initbot"]
 # Stage 3b: web app image (core + web wheels only)
 FROM runtime-base AS web
 COPY --from=builder /root/dist/initbot_core-*.whl /root/dist/initbot_web-*.whl /tmp/
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv venv /app \
     && VIRTUAL_ENV=/app uv pip install --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl

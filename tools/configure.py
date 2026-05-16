@@ -9,15 +9,15 @@
 
 """Interactive setup wizard for initbot.
 
-Guides new users through Discord bot token setup, web app deployment mode
-selection, and writing the necessary .env files.
+Guides new admins through application selection, credential setup, and
+deployment mode configuration. Writes the .env files that docker compose reads.
 
 Usage:
-    sh ./tools/configure.sh
-    uv run tools/configure.py
+    ./tools/configure.sh
 """
 
 import getpass
+import re
 import secrets
 import shutil
 import string
@@ -35,6 +35,10 @@ _ENV_CHAT_FILE: Final[Path] = _REPO_ROOT / ".env.chat"
 _ALPHABET: Final[str] = string.ascii_letters + string.digits
 _PREFIX_LENGTH: Final[int] = 40
 
+# ngrok auth tokens are long alphanumeric strings (40+ characters).
+# This pattern rejects obviously wrong values such as Cloudflare tokens (cr_…).
+_NGROK_AUTHTOKEN_RE: Final[re.Pattern[str]] = re.compile(r"^[a-zA-Z0-9_]{40,}$")
+
 _NGROK_INSTALL_URL: Final[str] = "https://ngrok.com/download"
 _NGROK_DOMAINS_URL: Final[str] = "https://dashboard.ngrok.com/domains"
 _CLOUDFLARE_TUNNEL_URL: Final[str] = (
@@ -47,8 +51,8 @@ _DISCORD_SETUP_GUIDE: Final[str] = "docs/discord-bot-setup.md"
 @dataclass
 class _WebConfig:
     enabled: bool = False
-    mode: int = 1  # 1=local, 2=own domain, 3=ngrok
-    domain: str = ""
+    mode: int = 1  # 1=local, 2=ngrok, 3=webserver
+    web_hostname: str = ""
     prefix: str = ""
     ngrok_authtoken: str = ""
 
@@ -141,45 +145,97 @@ def _mask(token: str) -> str:
     return f"...{token[-6:]}" if len(token) >= 6 else "***"
 
 
+def _choose_applications() -> tuple[bool, bool]:
+    """Ask what to run. Returns (run_bot, run_web)."""
+    print("What do you want to run?")
+    print("  1) Chat bot only")
+    print("  2) Web tracker only")
+    print("  3) Both")
+    while True:
+        choice = _prompt("Choose", default="3")
+        if choice == "1":
+            return True, False
+        if choice == "2":
+            return False, True
+        if choice == "3":
+            return True, True
+        print("  Please enter 1, 2, or 3.")
+
+
 def _configure_token() -> str:
-    print("[1/3] Discord bot token")
+    """Ask for and return a non-empty Discord bot token."""
     current = read_env(_ENV_CHAT_FILE).get("token", "")
-    print(f"  Current: {_mask(current) if current else 'not set'}")
-    token = _prompt(
-        "  Token (Enter to keep current)" if current else "  Token",
-        default=current,
-        secret=True,
-    )
+    if current:
+        print(f"  Current token: {_mask(current)}")
+    else:
+        print(
+            f"  You need a Discord bot token. See {_DISCORD_SETUP_GUIDE} for instructions."
+        )
+    label = "  Token (Enter to keep current)" if current else "  Token"
+    token = _prompt(label, default=current, secret=True)
     if not token:
         print("\nError: a Discord bot token is required.")
-        print(f"See {_DISCORD_SETUP_GUIDE} for step-by-step instructions.")
         sys.exit(1)
     return token
 
 
-def _configure_ngrok(current_domain: str) -> tuple[str, str]:
-    """Configure ngrok and return (domain, authtoken)."""
+def _choose_web_mode() -> int:
+    """Ask for the web deployment mode. Re-prompts if ngrok is chosen but not installed."""
+    while True:
+        print("\n  Deployment mode:")
+        print(
+            "    1) Local mode      — only accessible on this computer; no internet required"
+        )
+        print(
+            "    2) ngrok mode      — players connect from anywhere; requires a free ngrok account"
+        )
+        print(
+            "    3) Webserver mode  — players connect from anywhere; requires a public web address"
+        )
+        mode_raw = _prompt("  Choose", default="2")
+        if mode_raw not in ("1", "2", "3"):
+            print("  Please enter 1, 2, or 3.")
+            continue
+        mode = int(mode_raw)
+        if mode == 2 and not shutil.which("ngrok"):
+            print(
+                "\n  ngrok is not installed. Download and install it, then re-run configure.sh,"
+            )
+            print("  or choose a different mode.")
+            print(f"\n  Download ngrok: {_NGROK_INSTALL_URL}")
+            continue
+        return mode
+
+
+def _configure_ngrok(current_hostname: str) -> tuple[str, str]:
+    """Configure ngrok credentials and optional static hostname. Returns (hostname, authtoken)."""
     ngrok = shutil.which("ngrok")
     if not ngrok:
-        print("\nError: ngrok is not installed.")
-        print(f"Install it from: {_NGROK_INSTALL_URL}")
-        print("\nAlternative — Cloudflare Tunnel (free, no session limits):")
-        print(f"  {_CLOUDFLARE_TUNNEL_URL}")
-        sys.exit(1)
-
+        raise RuntimeError("ngrok not found; _choose_web_mode should have caught this")
     check = subprocess.run([ngrok, "config", "check"], capture_output=True)  # noqa: S603
     current_authtoken = read_env(_ENV_FILE).get("NGROK_AUTHTOKEN", "")
 
-    print("\n  ngrok authtoken — used for both standalone and Docker Compose.")
+    print("\n  ngrok auth token")
     print(
         "  https://dashboard.ngrok.com/get-started/your-authtoken"
     )  # pragma: allowlist secret
-    authtoken = _prompt(
-        "  ngrok authtoken", default=current_authtoken, secret=True
-    )  # pragma: allowlist secret
-    if not authtoken:
-        print("Error: ngrok authtoken is required.")
-        sys.exit(1)
+    while True:
+        authtoken = _prompt(
+            "  Auth token", default=current_authtoken, secret=True
+        )  # pragma: allowlist secret
+        if not authtoken:
+            print("  An ngrok auth token is required.")
+            continue
+        if _NGROK_AUTHTOKEN_RE.match(authtoken):
+            break
+        print("  That doesn't look like a valid ngrok auth token.")
+        print(
+            "  Tokens are long strings of letters, numbers, and underscores (40+ characters)."
+        )
+        print(
+            "  Make sure you copied it from your ngrok dashboard, not from another service."
+        )
+        current_authtoken = ""  # don't re-offer the invalid value as default
 
     if check.returncode != 0:
         subprocess.run(  # noqa: S603  user is providing their own authtoken
@@ -187,68 +243,91 @@ def _configure_ngrok(current_domain: str) -> tuple[str, str]:
             check=True,
         )
 
-    print("\n  A free ngrok account gives you one static domain.")
-    print(f"  Find it at: {_NGROK_DOMAINS_URL}")
+    print("\n  Fixed web address (optional but recommended):")
     print(
-        f"  (Cloudflare Tunnel is an alternative with no session limits:\n"
-        f"   {_CLOUDFLARE_TUNNEL_URL})"
+        "  A fixed address keeps the join link stable — players use the same link every time."
     )
-    domain = _prompt(
-        "  ngrok static domain (e.g. foo-bar.ngrok-free.app)", default=current_domain
+    print("  Without one, the address changes each time initbot restarts.")
+    print(f"  Find your free fixed address at: {_NGROK_DOMAINS_URL}")
+    hostname = _prompt(
+        "  Fixed address (leave blank for a random address each restart)",
+        default=current_hostname,
     )
-    if not domain:
-        print("Error: a domain is required for ngrok mode.")
-        sys.exit(1)
-    return domain, authtoken
+    return hostname, authtoken
 
 
 def _configure_web() -> _WebConfig:
-    print("\n[2/3] Web app")
-    if _prompt("  Enable the web initiative tracker?", default="Y").lower() not in (
-        "y",
-        "yes",
-    ):
-        return _WebConfig(enabled=False)
-
+    """Configure the web tracker. Returns a fully populated _WebConfig."""
     shared = read_env(_ENV_FILE)
-    current_domain = shared.get("DOMAIN", "")
+    current_hostname = shared.get("WEB_HOSTNAME", "")
     current_prefix = shared.get("web_url_path_prefix", "")
-
-    print("\n  Deployment mode:")
-    print("    1) Local only  — localhost access; $web command unavailable")
-    print("    2) Own domain  — Docker Compose + Caddy (requires a public domain)")
-    print(
-        "    3) ngrok       — free public HTTPS tunnel, no domain required (recommended)"
-    )
-    mode_raw = _prompt("  Choose mode", default="3")
-    mode = int(mode_raw) if mode_raw in ("1", "2", "3") else 3
-
     prefix = current_prefix or generate_prefix()
 
+    mode = _choose_web_mode()
+
     if mode == 1:
-        return _WebConfig(enabled=True, mode=1, domain="", prefix=prefix)
+        return _WebConfig(enabled=True, mode=1, web_hostname="", prefix=prefix)
 
-    if mode == 2:
-        domain = _prompt("  Domain name (e.g. example.com)", default=current_domain)
-        if not domain:
-            print("Error: a domain name is required.")
+    if mode == 3:
+        print("\n  Enter the web address players will use to reach this server.")
+        print("  You need a DNS record pointing that address at this machine.")
+        hostname = _prompt(
+            "  Web address (e.g. example.com)",
+            default=current_hostname,
+        )
+        if not hostname:
+            print("Error: a public hostname is required.")
             sys.exit(1)
-        return _WebConfig(enabled=True, mode=2, domain=domain, prefix=prefix)
+        return _WebConfig(enabled=True, mode=3, web_hostname=hostname, prefix=prefix)
 
-    # mode == 3: ngrok
-    domain, authtoken = _configure_ngrok(current_domain)
+    # mode == 2: ngrok
+    hostname, authtoken = _configure_ngrok(current_hostname)
     return _WebConfig(
-        enabled=True, mode=3, domain=domain, prefix=prefix, ngrok_authtoken=authtoken
+        enabled=True,
+        mode=2,
+        web_hostname=hostname,
+        prefix=prefix,
+        ngrok_authtoken=authtoken,
     )
 
 
-def _write_config(token: str, web: _WebConfig) -> None:
-    print("\n[3/3] Summary")
-
-    env_updates: dict[str, str] = {}
+def _write_config(token: str | None, web: _WebConfig) -> None:
+    """Show a plain-language summary, confirm, and write configuration files."""
+    print("\n=== Summary ===\n")
+    print(f"  Chat bot:    {'enabled' if token is not None else 'off'}")
     if web.enabled:
-        if web.domain:
-            env_updates["DOMAIN"] = web.domain
+        mode_label = {1: "local mode", 2: "ngrok mode", 3: "webserver mode"}[web.mode]
+        print(f"  Web tracker: {mode_label}")
+        if web.mode == 1:
+            print("               address: http://localhost:8080")
+        elif web.mode == 2:
+            if web.web_hostname:
+                print(f"               address: https://{web.web_hostname}")
+            else:
+                print("               address: random (changes each restart)")
+        else:
+            print(f"               address: https://{web.web_hostname}")
+    else:
+        print("  Web tracker: off")
+
+    if _prompt("\n  Save configuration?", default="Y").lower() not in ("y", "yes"):
+        print("Aborted. No files written.")
+        sys.exit(0)
+
+    profiles: list[str] = []
+    if token:
+        profiles.append("chat")
+    if web.enabled:
+        profiles.append("web")
+        if web.mode == 2:
+            profiles.append("ngrok")
+        elif web.mode == 3:
+            profiles.append("caddy")
+
+    env_updates: dict[str, str] = {"COMPOSE_PROFILES": ",".join(profiles)}
+    if web.enabled:
+        if web.web_hostname:
+            env_updates["WEB_HOSTNAME"] = web.web_hostname
         if web.ngrok_authtoken:
             env_updates["NGROK_AUTHTOKEN"] = (
                 web.ngrok_authtoken
@@ -256,54 +335,37 @@ def _write_config(token: str, web: _WebConfig) -> None:
         if web.prefix:
             env_updates["web_url_path_prefix"] = web.prefix
 
-    chat_updates: dict[str, str] = {"token": token}  # pragma: allowlist secret
-
-    if env_updates:
-        print("\n  .env:")
-        for k, v in env_updates.items():
-            masked = k in ("NGROK_AUTHTOKEN",)
-            print(f"    {k} = {_mask(v) if masked else v}")
-    print("\n  .env.chat:")
-    print("    token = [set]")
-
-    if _prompt("\nWrite these settings?", default="Y").lower() not in ("y", "yes"):
-        print("Aborted. No files written.")
-        sys.exit(0)
-
-    if env_updates:
-        update_env(_ENV_FILE, env_updates)
-        print("  Written: .env")
-    update_env(_ENV_CHAT_FILE, chat_updates)
-    print("  Written: .env.chat")
+    update_env(_ENV_FILE, env_updates)
+    if token is not None:
+        update_env(_ENV_CHAT_FILE, {"token": token})  # pragma: allowlist secret
+    print("  Configuration saved.")
 
 
-def _print_next_steps(web: _WebConfig) -> None:
+def _print_next_steps() -> None:
     print("\n=== Setup complete! ===\n")
-    print("Start the chat bot:")
-    print("  sh ./tools/run_chat.sh\n")
-
-    if not web.enabled:
-        return
-
-    if web.mode == 1:
-        print("Start the web tracker (local access):")
-        print("  sh ./tools/run_web_standalone.sh")
-    elif web.mode == 2:
-        print("Start everything with Docker Compose:")
-        print("  sh ./tools/run_compose.sh")
-    else:
-        print("Start the web tracker with ngrok:")
-        print("  sh ./tools/run_web_ngrok.sh      (standalone)")
-        print("  sh ./tools/run_compose.sh         (Docker Compose)")
+    print("Start initbot:")
+    print("  ./tools/run.sh")
 
 
 def main() -> None:
     """Run the initbot interactive setup wizard."""
     print("=== Initbot Setup ===\n")
-    token = _configure_token()
-    web = _configure_web()
+    print("This wizard sets up initbot. It will ask what you want to run and how.\n")
+
+    run_bot, run_web = _choose_applications()
+
+    token: str | None = None
+    if run_bot:
+        print("\n--- Chat bot ---")
+        token = _configure_token()
+
+    web = _WebConfig(enabled=False)
+    if run_web:
+        print("\n--- Web tracker ---")
+        web = _configure_web()
+
     _write_config(token, web)
-    _print_next_steps(web)
+    _print_next_steps()
 
 
 if __name__ == "__main__":

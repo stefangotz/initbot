@@ -15,9 +15,9 @@ from initbot_core.state.state import State
 
 
 def _web_configured(_ctx: commands.Context) -> bool:
-    if not (CORE_CFG.domain and CORE_CFG.web_url_path_prefix):
+    if not (CORE_CFG.web_hostname and CORE_CFG.web_url_path_prefix):
         raise commands.CheckFailure(
-            "The web command is not available (DOMAIN or WEB_URL_PATH_PREFIX not configured)."
+            "The web command is not available (WEB_HOSTNAME or WEB_URL_PATH_PREFIX not configured)."
         )
     return True
 

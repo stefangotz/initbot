@@ -20,9 +20,9 @@ class CoreSettings(BaseSettings):
         default="",
         description="URL path prefix for the web app. Acts as a hard-to-guess component that obscures well-known endpoints. Auto-generated at startup when unset. Set WEB_URL_PATH_PREFIX in .env for a stable, shareable URL across restarts.",
     )
-    domain: str = Field(
+    web_hostname: str = Field(
         default="",
-        description="Public domain name when running behind a reverse proxy (e.g. 'example.com'). Must use uppercase DOMAIN so Caddy picks it up correctly.",
+        description="Public hostname when running behind a reverse proxy (e.g. 'example.com'). Set WEB_HOSTNAME in .env.",
     )
 
 

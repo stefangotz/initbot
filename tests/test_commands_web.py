@@ -43,7 +43,7 @@ def _dm_ctx(sqlite_state):
 
 
 async def test_web_sends_dm_with_token(monkeypatch, web_ctx):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "example.com")
     monkeypatch.setattr(core_config.CORE_CFG, "web_url_path_prefix", "testprefix")
     await web.callback(web_ctx)
     web_ctx.author.send.assert_called_once()
@@ -52,8 +52,8 @@ async def test_web_sends_dm_with_token(monkeypatch, web_ctx):
     assert "expires in 1 minute" in dm_text
 
 
-async def test_web_sends_localhost_url_when_no_domain(monkeypatch, web_ctx):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "")
+async def test_web_sends_localhost_url_when_no_web_hostname(monkeypatch, web_ctx):
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "")
     monkeypatch.setattr(core_config.CORE_CFG, "web_url_path_prefix", "testprefix")
     await web.callback(web_ctx)
     dm_text = web_ctx.author.send.call_args[0][0]
@@ -61,7 +61,7 @@ async def test_web_sends_localhost_url_when_no_domain(monkeypatch, web_ctx):
 
 
 async def test_web_sends_channel_notification(monkeypatch, web_ctx):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "example.com")
     await web.callback(web_ctx)
     web_ctx.send.assert_called_once()
     channel_text = web_ctx.send.call_args[0][0]
@@ -71,7 +71,7 @@ async def test_web_sends_channel_notification(monkeypatch, web_ctx):
 
 
 async def test_web_token_is_single_use(monkeypatch, web_ctx):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "example.com")
     await web.callback(web_ctx)
     first_dm = web_ctx.author.send.call_args[0][0]
 
@@ -83,7 +83,7 @@ async def test_web_token_is_single_use(monkeypatch, web_ctx):
 
 
 async def test_web_token_stored_in_state(monkeypatch, web_ctx):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "example.com")
     await web.callback(web_ctx)
     dm_text = web_ctx.author.send.call_args[0][0]
     # Extract token from URL: last path segment before trailing slash
@@ -93,7 +93,7 @@ async def test_web_token_stored_in_state(monkeypatch, web_ctx):
 
 
 async def test_web_no_channel_notification_when_invoked_in_dm(monkeypatch, dm_ctx):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "example.com")
     await web.callback(dm_ctx)
     dm_ctx.author.send.assert_called_once()  # DM was sent
     dm_ctx.send.assert_not_called()  # no channel notification

@@ -13,11 +13,11 @@ from tests.helpers import predicate_from
 
 
 @pytest.mark.parametrize(
-    ("domain", "prefix"),
+    ("web_hostname", "prefix"),
     [("", ""), ("example.com", ""), ("", "secret")],
 )
-def test_web_configured_raises_when_missing(monkeypatch, domain, prefix):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", domain)
+def test_web_configured_raises_when_missing(monkeypatch, web_hostname, prefix):
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", web_hostname)
     monkeypatch.setattr(core_config.CORE_CFG, "web_url_path_prefix", prefix)
     predicate = predicate_from(web_configured)
     with pytest.raises(CheckFailure):
@@ -25,7 +25,7 @@ def test_web_configured_raises_when_missing(monkeypatch, domain, prefix):
 
 
 def test_web_configured_passes_when_set(monkeypatch):
-    monkeypatch.setattr(core_config.CORE_CFG, "domain", "example.com")
+    monkeypatch.setattr(core_config.CORE_CFG, "web_hostname", "example.com")
     monkeypatch.setattr(core_config.CORE_CFG, "web_url_path_prefix", "secret")
     predicate = predicate_from(web_configured)
     assert predicate(MagicMock()) is True
