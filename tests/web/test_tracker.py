@@ -61,28 +61,26 @@ def _client(app):
 
 @pytest.fixture(name="authed_client")
 def _authed_client(app):
-    """Client with an active session obtained via the shared admin token."""
+    """Client with an active session obtained via the join flow."""
     with TestClient(app, follow_redirects=False) as client:
-        client.post(
-            f"/testsecret/{app.state.admin_token}/"
-        )  # sets session cookie in client's cookie jar
+        client.post("/testsecret/join/", data={"name": "Tester"})
         yield client
 
 
 # ── Login flow ────────────────────────────────────────────────────────────────
 
 
-def test_login_get_shows_form(client, app):
-    resp = client.get(f"/testsecret/{app.state.admin_token}/")
+def test_join_get_shows_form(client):
+    resp = client.get("/testsecret/join/")
     assert resp.status_code == 200
-    assert "Log In" in resp.text
+    assert "Join" in resp.text
 
 
 def test_login_get_does_not_consume_token(tmp_path):
     """GET must not consume the token — bots (e.g. Discordbot) issue GET requests."""
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player = state.players.upsert(discord_id=42, name="Alice")
+    player = state.players.upsert_discord(discord_id=42, name="Alice")
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
@@ -96,8 +94,8 @@ def test_login_get_does_not_consume_token(tmp_path):
         assert resp_post.headers["location"] == "/admintoken/tracker/"
 
 
-def test_login_post_redirects_to_tracker(client, app):
-    resp = client.post(f"/testsecret/{app.state.admin_token}/")
+def test_join_post_redirects_to_tracker(client):
+    resp = client.post("/testsecret/join/", data={"name": "Tester"})
     assert resp.status_code == 303
     assert resp.headers["location"] == "/testsecret/tracker/"
 
@@ -134,7 +132,7 @@ def test_tracker_page_accessible_after_login(authed_client):
 def test_tracker_page_shows_player_name(tmp_path):
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player = state.players.upsert(discord_id=44, name="Alice")
+    player = state.players.upsert_discord(discord_id=44, name="Alice")
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
@@ -147,10 +145,10 @@ def test_tracker_page_shows_player_name(tmp_path):
         assert "Alice" in resp.text
 
 
-def test_tracker_page_no_player_name_for_admin_session(authed_client):
+def test_tracker_page_shows_player_name_for_join_session(authed_client):
     resp = authed_client.get("/testsecret/tracker/")
     assert resp.status_code == 200
-    assert 'id="player-bar"' not in resp.text
+    assert "Tester" in resp.text
 
 
 # ── SSE endpoint ──────────────────────────────────────────────────────────────
@@ -167,7 +165,7 @@ def test_sse_requires_session(client):
 def test_per_player_token_creates_session(tmp_path):
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player = state.players.upsert(discord_id=42, name="Alice")
+    player = state.players.upsert_discord(discord_id=42, name="Alice")
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
@@ -185,7 +183,7 @@ def test_per_player_token_creates_session(tmp_path):
 def test_used_token_returns_403(tmp_path):
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player = state.players.upsert(discord_id=43, name="Bob")
+    player = state.players.upsert_discord(discord_id=43, name="Bob")
     assert player.discord_id is not None
     token = state.web_login_tokens.create(discord_id=player.discord_id)
 
@@ -205,7 +203,7 @@ def test_used_token_returns_403(tmp_path):
 def test_expired_session_returns_403(app, monkeypatch):
     future = time.time() + tracker_module.SESSION_TTL + 1
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")  # log in
+        client.post("/testsecret/join/", data={"name": "Tester"})  # log in
         monkeypatch.setattr(tracker_module.time, "time", lambda: future)
         resp = client.get("/testsecret/tracker/")
         assert resp.status_code == 403
@@ -228,7 +226,7 @@ def test_session_survives_restart(tmp_path):
     )
     app1 = create_app(settings, web_url_path_prefix="testsecret")
     with TestClient(app1, follow_redirects=False) as client1:
-        client1.post(f"/testsecret/{app1.state.admin_token}/")
+        client1.post("/testsecret/join/", data={"name": "Tester"})
         cookies = dict(client1.cookies)
 
     app2 = create_app(settings, web_url_path_prefix="testsecret")
@@ -245,7 +243,7 @@ def _make_app_with_character(tmp_path):
     """Return (app, state, char_name) with one character in the DB."""
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player = state.players.upsert(discord_id=99, name="Tester")
+    player = state.players.upsert_discord(discord_id=99, name="Alice")
     assert player.id is not None
     char = state.characters.add_store_and_get(
         NewCharacterData(name="Aldric", player_id=player.id)
@@ -268,7 +266,7 @@ def test_set_initiative_requires_auth(tmp_path):
 def test_set_initiative_updates_character(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": 17},
@@ -280,7 +278,7 @@ def test_set_initiative_updates_character(tmp_path):
 def test_set_initiative_unknown_character_returns_2xx_no_change(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "NoSuchCharacter", "initval": 5},
@@ -294,7 +292,7 @@ def test_set_initiative_out_of_range_returns_error_signal(tmp_path):
     char.initiative = 10
     state.characters.update_and_store(char)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": 999},
@@ -311,7 +309,7 @@ def test_set_initiative_missing_initval_leaves_initiative_unchanged(tmp_path):
     char.initiative_dice = "d20+3"
     state.characters.update_and_store(char)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric"},
@@ -324,7 +322,7 @@ def test_set_initiative_missing_initval_leaves_initiative_unchanged(tmp_path):
 def test_set_initiative_invalid_input_returns_error_signal(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": "notvalid"},
@@ -336,7 +334,7 @@ def test_set_initiative_invalid_input_returns_error_signal(tmp_path):
 def test_set_initiative_dice_expression_stores_dice(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": "d20+5"},
@@ -351,7 +349,7 @@ def test_set_initiative_dice_expression_preserves_existing_initiative(tmp_path):
     char.initiative = 10
     state.characters.update_and_store(char)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Aldric", "initval": "d20+5"},
@@ -368,7 +366,7 @@ def test_session_invalidated_after_secret_expiry(tmp_path, monkeypatch):
     )
     app1 = create_app(settings, web_url_path_prefix="testsecret")
     with TestClient(app1, follow_redirects=False) as client1:
-        client1.post(f"/testsecret/{app1.state.admin_token}/")
+        client1.post("/testsecret/join/", data={"name": "Tester"})
         cookies = dict(client1.cookies)
 
     future = int(time.time()) + _SESSION_SECRET_TTL + 1
@@ -388,7 +386,7 @@ def _make_app_with_dice(tmp_path, initiative_dice: str | None):
     """Return (app, state, char_name) with one character, optionally with initiative_dice."""
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player = state.players.upsert(discord_id=99, name="Tester")
+    player = state.players.upsert_discord(discord_id=99, name="Alice")
     assert player.id is not None
     char = state.characters.add_store_and_get(
         NewCharacterData(
@@ -410,7 +408,7 @@ def test_roll_initiative_requires_auth(tmp_path):
 def test_roll_initiative_updates_character(tmp_path):
     app, state, _ = _make_app_with_dice(tmp_path, "d6")
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
         assert resp.status_code in (200, 204)
         initiative = state.characters.get_from_name("Aldric").initiative
@@ -421,7 +419,7 @@ def test_roll_initiative_updates_character(tmp_path):
 def test_roll_initiative_unknown_character_returns_2xx_no_change(tmp_path):
     app, _, _ = _make_app_with_dice(tmp_path, "d6")
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post("/testsecret/tracker/roll-initiative/NoSuchCharacter")
         assert resp.status_code in (200, 204)
 
@@ -429,7 +427,7 @@ def test_roll_initiative_unknown_character_returns_2xx_no_change(tmp_path):
 def test_roll_initiative_no_dice_set_returns_2xx_no_change(tmp_path):
     app, state, _ = _make_app_with_dice(tmp_path, None)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
         assert resp.status_code in (200, 204)
         assert state.characters.get_from_name("Aldric").initiative is None
@@ -438,7 +436,7 @@ def test_roll_initiative_no_dice_set_returns_2xx_no_change(tmp_path):
 def test_roll_initiative_invalid_dice_returns_2xx_no_change(tmp_path):
     app, state, _ = _make_app_with_dice(tmp_path, "notvalid")
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post("/testsecret/tracker/roll-initiative/Aldric")
         assert resp.status_code in (200, 204)
         assert state.characters.get_from_name("Aldric").initiative is None
@@ -457,7 +455,7 @@ def test_resort_requires_auth(tmp_path):
 def test_resort_returns_2xx_when_authed(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post("/testsecret/tracker/resort")
         assert resp.status_code in (200, 204)
 
@@ -469,8 +467,8 @@ def _make_app_with_two_players(tmp_path):
     """Return (app, state, char, player1, player2) with one character owned by player1."""
     db_path = tmp_path / "test.db"
     state = create_state_from_source(f"sqlite:{db_path}")
-    player1 = state.players.upsert(discord_id=10, name="Alice")
-    player2 = state.players.upsert(discord_id=20, name="Bob")
+    player1 = state.players.upsert_discord(discord_id=10, name="Alice")
+    player2 = state.players.upsert_discord(discord_id=20, name="Bob")
     char = state.characters.add_store_and_get(
         NewCharacterData(name="Gandalf", player_id=player1.id)
     )
@@ -482,7 +480,7 @@ def _make_app_with_two_players(tmp_path):
 def test_rename_character(tmp_path):
     app, state, _, _, _ = _make_app_with_two_players(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Gandalf", "newcharname": "Gandalf the White"},
@@ -499,7 +497,7 @@ def test_rename_to_existing_name_returns_error(tmp_path):
         NewCharacterData(name="Saruman", player_id=player1.id)
     )
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Gandalf", "newcharname": "Saruman"},
@@ -512,7 +510,7 @@ def test_rename_to_existing_name_returns_error(tmp_path):
 def test_change_character_player(tmp_path):
     app, state, _, _, player2 = _make_app_with_two_players(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Gandalf", "editplayerid": str(player2.id)},
@@ -524,7 +522,7 @@ def test_change_character_player(tmp_path):
 def test_change_character_player_invalid_id_ignored(tmp_path):
     app, state, _, player1, _ = _make_app_with_two_players(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "Gandalf", "editplayerid": "9999"},
@@ -533,22 +531,10 @@ def test_change_character_player_invalid_id_ignored(tmp_path):
         assert state.characters.get_from_name("Gandalf").player_id == player1.id
 
 
-def test_player_select_excludes_admin(tmp_path):
-    db_path = tmp_path / "test.db"
-    state = create_state_from_source(f"sqlite:{db_path}")
-    player1 = state.players.upsert(discord_id=10, name="Alice")
-    player2 = state.players.upsert(discord_id=20, name="Bob")
-    admin_player = state.players.upsert(discord_id=0, name="admin")
-    non_admin_ids = {p.id for p in state.players.get_all() if p.discord_id != 0}
-    assert player1.id in non_admin_ids
-    assert player2.id in non_admin_ids
-    assert admin_player.id not in non_admin_ids
-
-
 def test_rename_and_change_player_together(tmp_path):
     app, state, _, _, player2 = _make_app_with_two_players(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={
@@ -569,7 +555,7 @@ def test_rename_and_change_player_together(tmp_path):
 def test_create_character_creates_new_character(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "", "newcharname": "Fenix", "initval": "12"},
@@ -582,7 +568,7 @@ def test_create_character_creates_new_character(tmp_path):
 def test_create_character_with_dice_expression(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "", "newcharname": "Fenix", "initval": "d20+3"},
@@ -596,7 +582,7 @@ def test_create_character_empty_name_is_noop(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     count_before = len(state.characters.get_all())
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "", "newcharname": "", "initval": "5"},
@@ -608,7 +594,7 @@ def test_create_character_empty_name_is_noop(tmp_path):
 def test_create_character_invalid_name_returns_error(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         # Control characters are invalid per validate_character_name
         resp = client.post(
             "/testsecret/tracker/add-character",
@@ -621,7 +607,7 @@ def test_create_character_invalid_name_returns_error(tmp_path):
 def test_create_character_duplicate_name_returns_error(tmp_path):
     app, _, char_name = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "", "newcharname": char_name, "initval": "5"},
@@ -633,7 +619,7 @@ def test_create_character_duplicate_name_returns_error(tmp_path):
 def test_create_character_invalid_init_returns_error(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={"editchar": "", "newcharname": "Fenix", "initval": "notvalid"},
@@ -655,7 +641,7 @@ def test_delete_character_requires_auth(tmp_path):
 def test_delete_character_removes_character(tmp_path):
     app, state, char_name = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(f"/testsecret/tracker/delete-character/{char_name}")
         assert resp.status_code in (200, 204)
         names = [c.name for c in state.characters.get_all()]
@@ -666,7 +652,7 @@ def test_delete_character_unknown_is_noop(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     count_before = len(state.characters.get_all())
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post("/testsecret/tracker/delete-character/NoSuchCharacter")
         assert resp.status_code in (200, 204)
         assert len(state.characters.get_all()) == count_before
@@ -679,7 +665,7 @@ def test_nextfield_player_returns_editplayerid(tmp_path):
     app, state, _ = _make_app_with_character(tmp_path)
     char = state.characters.get_from_name("Aldric")
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={
@@ -701,7 +687,7 @@ def test_nextfield_init_returns_initval(tmp_path):
     char.initiative = 17
     state.characters.update_and_store(char)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={
@@ -723,7 +709,7 @@ def test_nextfield_dice_returns_initval(tmp_path):
     char.initiative_dice = "d20+2"
     state.characters.update_and_store(char)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={
@@ -741,7 +727,7 @@ def test_nextfield_dice_returns_initval(tmp_path):
 def test_nextfield_name_returns_newcharname(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={
@@ -759,7 +745,7 @@ def test_nextfield_name_returns_newcharname(tmp_path):
 def test_nextfield_unknown_nextchar_falls_back_to_result(tmp_path):
     app, _, _ = _make_app_with_character(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         resp = client.post(
             "/testsecret/tracker/add-character",
             json={
@@ -969,7 +955,7 @@ def test_render_combined_rows_stale_init():
 def test_rename_character_invalid_name_returns_error(tmp_path):
     app, state, _, _, _ = _make_app_with_two_players(tmp_path)
     with TestClient(app, follow_redirects=False) as client:
-        client.post(f"/testsecret/{app.state.admin_token}/")
+        client.post("/testsecret/join/", data={"name": "Tester"})
         # Control characters are invalid per validate_character_name
         resp = client.post(
             "/testsecret/tracker/add-character",

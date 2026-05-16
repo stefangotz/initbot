@@ -30,7 +30,7 @@ players_raw = [
     (1005, "Dave"),
     (1006, "Eve"),
 ]
-players = [state.players.upsert(discord_id=did, name=name) for did, name in players_raw]
+players = [state.players.upsert_discord(discord_id=did, name=name) for did, name in players_raw]
 
 characters_raw = [
     ("Aldric",       0, 18, "d20+2"),

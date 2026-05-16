@@ -148,7 +148,7 @@ class _SqlPlayerState(_ChangeNotifyMixin, PlayerState):
         super().__init__(on_change)
         self._db = db
 
-    def upsert(self, discord_id: int, name: str) -> PlayerData:
+    def upsert_discord(self, discord_id: int, name: str) -> PlayerData:
         row = self._db.execute(
             "INSERT INTO _sqlplayerdata (discord_id, name) VALUES (?, ?)"
             " ON CONFLICT(discord_id) DO UPDATE SET name=excluded.name"
@@ -157,6 +157,26 @@ class _SqlPlayerState(_ChangeNotifyMixin, PlayerState):
         ).fetchone()
         if row is None:
             raise RuntimeError("UPSERT into _sqlplayerdata returned no row")
+        self._notify()
+        return PlayerData(*row)
+
+    def upsert_standalone(self, name: str) -> PlayerData | str:
+        existing = self._db.execute(
+            "SELECT id, discord_id, name FROM _sqlplayerdata WHERE lower(name)=lower(?)",
+            (name,),
+        ).fetchone()
+        if existing is not None:
+            player = PlayerData(*existing)
+            if player.discord_id is not None:
+                return "taken"
+            return player
+        row = self._db.execute(
+            "INSERT INTO _sqlplayerdata (discord_id, name) VALUES (NULL, ?)"
+            " RETURNING id, discord_id, name",
+            (name,),
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("INSERT into _sqlplayerdata returned no row")
         self._notify()
         return PlayerData(*row)
 

@@ -15,6 +15,8 @@ from initbot_core.config import CORE_CFG
 async def web(ctx: commands.Context) -> None:
     """Sends a personal, single-use web app login link via DM."""
     player = sync_player(ctx.bot.initbot_state, ctx)
+    if player.discord_id is None:
+        raise RuntimeError("sync_player returned a player without a discord_id")
     token = ctx.bot.initbot_state.web_login_tokens.create(discord_id=player.discord_id)
     if CORE_CFG.domain:
         url = f"https://{CORE_CFG.domain}/{CORE_CFG.web_url_path_prefix}/{token}/"

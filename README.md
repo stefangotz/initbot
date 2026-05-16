@@ -12,7 +12,8 @@ RPG-related chat bot features.
 ![Web app](docs/screenshots/tracker.png)
 
 The web app does the same thing in a browser and stays in sync with Discord.
-Players access it through a personal login link sent by the `$web` chat-bot command.
+Players access it by visiting a shared join URL and entering a display name, or via a
+personal login link sent by the `$web` chat-bot command.
 
 ## Quick Start
 
@@ -35,11 +36,12 @@ Players access it through a personal login link sent by the `$web` chat-bot comm
    ./tools/run_compose.sh         # Docker Compose (ngrok as above or Caddy for your own domain)
    ```
 
-   **To try out the web app stand-alone:** The web app prints a direct access URL
-   to the terminal at startup — no Discord bot required for that single-user URL.
+   **Standalone (no bot required):** The web app prints a Join URL at startup.
+   Share it with your players — anyone who visits `/join/` and enters a display name
+   gets immediate access to the tracker.
 
-   **For players in a game session:** The chat bot is currently mandatory. Players
-   log into the web app via the `$web` chat-bot command.
+   **With the Discord bot:** Players can also log in via the `$web` chat-bot command,
+   which sends each player a personal, single-use link via DM.
 
 ## Applications
 
@@ -70,18 +72,15 @@ displaying on a shared screen or a second monitor during play.
 
 #### Logging in
 
-The web app has no public login page. Players authenticate via a personal, single-use link
-delivered by the chat bot:
+The web app supports two login flows:
 
-1. In any channel the bot is in, or in a DM to the bot, type `$web`.
-2. The bot sends a private DM with a personal login link. The link expires in one minute and
-   can only be used once.
-3. Click the link. The browser opens the initiative tracker and stays logged in for eight hours.
-   After that, type `$web` again to get a fresh link.
+- **Standalone join** — visit `/<prefix>/join/`, enter a display name, click **Join**.
+  No Discord bot required. Returning players who use the same name get the same player record.
+- **Discord `$web` command** — type `$web` in any channel the bot is in or in a DM to it.
+  The bot sends a private, single-use login link via DM; click it to open the tracker.
 
-If you type `$web` in a channel rather than in a DM, the bot posts a brief "check your DMs"
-notice in the channel that disappears after a few seconds — the actual login link is always
-delivered privately.
+Sessions last eight hours. See [docs/web-sessions.md](docs/web-sessions.md) for full detail
+on login flows, player identity, session lifetime, and the session signing key.
 
 ### Chat bot and web app integration
 
@@ -92,37 +91,18 @@ with each other over a network. The chat bot writes initiative data and login to
 database; the web app reads from the same database. This keeps the architecture simple and
 avoids the need for any additional infrastructure between the two processes.
 
-#### Login flow in detail
-
-When a player runs `$web`:
-
-1. The bot generates a random, single-use token and writes it to the shared database with a
-   60-second expiry.
-2. The bot constructs a personal login URL — `https://<DOMAIN>/<token>/` — and sends it to
-   the player via Discord DM.
-3. The player opens the link. The web app looks up the token in the database, verifies it has
-   not been used and has not expired, then invalidates it and creates a signed browser session.
-4. Subsequent requests carry the session cookie. The session expires after eight hours.
-
-#### Why Discord is the identity provider
-
-The bot already knows who sent the `$web` command — Discord provides the sender's identity
-cryptographically. The DM channel is a private channel that only the player and the bot can
-see. Together these mean no separate account system, password storage, or OAuth integration
-is needed. Discord itself acts as the trusted authentication channel.
-
 #### Security design
 
-All web app endpoints sit under a hard-to-guess URL prefix (`web_url_path_prefix`). This
-means the application is invisible to port scanners and opportunistic probes: without knowing
-the prefix, there is nothing to attack. Login tokens are single-use and expire in 60 seconds,
-so an intercepted link cannot be replayed. Sessions are signed cookies; the signing key is
-generated in memory at startup and never written to disk, so there is nothing to steal from
-the filesystem.
+All web app endpoints sit under a hard-to-guess URL prefix (`web_url_path_prefix`), making
+the application invisible to port scanners and opportunistic probes. Discord login tokens are
+single-use and expire in 60 seconds, so an intercepted link cannot be replayed. Sessions are
+signed cookies valid for eight hours; see [docs/web-sessions.md](docs/web-sessions.md) for
+details.
 
 #### Prerequisites for the web app
 
-For the web app and its login flow to work, operators must ensure:
+The standalone join flow only requires the web app itself to be running. The prerequisites
+below apply to the Discord `$web` integration, which additionally needs the chat bot.
 
 1. **Shared state.** Both applications must be configured with the same SQLite URI:
    `state=sqlite:/path/to/app.sqlite`. In the Docker Compose setup this is handled
@@ -143,10 +123,6 @@ For the web app and its login flow to work, operators must ensure:
    server privacy settings allow members to block DMs from other server members, which also
    blocks bot DMs. Players who do not receive the login link should check their Discord
    privacy settings under *Server Privacy Defaults* or *Privacy & Safety*.
-
-5. **Chat bot running.** Players currently access the web tracker exclusively via the `$web`
-   Discord command, which the chat bot handles. The web tracker has no standalone login page,
-   so the bot must be running for anyone to log in.
 
 ## Application Setup & Execution
 

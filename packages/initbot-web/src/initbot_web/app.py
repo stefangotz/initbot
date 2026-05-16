@@ -120,10 +120,8 @@ def create_app(
     # but Starlette's SessionMiddleware only accepts a single secret_key at this point.
     session_secret = state.session_secret.get_or_rotate()
     https_only = bool(CORE_CFG.domain)
-    admin_token = secrets.token_urlsafe(32)
-
     app = Starlette(
-        routes=make_routes(state, templates, url_path_prefix, vuln_state, admin_token),
+        routes=make_routes(state, templates, url_path_prefix, vuln_state),
         middleware=[
             Middleware(
                 SessionMiddleware,  # type: ignore[invalid-argument-type]  # SessionMiddleware satisfies _MiddlewareFactory
@@ -134,7 +132,6 @@ def create_app(
         ],
         lifespan=lifespan,
     )
-    app.state.admin_token = admin_token
     app.state.notifier = notifier
     app.state.url_path_prefix = url_path_prefix
     return app
@@ -144,10 +141,9 @@ def run() -> None:
     cfg = WebSettings(_cli_parse_args=True)  # type: ignore
     app = create_app(cfg)
     prefix = app.state.url_path_prefix
-    admin_token = app.state.admin_token
-    print(f"URL: http://localhost:{cfg.web_port}/{prefix}/{admin_token}/")
+    print(f"Join URL: http://localhost:{cfg.web_port}/{prefix}/join/")
     if CORE_CFG.domain:
-        print(f"External URL: https://{CORE_CFG.domain}/{prefix}/{admin_token}/")
+        print(f"External Join URL: https://{CORE_CFG.domain}/{prefix}/join/")
     uvicorn.run(
         app,
         host=cfg.web_host,
