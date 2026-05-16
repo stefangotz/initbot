@@ -26,6 +26,15 @@ Type `$help` to see everything it can do.
 
 **Web app** — view and manage the initiative order and characters on all your preferred devices without Discord.
 
+### Adding the web app to your phone
+
+You can add the web app to your phone's home screen so it opens like any other app — no browser bar, just the tracker.
+
+- **Android** — open the join link in Chrome, then tap the three-dot menu → *Add to Home Screen*
+- **iPhone** — open the join link in Safari, tap the Share button → *Add to Home Screen*
+
+Tap the icon on your home screen to open it directly next time.
+
 ### Either application works on its own
 
 You don't need both. If your group only uses Discord, the chat bot alone is fine. If your
