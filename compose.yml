@@ -4,6 +4,7 @@
 
 services:
   chat:
+    profiles: ["chat"]
     build:
       context: .
       target: chat
@@ -20,6 +21,7 @@ services:
       - data:/data
 
   web:
+    profiles: ["web"]
     build:
       context: .
       target: web
@@ -32,11 +34,12 @@ services:
       STATE: sqlite:/data/app.sqlite
       WEB_HOST: "0.0.0.0"
       NOTIFY_PORT: "9876"
+    ports:
+      - "8080:8080"
     volumes:
       - data:/data
 
-  # caddy profile: HTTPS via Caddy reverse proxy. Requires DOMAIN in .env.
-  # Use: sh ./tools/run_compose.sh caddy  (or auto-detected when NGROK_AUTHTOKEN is absent)
+  # caddy profile: HTTPS via Caddy reverse proxy. Requires WEB_HOSTNAME in .env.
   caddy:
     profiles: ["caddy"]
     image: caddy:alpine
@@ -54,16 +57,19 @@ services:
     depends_on:
       - web
 
-  # ngrok profile: public HTTPS tunnel. Requires DOMAIN and NGROK_AUTHTOKEN in .env.
-  # Use: sh ./tools/run_compose.sh ngrok  (or auto-detected when NGROK_AUTHTOKEN is present)
-  # Standalone alternative (no Docker): sh ./tools/run_web_ngrok.sh
+  # ngrok profile: public HTTPS tunnel. Requires NGROK_AUTHTOKEN in .env.
+  # Set WEB_HOSTNAME in .env to use a static ngrok hostname; omit for a random URL each restart.
   ngrok:
     profiles: ["ngrok"]
     image: ngrok/ngrok:latest
     restart: unless-stopped
-    command: http web:8080 --url https://${DOMAIN}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'if [ -n "$$WEB_HOSTNAME" ]; then exec ngrok http web:8080 --url https://$$WEB_HOSTNAME; else exec ngrok http web:8080; fi'
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      WEB_HOSTNAME: ${WEB_HOSTNAME:-}
     depends_on:
       - web
     ports:

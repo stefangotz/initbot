@@ -63,9 +63,9 @@ Start with:
 tools/run_web_standalone_dev.sh
 ```
 
-This generates 5 sample characters with fresh initiative timestamps, exports them to `dev-state/dev.sqlite`, and starts the server. The server prints the join URL to stdout:
+This generates 5 sample characters with fresh initiative timestamps, exports them to `dev-state/dev.sqlite`, and starts the server. The server prints the join link to stdout:
 ```
-Join URL: http://localhost:8080/dev/join/
+Join link: http://localhost:8080/dev/join/
 ```
 
 Read the URL from the server output (e.g. `/tmp/initbot-web-dev.log` if started in the background). The state is regenerated on each run (timestamps stay fresh). `dev-state/` is gitignored.
@@ -92,7 +92,7 @@ The tracker uses Datastar v1.0.0-RC.8. Several things differ from what documenta
 ### Design iteration workflow
 
 1. Start the dev server in the background: `tools/run_web_standalone_dev.sh &>/tmp/initbot-web-dev.log &`
-2. Read the URL from the log: `grep '^Join URL:' /tmp/initbot-web-dev.log`
+2. Read the URL from the log: `grep '^Join link:' /tmp/initbot-web-dev.log`
 3. Use Playwright MCP to navigate to that URL and take a screenshot
 4. Edit `packages/initbot-web/src/initbot_web/templates/tracker.html`
 5. Use Playwright MCP to verify the result visually before committing

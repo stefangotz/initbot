@@ -7,8 +7,4 @@
 set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
-
-sh ./tools/set_up_uv.sh
-uv sync
-cmd="$1"; shift
-exec uv run "$cmd" "$@"
+exec docker compose up --build "$@"

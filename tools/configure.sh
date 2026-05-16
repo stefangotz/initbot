@@ -7,4 +7,10 @@
 set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
-exec sh ./tools/run.sh python tools/configure.py "$@"
+
+if ! command -v uv >/dev/null 2>&1; then
+    ./tools/set_up_uv.sh
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+exec uv run tools/configure.py "$@"

@@ -8,6 +8,6 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/..
 
-sh ./tools/set_up_uv.sh
+./tools/set_up_uv.sh
 uv sync
 ./.venv/bin/pre-commit install
