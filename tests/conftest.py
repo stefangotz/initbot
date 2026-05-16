@@ -2,11 +2,25 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import os
+import sys
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from initbot_core.state.factory import create_state_from_source
+
+# initbot_chat.bot imports a Settings object at module level with _cli_parse_args=True.
+# Importing it while pytest is running would cause pydantic-settings to parse pytest's
+# argv as bot settings. Clear argv first and ensure a dummy token suppresses the
+# interactive getpass prompt. This runs before any test module is loaded, so the
+# subsequent imports in bot test files are no-ops against sys.modules.
+os.environ.setdefault("TOKEN", "_test_token_")
+_argv = sys.argv[:]
+sys.argv = sys.argv[:1]
+import initbot_chat.bot  # noqa: E402, F401  # pylint: disable=wrong-import-position,unused-import
+
+sys.argv = _argv
 
 
 @pytest.fixture(name="initbot_state")

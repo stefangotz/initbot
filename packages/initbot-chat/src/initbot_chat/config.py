@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import logging
 from getpass import getpass
 
 from pydantic import Field
@@ -43,6 +44,18 @@ class Settings(BaseSettings):
     notify_port: int = Field(
         default=9876,
         description="UDP port on which the web app listens for change notifications.",
+    )
+    chat_notify_host: str = Field(
+        default="0.0.0.0",  # noqa: S104  # all interfaces needed: receives from Docker internal network
+        description="Host address the chat bot UDP listener binds to.",
+    )
+    chat_notify_port: int = Field(
+        default=9877,
+        description="UDP port the chat bot listens on for web-app change notifications.",
+    )
+    log_level: int = Field(
+        default=logging.INFO,
+        description="Logging level for all application loggers. Use 10 for DEBUG, 20 for INFO, 30 for WARNING.",
     )
 
 

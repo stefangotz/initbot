@@ -29,3 +29,11 @@ class WebSettings(BaseSettings):
         default=9876,
         description="UDP port on which the web app listens for change notifications from itself and from the chat bot.",
     )
+    chat_notify_host: str = Field(
+        default="chat",
+        description="Hostname of the chat bot to notify after state writes. In Docker Compose this is the service name.",
+    )
+    chat_notify_port: int = Field(
+        default=9877,
+        description="UDP port on which the chat bot listens for change notifications from the web app.",
+    )

@@ -2,11 +2,14 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import asyncio
 import logging
 import sys
+from asyncio import DatagramProtocol, get_running_loop
 from collections import defaultdict
 from collections.abc import Sequence
 from itertools import product
+from typing import Any
 
 import discord
 from discord import Intents
@@ -26,6 +29,15 @@ from initbot_core.state.state import State
 
 _log = logging.getLogger(__name__)
 
+
+class _BotUdpProtocol(DatagramProtocol):
+    """Receives zero-byte change notifications from the web app."""
+
+    def datagram_received(self, data: bytes, addr: tuple[str | Any, int]) -> None:
+        del data, addr
+        _log.debug("External state change notification received from web app")
+
+
 intents = Intents.default()
 intents.message_content = True
 
@@ -37,6 +49,7 @@ bot = Bot(
 )
 
 _STARTUP_FAILED: bool = False
+_udp_transport: asyncio.BaseTransport | None = None  # pylint: disable=invalid-name
 
 
 @tasks.loop(hours=24)
@@ -214,6 +227,34 @@ async def on_message(message: discord.Message) -> None:
         await message.channel.send(result_text)
 
 
+_original_bot_close = bot.close
+
+
+async def _setup_hook() -> None:
+    global _udp_transport  # pylint: disable=global-statement
+    if _udp_transport is not None:
+        return
+    loop = get_running_loop()
+    transport, _ = await loop.create_datagram_endpoint(
+        _BotUdpProtocol,
+        local_addr=(CFG.chat_notify_host, CFG.chat_notify_port),
+    )
+    _udp_transport = transport
+    _log.info(
+        "UDP listener started on %s:%d",
+        CFG.chat_notify_host,
+        CFG.chat_notify_port,
+    )
+
+
+async def _bot_close() -> None:
+    global _udp_transport  # pylint: disable=global-statement
+    if _udp_transport is not None:
+        _udp_transport.close()
+        _udp_transport = None
+    await _original_bot_close()
+
+
 def run() -> None:
     for cmd in commands:
         bot.add_command(cmd)
@@ -221,6 +262,8 @@ def run() -> None:
         CFG.state,
         on_change=lambda: send_notification(CFG.notify_host, CFG.notify_port),
     )
-    bot.run(CFG.token)
+    bot.setup_hook = _setup_hook  # type: ignore  # module-level function shadows bound method
+    bot.close = _bot_close  # type: ignore  # module-level function shadows bound method
+    bot.run(CFG.token, root_logger=True, log_level=CFG.log_level)
     if _STARTUP_FAILED:
         sys.exit(1)

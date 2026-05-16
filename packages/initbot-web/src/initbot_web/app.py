@@ -93,10 +93,12 @@ def create_app(
 ) -> Starlette:
     cfg = settings or WebSettings()
     notifier = _Notifier()
-    state = create_state_from_source(
-        cfg.state,
-        on_change=lambda: send_notification("127.0.0.1", cfg.notify_port),
-    )
+
+    def _on_state_change() -> None:
+        send_notification("127.0.0.1", cfg.notify_port)
+        send_notification(cfg.chat_notify_host, cfg.chat_notify_port)
+
+    state = create_state_from_source(cfg.state, on_change=_on_state_change)
     templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
     vuln_state = VulnerabilityState()
     url_path_prefix = (

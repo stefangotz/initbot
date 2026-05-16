@@ -2,31 +2,14 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import os
-import sys
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
 
-# bot.py's chat config uses _cli_parse_args=True, so importing it while pytest
-# is running would cause pydantic-settings to try to parse pytest's argv as
-# Discord bot settings and fail. Clear argv before the import and ensure a
-# dummy token is set so the interactive getpass prompt is also skipped.
-os.environ.setdefault("TOKEN", "_test_token_")
-_argv = sys.argv[:]
-sys.argv = sys.argv[:1]
-# pylint: disable=wrong-import-position
-from initbot_chat.bot import (  # noqa: E402
-    _send_pruning_notifications,
-)
-
-sys.argv = _argv
-
-from initbot_core.data.character import NewCharacterData  # noqa: E402
-
-# pylint: enable=wrong-import-position
+from initbot_chat.bot import _send_pruning_notifications
+from initbot_core.data.character import NewCharacterData
 
 _FUTURE = int(time.time()) + 200 * 86400
 _PLAYER_ID = 42
