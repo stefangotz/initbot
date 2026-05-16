@@ -35,6 +35,7 @@ from initbot_core.security import (
 from initbot_core.state.factory import create_state_from_source
 from initbot_core.state.state import State
 from initbot_web.config import WebSettings
+from initbot_web.routes.pwa import make_pwa_routes
 from initbot_web.routes.tracker import make_routes
 
 _log = logging.getLogger(__name__)
@@ -121,7 +122,8 @@ def create_app(
     session_secret = state.session_secret.get_or_rotate()
     https_only = bool(CORE_CFG.web_hostname)
     app = Starlette(
-        routes=make_routes(state, templates, url_path_prefix, vuln_state),
+        routes=make_pwa_routes(url_path_prefix)
+        + make_routes(state, templates, url_path_prefix, vuln_state),
         middleware=[
             Middleware(
                 SessionMiddleware,  # type: ignore[invalid-argument-type]  # SessionMiddleware satisfies _MiddlewareFactory
