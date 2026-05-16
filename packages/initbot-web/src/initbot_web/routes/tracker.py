@@ -613,14 +613,8 @@ def _has_valid_dice(initiative_dice: str | None) -> bool:
         return False
 
 
-_ROLL_BTN_TITLE = (
-    "Roll initiative using this character's dice formula. "
-    "Requires initiative dice to be set (e.g. d20+3 or d20adv). "
-    "Equivalent to $init without specifying a value."
-)
-_DELETE_BTN_TITLE = (
-    "Remove this character from the tracker. Equivalent to the $remove command."
-)
+_ROLL_BTN_TITLE = "Roll dice to set when this character acts in the turn order"
+_DELETE_BTN_TITLE = "Remove this character from the initiative order"
 
 
 def _render_roll_button(char_name: str, roll_url_prefix: str) -> str:
@@ -659,6 +653,7 @@ def _render_sort_indicator(is_stale: bool, resort_url: str) -> str:
     return (
         f'<div id="sort-indicator">'
         f'<button type="button" class="resort-btn"'
+        f' title="Reorder all characters by their current initiative scores"'
         f" data-on:click=\"@post('{resort_url}')\">"
         f"Update initiatives"
         f"</button>"
@@ -730,7 +725,8 @@ def _render_inline_name_cell(char_name: str, add_url: str) -> str:
     error_show = f"{input_show}&&$nameerror"
     return (
         f"<td>"
-        f'<span class="editable" data-show="{span_show}" data-on:click="{click}">'
+        f'<span class="editable" title="Change this character\'s name"'
+        f' data-show="{span_show}" data-on:click="{click}">'
         f"{safe_name}</span>"
         f'<input class="inline-input" type="text" data-bind:newcharname'
         f' data-show="{input_show}" style="display:none"'
@@ -782,7 +778,8 @@ def _render_inline_player_cell(
     effect = f"({select_show})&&setTimeout(()=>el.focus(),0)"
     return (
         f"<td>"
-        f'<span class="editable" data-show="{span_show}" data-on:click="{click}">'
+        f'<span class="editable" title="Assign this character to a different player"'
+        f' data-show="{span_show}" data-on:click="{click}">'
         f"{safe_player}</span>"
         f'<select class="inline-select" data-bind:editplayerid'
         f' data-show="{select_show}" style="display:none"'
@@ -818,7 +815,8 @@ def _render_inline_init_cell(init_display: str, add_url: str) -> str:
     error_show = f"{input_show}&&$editerror"
     return (
         f"<td>"
-        f'<span class="{span_class}" data-show="{span_show}" data-on:click="{click}">'
+        f'<span class="{span_class}" title="Set when this character acts in the turn order"'
+        f' data-show="{span_show}" data-on:click="{click}">'
         f"{init_display}</span>"
         f'<input class="inline-input" type="text" data-bind:initval'
         f' data-show="{input_show}" style="display:none"'
@@ -858,7 +856,8 @@ def _render_inline_dice_cell(initiative_dice: str | None, add_url: str) -> str:
     error_show = f"{input_show}&&$editerror"
     return (
         f"<td>"
-        f'<span class="{span_class}" data-show="{span_show}" data-on:click="{click}">'
+        f'<span class="{span_class}" title="Set the dice formula for this character\'s initiative rolls (e.g. d20+3)"'
+        f' data-show="{span_show}" data-on:click="{click}">'
         f"{display}</span>"
         f'<input class="inline-input" type="text" data-bind:initval'
         f' data-show="{input_show}" style="display:none"'

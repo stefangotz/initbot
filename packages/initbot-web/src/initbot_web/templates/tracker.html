@@ -381,6 +381,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           <td>
             <input id="create-init-input" class="inline-input" type="text" data-bind:initval
                    autocomplete="off" placeholder="e.g. 17 or d20+3"
+                   title="Set when this character acts — enter a number (e.g. 17) or a dice roll (e.g. d20+3)"
                    data-on:keydown="evt.key==='Tab' ? (evt.preventDefault(),document.getElementById('create-name-input')?.focus()) : (evt.key==='Escape' ? ($creating=false,$initval='',$editerror='',$nameerror='') : (evt.key==='Enter' && @post('{{ add_character_url }}')))"
                    data-on:blur="setTimeout(() => { if(!document.querySelector('#create-row').contains(document.activeElement)){$creating=false;$initval='';$editerror='';$nameerror='';} }, 0)">
             <span class="field-error" data-show="$editerror" data-text="$editerror" style="display:none"></span>
@@ -388,6 +389,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           <td>
             <input id="create-name-input" class="inline-input" type="text" data-bind:newcharname
                    maxlength="32" autocomplete="off" placeholder="Character name"
+                   title="Enter the character's name"
                    data-effect="$creating && setTimeout(() => el.focus(), 0)"
                    data-on:keydown="evt.key==='Tab' ? (evt.preventDefault(),document.getElementById('create-init-input')?.focus()) : (evt.key==='Escape' ? ($creating=false,$newcharname='',$editerror='',$nameerror='') : (evt.key==='Enter' && @post('{{ add_character_url }}')))"
                    data-on:blur="setTimeout(() => { if(!document.querySelector('#create-row').contains(document.activeElement)){$creating=false;$newcharname='';$editerror='';$nameerror='';} }, 0)">
@@ -398,13 +400,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           <td></td>
           <td>
             <button type="button" class="cancel-touch"
+                    title="Cancel and return to the tracker"
                     data-on:click="$creating=false,$newcharname='',$initval='',$editerror='',$nameerror=''">&#x2717;</button>
           </td>
         </tr>
       </tbody>
     </table>
     <button type="button" class="add-btn"
-            title="Add a new character to the tracker"
+            title="Add a new character to the initiative order"
             data-on:click="$creating=true,$editchar='',$editingfield='',$initval='',$newcharname='',$editplayerid='',$editerror='',$nameerror=''">
       &#x2795;
     </button>
