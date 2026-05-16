@@ -86,9 +86,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     <h1>Initiative Tracker</h1>
     <form method="post">
       <label for="name">Your name</label>
-      <input type="text" id="name" name="name" autocomplete="off" autofocus maxlength="64">
+      <input type="text" id="name" name="name" autocomplete="off" autofocus maxlength="64"
+             title="The name other players will see in the tracker">
       <div class="error">{{ error }}</div>
-      <button type="submit">Join</button>
+      <button type="submit" title="Join the current session as a player">Join</button>
     </form>
   </div>
 </body>
