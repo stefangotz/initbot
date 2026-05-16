@@ -119,7 +119,17 @@ class CharacterState(ABC):
 
 class PlayerState(ABC):
     @abstractmethod
-    def upsert(self, discord_id: int, name: str) -> PlayerData:
+    def upsert_discord(self, discord_id: int, name: str) -> PlayerData:
+        """Find or create a Discord-linked player; update their display name."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def upsert_standalone(self, name: str) -> PlayerData | str:
+        """Find or create a standalone (non-Discord) player by display name.
+
+        Returns PlayerData on success, or an error string if the name is already
+        taken by a Discord-linked player.
+        """
         raise NotImplementedError()
 
     @abstractmethod

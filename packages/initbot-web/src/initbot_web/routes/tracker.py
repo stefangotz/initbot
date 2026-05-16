@@ -9,11 +9,11 @@ import secrets
 import time
 from collections.abc import AsyncGenerator, Sequence
 from datetime import datetime
-from typing import Final
+from typing import Final, NamedTuple
 from urllib.parse import quote
 
 from datastar_py import ServerSentEventGenerator as SSE
-from datastar_py.sse import DatastarEvent
+from datastar_py.sse import DatastarEvent, SignalValue
 from datastar_py.starlette import datastar_response
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
@@ -32,8 +32,6 @@ SESSION_TTL: Final[int] = 8 * 3600
 _INITIATIVE_INPUT_ERROR = (
     "Enter a number from \u221299 to 99, or a dice formula like d20+5."
 )
-_ADMIN_DISCORD_ID: Final[int] = 0
-_ADMIN_PLAYER_NAME: Final[str] = "admin"
 _NAME_INPUT_ERROR_EMPTY: Final[str] = "Enter a character name."
 _NAME_INPUT_ERROR_EXISTS: Final[str] = "A character with this name already exists."
 _NAME_INPUT_ERROR_INVALID: Final[str] = "Name contains characters that are not allowed."
@@ -55,6 +53,22 @@ _SIG_NEWCHARNAME: Final[str] = "newcharname"
 _log = logging.getLogger(__name__)
 
 
+class _SessionPlayer(NamedTuple):
+    """Player identity extracted from the session for use in character operations."""
+
+    player_id: int | None
+    discord_id: int | None
+    player_name: str | None
+
+    @classmethod
+    def from_session(cls, request: Request) -> "_SessionPlayer":
+        return cls(
+            player_id=request.session.get("player_id"),
+            discord_id=request.session.get("discord_id"),
+            player_name=request.session.get("player_name"),
+        )
+
+
 def _require_auth(request: Request) -> Response | None:
     """Return a 403 Response if the session is missing or expired, else None."""
     if not request.session.get("authenticated"):
@@ -67,11 +81,15 @@ def _require_auth(request: Request) -> Response | None:
 
 
 def _write_session(
-    request: Request, discord_id: int | None, player_name: str | None
+    request: Request,
+    discord_id: int | None,
+    player_name: str | None,
+    player_id: int | None = None,
 ) -> None:
     request.session["authenticated"] = True
     request.session["discord_id"] = discord_id
     request.session["player_name"] = player_name
+    request.session["player_id"] = player_id
     request.session["expires_at"] = int(time.time()) + SESSION_TTL
     request.session["session_key"] = secrets.token_urlsafe(16)
 
@@ -139,8 +157,7 @@ def _apply_edit(
 
 def _apply_create(
     state: State,
-    discord_id: int | None,
-    player_name: str | None,
+    session_player: _SessionPlayer,
     new_char_name: str,
     initval: str,
 ) -> DatastarEvent | tuple[()] | CharacterData:
@@ -154,12 +171,17 @@ def _apply_create(
     as_integer, err = _parse_initval(initval)
     if err is not None:
         return err
-    if discord_id is not None:
-        player = state.players.get_from_discord_id(discord_id)
+    if session_player.player_id is not None:
+        player = state.players.get_from_id(session_player.player_id)
+    elif session_player.discord_id is not None:
+        player = state.players.get_from_discord_id(session_player.discord_id)
         if player is None:
-            player = state.players.upsert(discord_id, player_name or "Player")
+            player = state.players.upsert_discord(
+                session_player.discord_id,
+                session_player.player_name or "Player",
+            )
     else:
-        player = state.players.upsert(_ADMIN_DISCORD_ID, _ADMIN_PLAYER_NAME)
+        return ()
     try:
         char = state.characters.add_store_and_get(
             NewCharacterData(name=new_char_name, player_id=player.id)
@@ -183,7 +205,7 @@ def _is_initiative_eligible(char: CharacterData, now: int) -> bool:
 
 def _compute_desired_ranked(all_chars: Sequence[CharacterData], now: int) -> list[str]:
     eligible = [c for c in all_chars if _is_initiative_eligible(c, now)]
-    eligible.sort(key=lambda c: c.initiative, reverse=True)  # type: ignore[arg-type]
+    eligible.sort(key=lambda c: c.initiative, reverse=True)
     return [c.name for c in eligible]
 
 
@@ -192,7 +214,6 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     templates: Jinja2Templates,
     url_path_prefix: str,
     vuln_state: VulnerabilityState,
-    admin_token: str,
 ) -> list[Mount]:
     tracker_url = f"/{url_path_prefix}/tracker/"
     sse_url = f"/{url_path_prefix}/tracker/sse"
@@ -218,9 +239,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             request.url.scheme,
             request.headers.get("x-forwarded-proto", "<absent>"),
         )
-        is_player_token = state.web_login_tokens.find_valid(token) is not None
-        is_admin_token = token == admin_token
-        if not (is_player_token or is_admin_token):
+        if state.web_login_tokens.find_valid(token) is None:
             _log.warning("login GET: invalid or already-used token")
             return Response(status_code=403)
         return templates.TemplateResponse(request, "login.html", {})
@@ -233,18 +252,14 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
             state.web_login_tokens.mark_used(token)
             player = state.players.get_from_discord_id(discord_id)
             _write_session(
-                request, discord_id, player.name if player is not None else None
+                request,
+                discord_id,
+                player.name if player is not None else None,
+                player.id if player is not None else None,
             )
             _log.info(
                 "login POST: session written discord_id=%s session_keys=%s",
                 discord_id,
-                list(request.session.keys()),
-            )
-            return RedirectResponse(tracker_url, status_code=303)
-        if token == admin_token:
-            _write_session(request, None, None)
-            _log.info(
-                "login POST: admin session written session_keys=%s",
                 list(request.session.keys()),
             )
             return RedirectResponse(tracker_url, status_code=303)
@@ -333,7 +348,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                     for n in display_ranked
                 ] + [(c, _resolve_player_name(players_by_id, c)) for c in bottom]
 
-                players = [p for p in all_players if p.discord_id != _ADMIN_DISCORD_ID]
+                players = list(all_players)
                 player_snapshot = tuple((p.id, p.name) for p in players)
 
                 table_snapshot: tuple = (
@@ -398,8 +413,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         else:
             result = _apply_create(
                 state,
-                request.session.get("discord_id"),
-                request.session.get("player_name"),
+                _SessionPlayer.from_session(request),
                 str(data.get(_SIG_NEWCHARNAME, "")).strip(),
                 initval,
             )
@@ -418,7 +432,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 )
             except (KeyError, ValueError, TypeError):
                 next_c = result
-            extra: dict[str, str] = {}
+            extra: dict[str, SignalValue] = {}
             if nextfield == "player":
                 extra[_SIG_EDITPLAYERID] = str(next_c.player_id)
             elif nextfield == "init":
@@ -514,6 +528,31 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
         request.session.clear()
         return Response(status_code=200)
 
+    async def join_page(request: Request) -> Response:
+        """GET: render the standalone player name-entry form."""
+        return templates.TemplateResponse(request, "join.html", {"error": ""})
+
+    async def join_post(request: Request) -> Response:
+        """POST: find or create a standalone player, write session, redirect to tracker."""
+        form = await request.form()
+        name = str(form.get("name", "")).strip()
+        if not name:
+            return templates.TemplateResponse(
+                request, "join.html", {"error": "Enter your name."}
+            )
+        result = state.players.upsert_standalone(name)
+        if isinstance(result, str):
+            return templates.TemplateResponse(
+                request, "join.html", {"error": "That name is already in use."}
+            )
+        _write_session(request, None, result.name, result.id)
+        _log.info(
+            "join POST: session written player_id=%s session_keys=%s",
+            result.id,
+            list(request.session.keys()),
+        )
+        return RedirectResponse(tracker_url, status_code=303)
+
     return [
         Mount(
             f"/{url_path_prefix}",
@@ -533,6 +572,8 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
                 ),
                 Route("/tracker/resort", resort_initiative, methods=["POST"]),
                 Route("/logout", logout),
+                Route("/join/", join_page, methods=["GET"]),
+                Route("/join/", join_post, methods=["POST"]),
                 Route("/{token}/", login_page, methods=["GET"]),
                 Route("/{token}/", login_post, methods=["POST"]),
             ],

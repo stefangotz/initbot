@@ -112,6 +112,8 @@ async def _send_pruning_notifications(
 
     for player_id, chars in by_player_id.items():
         player = state.players.get_from_id(player_id)
+        if player.discord_id is None:
+            continue
         member = await _fetch_member(guilds, player.discord_id)
         if not member:
             _log.warning(

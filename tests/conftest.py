@@ -22,7 +22,7 @@ def _mock_ctx(initbot_state):
     ctx.author.id = discord_id
     ctx.author.name = name
     ctx.author.display_name = name
-    player = initbot_state.players.upsert(discord_id=discord_id, name=name)
+    player = initbot_state.players.upsert_discord(discord_id=discord_id, name=name)
     ctx.author.player_id = player.id  # pylint: disable=no-member
     ctx.bot.initbot_state = initbot_state
     ctx.send = AsyncMock(return_value=None)

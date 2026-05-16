@@ -13,7 +13,7 @@ from initbot_core.state.factory import create_state_from_source
 
 
 def test_add_character_and_retrieve(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=1, name="alice")
     cdi = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Bob", player_id=player.id)
     )
@@ -25,7 +25,7 @@ def test_add_character_and_retrieve(initbot_state):
 def test_add_character_persists_on_reload(tmp_path):
     db_path = tmp_path / "test.db"
     state1 = create_state_from_source(f"sqlite:{db_path}")
-    player = state1.players.upsert(discord_id=1, name="alice")
+    player = state1.players.upsert_discord(discord_id=1, name="alice")
     state1.characters.add_store_and_get(
         NewCharacterData(name="Bob", player_id=player.id)
     )
@@ -36,7 +36,7 @@ def test_add_character_persists_on_reload(tmp_path):
 
 
 def test_update_character_persists(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=1, name="alice")
     cdi = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Bob", player_id=player.id, initiative_dice="d20+2")
     )
@@ -47,7 +47,7 @@ def test_update_character_persists(initbot_state):
 
 
 def test_remove_character(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=1, name="alice")
     cdi = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Bob", player_id=player.id)
     )
@@ -57,7 +57,7 @@ def test_remove_character(initbot_state):
 
 
 def test_lookup_by_prefix(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=1, name="alice")
     initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Mediocre Mel", player_id=player.id)
     )
@@ -68,7 +68,7 @@ def test_lookup_by_prefix(initbot_state):
 
 
 def test_update_sets_last_used(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=1, name="alice")
     before = int(time.time())
     cdi = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="TimestampChar", player_id=player.id)
@@ -82,7 +82,7 @@ def test_update_sets_last_used(initbot_state):
 
 
 def test_add_sets_last_used(initbot_state):
-    player = initbot_state.players.upsert(discord_id=1, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=1, name="alice")
     before = int(time.time())
     cdi = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="NewChar", player_id=player.id)

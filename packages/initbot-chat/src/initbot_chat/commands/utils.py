@@ -27,7 +27,7 @@ web_configured: Final[Callable[..., Any]] = commands.check(_web_configured)
 
 def sync_player(state: State, ctx: Context) -> PlayerData:
     """Upsert the player record for the Discord user."""
-    return state.players.upsert(discord_id=ctx.author.id, name=ctx.author.name)
+    return state.players.upsert_discord(discord_id=ctx.author.id, name=ctx.author.name)
 
 
 def player_name(state: State, cdi: CharacterData) -> str:

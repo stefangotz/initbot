@@ -6,7 +6,7 @@ from initbot_core.data.character import NewCharacterData
 
 
 def test_character_with_player_id_round_trips(initbot_state):
-    player = initbot_state.players.upsert(discord_id=42, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=42, name="alice")
     char = initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Harold", player_id=player.id)
     )

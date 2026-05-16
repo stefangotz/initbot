@@ -8,5 +8,5 @@ from dataclasses import dataclass
 @dataclass
 class PlayerData:
     id: int  # Internal primary key, auto-assigned, used as foreign key by other entities
-    discord_id: int  # Discord snowflake
+    discord_id: int | None  # Discord snowflake; None for standalone players
     name: str  # Display name, refreshed on each command invocation

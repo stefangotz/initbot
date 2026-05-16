@@ -8,7 +8,7 @@ from initbot_core.data.character import NewCharacterData
 
 
 def test_access_control_uses_player_id(initbot_state):
-    player = initbot_state.players.upsert(discord_id=111, name="alice")
+    player = initbot_state.players.upsert_discord(discord_id=111, name="alice")
     initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Harold", player_id=player.id)
     )
