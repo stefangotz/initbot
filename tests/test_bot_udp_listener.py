@@ -1,13 +1,15 @@
-# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneaise@spamgourmet.com>
+# SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 # pylint: disable=protected-access  # tests must access private module internals
 
+import asyncio
+import contextlib
 import logging
 import socket
 import sys
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 
 def _free_udp_port() -> int:
@@ -71,9 +73,26 @@ async def test_close_without_transport_does_not_raise(monkeypatch):
     mock_original.assert_awaited_once()
 
 
-def test_protocol_logs_on_receipt(caplog):
-    bot = _bot()
-    protocol = bot._BotUdpProtocol()
-    with caplog.at_level(logging.DEBUG, logger="initbot_chat.bot"):
+async def test_protocol_logs_on_receipt(caplog):
+    bot_module = _bot()
+    protocol = bot_module._BotUdpProtocol()
+    loop = asyncio.get_running_loop()
+    created_tasks = []
+    original_create_task = loop.create_task
+
+    def _capture(coro, **kwargs):
+        task = original_create_task(coro, **kwargs)
+        created_tasks.append(task)
+        return task
+
+    with (
+        patch.object(loop, "create_task", side_effect=_capture),
+        caplog.at_level(logging.DEBUG, logger="initbot_chat.bot"),
+    ):
         protocol.datagram_received(b"", ("127.0.0.1", 9877))
+
     assert "External state change notification" in caplog.text
+    for task in created_tasks:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await task
