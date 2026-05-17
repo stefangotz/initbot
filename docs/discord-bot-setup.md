@@ -57,10 +57,10 @@ Run the setup wizard to enter your bot token and configure the app:
 ./tools/configure.sh
 ```
 
-Then start the chat bot:
+Then start initbot:
 
 ```sh
-./tools/run_chat.sh
+./tools/run.sh
 ```
 
 Type `$help` in any Discord channel the bot has joined or in a DM to the bot to see available commands.
