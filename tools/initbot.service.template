@@ -16,7 +16,7 @@ Requires=docker.service
 Type=simple
 User=${SERVICE_USER}
 WorkingDirectory=${REPO_DIR}
-ExecStart=/bin/sh ${REPO_DIR}/tools/run_compose.sh
+ExecStart=/bin/sh ${REPO_DIR}/tools/run.sh
 ExecStop=/usr/bin/docker compose down
 Restart=on-failure
 
