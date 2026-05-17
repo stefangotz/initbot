@@ -5,7 +5,9 @@
 {$WEB_HOSTNAME} {
 	@app path /{$web_url_path_prefix}/* /manifest.json /sw.js /icons/*
 	handle @app {
-		reverse_proxy web:8080
+		reverse_proxy web:8080 {
+			flush_interval -1
+		}
 	}
 	handle {
 		respond 404
