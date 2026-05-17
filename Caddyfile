@@ -3,5 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 {$WEB_HOSTNAME} {
-	reverse_proxy web:8080
+	@app path /{$web_url_path_prefix}/* /manifest.json /sw.js /icons/*
+	reverse_proxy @app web:8080
+	respond 404
 }
