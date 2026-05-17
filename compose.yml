@@ -17,6 +17,9 @@ services:
       STATE: sqlite:/data/app.sqlite
       NOTIFY_HOST: web
       NOTIFY_PORT: "9876"
+      CHAT_NOTIFY_HOST: "0.0.0.0"
+      CHAT_NOTIFY_PORT: "9877"
+      LOG_LEVEL: ${LOG_LEVEL:-20}
     volumes:
       - data:/data
 
@@ -34,6 +37,8 @@ services:
       STATE: sqlite:/data/app.sqlite
       WEB_HOST: "0.0.0.0"
       NOTIFY_PORT: "9876"
+      CHAT_NOTIFY_HOST: chat
+      CHAT_NOTIFY_PORT: "9877"
     ports:
       - "8080:8080"
     volumes:

@@ -964,3 +964,29 @@ def test_rename_character_invalid_name_returns_error(tmp_path):
         assert resp.status_code in (200, 204)
         assert "nameerror" in resp.text
         assert state.characters.get_from_name("Gandalf") is not None
+
+
+# ── Chat-bot notification ─────────────────────────────────────────────────────
+
+
+def test_web_notifies_chat_bot_on_state_change(tmp_path):
+    chat_port = _free_udp_port()
+    db_path = tmp_path / "test.db"
+    settings = WebSettings(
+        state=f"sqlite:{db_path}",
+        notify_port=_free_udp_port(),
+        chat_notify_host="127.0.0.1",
+        chat_notify_port=chat_port,
+    )
+    app = create_app(settings, web_url_path_prefix="testsecret")
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.bind(("127.0.0.1", chat_port))
+        sock.settimeout(1.0)
+        with TestClient(app, follow_redirects=False) as client:
+            client.post("/testsecret/join/", data={"name": "Tester"})
+            client.post(
+                "/testsecret/tracker/add-character",
+                json={"newcharname": "Hero", "editchar": "", "initval": ""},
+            )
+        data, _ = sock.recvfrom(16)
+        assert data == b""
