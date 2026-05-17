@@ -9,7 +9,12 @@ from datetime import datetime
 
 from discord.ext import commands
 
-from initbot_chat.commands.utils import player_name, send_in_parts, sync_player
+from initbot_chat.commands.utils import (
+    player_name,
+    refresh_live_inis,
+    send_in_parts,
+    sync_player,
+)
 from initbot_core.character_name import validate_character_name
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import (
@@ -100,6 +105,7 @@ async def rename(ctx: commands.Context, *args: str) -> None:
     ctx.bot.initbot_state.character_actions.rename_character(old_name, new_name)
     cdi = ctx.bot.initbot_state.characters.rename_and_store(cdi, new_name)
     await ctx.send(f"Renamed {old_name} to {cdi.name}", delete_after=3)
+    await refresh_live_inis(ctx)
 
 
 @commands.command(usage="[character name]")
@@ -119,6 +125,7 @@ async def remove(ctx: commands.Context, *args: str) -> None:
     ctx.bot.initbot_state.character_actions.remove_all_for_character(cdi.name)
     ctx.bot.initbot_state.characters.remove_and_store(cdi)
     await ctx.send(f"Removed character {cdi.name}", delete_after=3)
+    await refresh_live_inis(ctx)
 
 
 @commands.command()
@@ -211,6 +218,7 @@ async def prune(ctx: commands.Context, *args: str) -> None:
         await ctx.send("No characters to prune.", delete_after=5)
         return
     await ctx.send("Pruned: " + ", ".join(cdi.name for cdi in to_prune))
+    await refresh_live_inis(ctx)
 
 
 @commands.command(usage="[character name] [character name ...]")
@@ -238,6 +246,7 @@ async def touch(ctx: commands.Context, *args: str) -> None:
         "Marked as recently used: " + ", ".join(touched),
         delete_after=3,
     )
+    await refresh_live_inis(ctx)
 
 
 @init_dice.error

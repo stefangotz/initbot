@@ -18,6 +18,7 @@ from discord.ext import tasks
 from discord.ext.commands import Bot
 
 from initbot_chat.commands import commands
+from initbot_chat.commands.utils import refresh_all_live_inis
 from initbot_chat.config import CFG
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import CharacterData, is_eligible_for_pruning
@@ -36,6 +37,7 @@ class _BotUdpProtocol(DatagramProtocol):
     def datagram_received(self, data: bytes, addr: tuple[str | Any, int]) -> None:
         del data, addr
         _log.debug("External state change notification received from web app")
+        asyncio.get_running_loop().create_task(refresh_all_live_inis(bot))  # type: ignore
 
 
 intents = Intents.default()
@@ -262,6 +264,7 @@ def run() -> None:
         CFG.state,
         on_change=lambda: send_notification(CFG.notify_host, CFG.notify_port),
     )
+    bot.last_inis_message = {}  # type: ignore  # dict[int, LiveInisRef], keyed by guild id or DM channel id
     bot.setup_hook = _setup_hook  # type: ignore  # module-level function shadows bound method
     bot.close = _bot_close  # type: ignore  # module-level function shadows bound method
     bot.run(CFG.token, root_logger=True, log_level=CFG.log_level)

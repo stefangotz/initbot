@@ -39,5 +39,11 @@ def _mock_ctx(initbot_state):
     player = initbot_state.players.upsert_discord(discord_id=discord_id, name=name)
     ctx.author.player_id = player.id  # pylint: disable=no-member
     ctx.bot.initbot_state = initbot_state
-    ctx.send = AsyncMock(return_value=None)
+    mock_message = MagicMock()
+    mock_message.id = 777000000000000001
+    mock_message.edit = AsyncMock(return_value=None)
+    ctx.send = AsyncMock(return_value=mock_message)
+    ctx.bot.last_inis_message = {}
+    ctx.guild.id = 999000000000000001
+    ctx.channel.id = 888000000000000001
     return ctx

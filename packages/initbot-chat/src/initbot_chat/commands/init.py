@@ -3,15 +3,23 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import logging
+import time
 from datetime import datetime
 
-from discord import Embed
 from discord.ext import commands
 
-from initbot_chat.commands.character import CharacterData, characters
-from initbot_chat.commands.utils import sync_player
+from initbot_chat.commands.utils import (
+    LiveInisRef,
+    _live_inis_key,
+    build_inis_embed,
+    refresh_live_inis,
+    sync_player,
+)
+from initbot_core.data.character import CharacterData
 from initbot_core.models.roll import parse_dice_spec
 from initbot_core.utils import is_int
+
+_log = logging.getLogger(__name__)
 
 
 @commands.command(usage="[character name] initiative *or* initiative [character name]")
@@ -67,6 +75,7 @@ async def init(ctx: commands.Context, *args: str) -> None:
     ctx.bot.initbot_state.characters.update_and_store(cdi)
 
     await ctx.send(f"{cdi.name}'s initiative is now {cdi.initiative}", delete_after=3)
+    await refresh_live_inis(ctx)
 
 
 @commands.command()
@@ -78,28 +87,16 @@ async def inis(ctx: commands.Context) -> None:
 
     Only characters whose initiative was set within the last 24 hours are shown.
     """
-
-    def has_recent_initiative(cdi: CharacterData) -> bool:
-        return (
-            cdi.initiative is not None
-            and cdi.last_used is not None
-            and cdi.last_used > int(datetime.now().timestamp()) - 24 * 3600
-        )
-
     sync_player(ctx.bot.initbot_state, ctx)
-    state = ctx.bot.initbot_state
-    sorted_characters = sorted(
-        filter(has_recent_initiative, characters(state)),
-        key=lambda c: c.initiative or 0,
-        reverse=True,
-    )
-    players_by_id = {p.id: p for p in state.players.get_all()}
-    desc: str = "\n".join(
-        f"{cdi.initiative}: **{cdi.name}** (*{players_by_id[cdi.player_id].name}*)"
-        for cdi in sorted_characters
-    )
-    embed = Embed(title="Initiative Order", description=desc)
-    await ctx.send(embed=embed)
+    embed = build_inis_embed(ctx.bot.initbot_state)
+    msg = await ctx.send(embed=embed)
+    if msg is not None:
+        key = _live_inis_key(ctx)
+        ctx.bot.last_inis_message[key] = LiveInisRef(
+            message=msg,
+            posted_at=int(time.time()),
+        )
+        _log.debug("Stored live inis ref for key %d, message %d", key, msg.id)
 
 
 @inis.error  # type: ignore  # stacking .error across cog/non-cog commands; valid at runtime
