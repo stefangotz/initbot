@@ -40,14 +40,24 @@ services:
       CHAT_NOTIFY_HOST: chat
       CHAT_NOTIFY_PORT: "9877"
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - data:/data
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
 
   # caddy profile: HTTPS via Caddy reverse proxy. Requires WEB_HOSTNAME in .env.
   caddy:
     profiles: ["caddy"]
-    image: caddy:alpine
+    # Pin by digest for supply chain integrity.
+    # To upgrade: docker pull caddy:X.Y.Z-alpine
+    #             docker inspect --format='{{index .RepoDigests 0}}' caddy:X.Y.Z-alpine
+    image: caddy:2.11.3-alpine@sha256:86deaf5e3d3408a6ccec08fbb79989783dd26e206ae10bcf78a801dc8c9ab794
     env_file:
       - path: .env
         required: false
@@ -61,6 +71,15 @@ services:
       - caddy_config:/config
     depends_on:
       - web
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
 
   # ngrok profile: public HTTPS tunnel. Requires NGROK_AUTHTOKEN in .env.
   # Set WEB_HOSTNAME in .env to use a static ngrok hostname; omit for a random URL each restart.

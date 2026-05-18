@@ -6,6 +6,7 @@
 FROM ghcr.io/astral-sh/uv:python3.14-alpine@sha256:5f5ac95b3d254601fc6d6035f26abe48cfbe8775c132e4890748f881434859a5 AS builder
 COPY . /root/
 WORKDIR /root
+RUN sh tools/vendor-web-assets.sh
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv build --package initbot-core --wheel \
     && uv build --package initbot-chat --wheel \

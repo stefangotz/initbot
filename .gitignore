@@ -20,3 +20,6 @@ mutants/
 dev-state/
 .playwright-mcp/
 .DS_Store
+packages/initbot-web/src/initbot_web/static/datastar.js
+packages/initbot-web/src/initbot_web/static/fonts.css
+packages/initbot-web/src/initbot_web/static/fonts/
