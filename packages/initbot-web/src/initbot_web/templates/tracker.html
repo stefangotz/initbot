@@ -132,7 +132,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
          1. No horizontal page scroll at any viewport.
          2. Roll & Delete buttons (when shown) are always fully visible.
          3. Character and Player are always equal width when both are visible.
-         4. Column drop thresholds scale with the user's font-size and zoom. */
+         4. Column drop thresholds scale with the user's font-size and zoom.
+         5. table-layout:fixed is required for invariant 3: without it,
+            browsers allocate width by content, giving Character ~3× more
+            space than Player despite both columns being auto-width. */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -179,7 +182,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     /* Explicit widths on the narrow columns. With table-layout:fixed above,
        these determine the final column widths. Char (col 2) and Player
        (col 3) are intentionally left auto so they share the remaining
-       horizontal space equally. */
+       horizontal space equally.
+       NOTE: thead th has font-size: 0.8rem, so em values here are relative
+       to 12.8px — not 16px. E.g. 3.5em ≈ 45px, not 56px. Changing the
+       header font-size will silently shift all em-based column widths. */
     thead th:nth-child(1) { width: 3.5em; }   /* Init */
     thead th:nth-child(4) { width: 5em; }     /* Dice */
     thead th:nth-child(5) { width: 3em; }     /* Roll */
@@ -467,6 +473,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       opacity: 0.5;
     }
 
+    /* Reset even-row stripe on idle rows: without this, the alternating
+       background shows through opacity at different intensities on odd vs
+       even rows, making some idle rows appear more faded than others. */
     tbody tr.idle:nth-child(even) {
       background-color: var(--color-bg);
     }
@@ -520,6 +529,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           </td>
           <td></td>
           <td></td>
+          <!-- Cancel button is in the Roll slot (td5), NOT the Delete slot (td6).
+               td6 is hidden at <22em container width, so placing cancel there
+               would remove the only way to dismiss the create row on narrow
+               touch screens. td5 (Roll) is always visible. -->
           <td>
             <button type="button" class="cancel-touch"
                     title="Cancel and return to the tracker"
