@@ -78,6 +78,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       max-width: 680px;
       margin: 0 auto;
       padding: 0 1.5rem 3rem;
+      /* Establish a containment context so the table can respond to the
+         wrapper's actual inline-size rather than the viewport. */
+      container-type: inline-size;
     }
 
     /* ── Heading ──────────────────────────────────────────────── */
@@ -95,10 +98,41 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       padding-bottom: 0.4rem;
     }
 
-    /* ── Table ────────────────────────────────────────────────── */
+    /* ── Table layout — rules & invariants ────────────────────────
+       Bounds:
+         Wrapper max-width 680px → table content area caps at 632px.
+
+       Column widths (table-layout: fixed below):
+         Init 3.5em · Dice 5em · Roll 3em · Delete 3em — explicit on thead th.
+         Character (col 2) and Player (col 3) are auto: they share whatever
+         is left, equally. Either name truncates with an ellipsis when its
+         share is too narrow for the content.
+
+       Progressive disclosure (@container queries on wrapper width, em-based,
+       so breakpoints scale with the user's font-size and zoom):
+         ≥ 32em      → all six columns
+         28–31.99em  → hide Player
+         22–27.99em  → also hide Dice
+         <  22em     → also hide Delete
+         Init, Character, and Roll are always visible.
+         Drop order: Player → Dice → Delete.
+
+       Touch vs viewport — separate concerns:
+         @media (hover: none): touch sizing (≥44px tap targets, ≥16px input
+           font, cancel button shown). Applies on touch at any viewport.
+         @media (max-width: 480px): narrow-viewport padding tuning only.
+           Body font stays 16px so the @container em breakpoints don't shift
+           discontinuously across this boundary.
+
+       Invariants:
+         1. No horizontal page scroll at any viewport.
+         2. Roll & Delete buttons (when shown) are always fully visible.
+         3. Character and Player are always equal width when both are visible.
+         4. Column drop thresholds scale with the user's font-size and zoom. */
     table {
       width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
     }
 
     thead tr {
@@ -127,10 +161,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     tbody td {
       padding: 0.6rem 1rem;
       vertical-align: middle;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 0;
     }
 
     /* ── Column styles ──────────────────────────────────────────── */
@@ -141,10 +172,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       color: var(--color-gold);
     }
 
-    /* Character name column: absorb remaining width, bold */
-    thead th:nth-child(2),
-    #char-rows td:nth-child(2) {
-      width: 100%;
+    /* Explicit widths on the narrow columns. With table-layout:fixed above,
+       these determine the final column widths. Char (col 2) and Player
+       (col 3) are intentionally left auto so they share the remaining
+       horizontal space equally. */
+    thead th:nth-child(1) { width: 3.5em; }   /* Init */
+    thead th:nth-child(4) { width: 5em; }     /* Dice */
+    thead th:nth-child(5) { width: 3em; }     /* Roll */
+    thead th:nth-child(6) { width: 3em; }     /* Delete */
+
+    /* Character & Player name columns share the remainder equally and
+       truncate with an ellipsis when a name is too long to fit. */
+    #char-rows td:nth-child(2),
+    #char-rows td:nth-child(3) {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     #char-rows td:nth-child(2) {
@@ -163,7 +205,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-size: 0.9rem;
     }
 
-    /* Action columns (roll, delete) — narrow, centred */
+    /* Action columns (roll, delete) — narrow, centred. */
     #char-rows td:nth-child(5),
     #char-rows td:nth-child(6) {
       width: 2rem;
@@ -278,10 +320,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       line-height: 1;
     }
 
-    .del-btn:hover {
-      opacity: 1;
-    }
-
     /* Last column (delete) — narrow, centred */
     tbody td:last-child,
     thead th:last-child {
@@ -300,10 +338,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       line-height: 1;
     }
 
-    .roll-btn:hover {
-      opacity: 1;
-    }
-
     /* ── Add-character button ────────────────────────────────── */
     .add-btn {
       display: block;
@@ -317,8 +351,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       padding: 0.1rem 0.2rem;
     }
 
-    .add-btn:hover {
-      opacity: 1;
+    /* ── Idle-action affordance (shared by .roll-btn, .del-btn, .add-btn) ──
+       Each button is dimmed at rest (per-element opacity above). On hover-
+       capable devices, :hover brightens the targeted button to show which
+       row the pointer is on. On touch, :hover would stick to the last-
+       tapped button and make its siblings look greyed by contrast, so we
+       force full opacity there. */
+    @media (hover: hover) {
+      .roll-btn:hover,
+      .del-btn:hover,
+      .add-btn:hover {
+        opacity: 1;
+      }
     }
 
     /* ── Touch cancel button (hidden on pointer devices) ─────── */
@@ -333,9 +377,94 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-family: var(--font-main);
     }
 
+    /* ── Touch sizing ──────────────────────────────────────────────
+       Every adjustment in this block adapts the UI for finger input.
+       It is intentionally keyed on `hover: none` (actual touch capability),
+       not on viewport width — a tablet in landscape still needs tap-sized
+       controls, and a desktop user shrinking their window does not. */
     @media (hover: none) {
+      /* See "Idle-action affordance" above for why these stay opaque on touch. */
+      .roll-btn,
+      .del-btn,
+      .add-btn {
+        opacity: 1;
+      }
+
+      /* Cancel button only appears on touch (Escape/click-outside handle it on pointer). */
       .cancel-touch {
         display: inline;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        min-height: 2.75rem;
+      }
+
+      /* Roll & delete buttons: ≥44px tap target. */
+      .roll-btn,
+      .del-btn {
+        font-size: 1.1rem;
+        padding: 0.5rem;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Add-character button: ≥44px tap target. */
+      .add-btn {
+        font-size: 1.5rem;
+        padding: 0.4rem 0.5rem;
+        min-height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      /* Editable spans: enlarge the tap target so the whole cell row is
+         tappable, not just the text glyphs. */
+      .editable {
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+      }
+
+      /* Inline inputs: ≥16px prevents iOS auto-zoom; min-height for tap comfort. */
+      .inline-input,
+      #create-init-input,
+      #create-name-input {
+        font-size: 1rem;
+        min-height: 2.75rem;
+        padding: 0.4rem 0.5rem;
+      }
+
+      .inline-select {
+        font-size: 1rem;
+        min-height: 2.75rem;
+        padding: 0.4rem 0.25rem;
+      }
+    }
+
+    /* ── Progressive column disclosure ─────────────────────────
+       Hide columns one at a time as the wrapper narrows. Drop order
+       (least essential first): Player → Dice → Delete. Breakpoints
+       are in em so they scale with the user's font-size and zoom. */
+    @container (max-width: 32em) {
+      thead th:nth-child(3),
+      tbody td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    @container (max-width: 28em) {
+      thead th:nth-child(4),
+      tbody td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @container (max-width: 22em) {
+      thead th:nth-child(6),
+      tbody td:nth-child(6) {
+        display: none;
       }
     }
 
@@ -353,10 +482,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       background-color: var(--color-bg);
     }
 
-    /* ── Responsive ───────────────────────────────────────────── */
+    /* ── Narrow-viewport tuning ────────────────────────────────────
+       Pure layout tweaks for narrow viewports (independent of touch).
+       Body font stays at 16px throughout so the @container `em` units
+       have a constant scale — otherwise crossing this breakpoint would
+       discontinuously shift the column-disclosure thresholds. */
     @media (max-width: 480px) {
-      body {
-        font-size: 0.875rem;
+      body > div[data-init] {
+        padding: 0 1rem 2rem;
       }
 
       thead th,
@@ -398,12 +531,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           </td>
           <td></td>
           <td></td>
-          <td></td>
           <td>
             <button type="button" class="cancel-touch"
                     title="Cancel and return to the tracker"
                     data-on:click="$creating=false,$newcharname='',$initval='',$editerror='',$nameerror=''">&#x2717;</button>
           </td>
+          <td></td>
         </tr>
       </tbody>
     </table>
