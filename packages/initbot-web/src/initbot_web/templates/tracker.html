@@ -286,6 +286,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       min-width: 4rem;
     }
 
+    /* The init column is 3.5em wide at 0.8rem font (≈45px). Tighten horizontal
+       padding so the input gets ~37px rather than the default 13px content area. */
+    #create-row td:first-child {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+
+    /* min-width: 4rem would still overflow the 45px column even with tight padding. */
+    #create-init-input {
+      min-width: 0;
+    }
+
     .inline-select {
       cursor: pointer;
     }
