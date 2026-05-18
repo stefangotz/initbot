@@ -326,8 +326,7 @@ def _write_config(token: str | None, web: _WebConfig) -> None:
 
     env_updates: dict[str, str] = {"COMPOSE_PROFILES": ",".join(profiles)}
     if web.enabled:
-        if web.web_hostname:
-            env_updates["WEB_HOSTNAME"] = web.web_hostname
+        env_updates["WEB_HOSTNAME"] = web.web_hostname
         if web.ngrok_authtoken:
             env_updates["NGROK_AUTHTOKEN"] = (
                 web.ngrok_authtoken

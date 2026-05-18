@@ -52,4 +52,4 @@ for name, player_idx, initiative, initiative_dice in characters_raw:
     )
 PYEOF
 
-exec env WEB_URL_PATH_PREFIX=dev uv run initbot-web --web_port 8080 --state "sqlite:dev-state/dev.sqlite" "$@"
+exec env WEB_URL_PATH_PREFIX=dev WEB_HOSTNAME= uv run initbot-web --web_port 8080 --state "sqlite:dev-state/dev.sqlite" "$@"
