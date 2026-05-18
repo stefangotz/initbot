@@ -24,8 +24,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       --color-offset:  #8f8b87;   /* light warm grey               */
       --color-ink:     #1a1209;   /* warm near-black               */
       --color-gold:    #b8860b;   /* antique gold, ~4:1 on bg      */
-      --color-row-alt: #f0ede8;   /* barely-there warm grey        */
-      --font-main:     'Cinzel', Georgia, serif;
+      --color-row-alt:   #f0ede8;              /* barely-there warm grey        */
+      --color-ink-muted: rgba(26, 18, 9, 0.65); /* secondary text (player, dice) */
+      --color-ink-faint: rgba(26, 18, 9, 0.55); /* tertiary text (player bar)    */
+      --color-ink-ghost: rgba(26, 18, 9, 0.3);  /* placeholder / empty state     */
+      --font-main:       'Cinzel', Georgia, serif;
       --tap-target:    2.75rem;   /* WCAG ≥44px finger-friendly hit area */
     }
 
@@ -50,7 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     #player-bar {
       text-align: right;
       font-size: 0.8rem;
-      color: rgba(26, 18, 9, 0.55);
+      color: var(--color-ink-faint);
       padding: 0.4rem 1.5rem 0;
       letter-spacing: 0.04em;
     }
@@ -194,15 +197,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-weight: 700;
     }
 
-    /* Player name — muted */
-    #char-rows td:nth-child(3) {
-      color: rgba(26, 18, 9, 0.65);
-      font-size: 0.9rem;
-    }
-
-    /* Dice expression — muted */
+    /* Player name and dice expression — muted */
+    #char-rows td:nth-child(3),
     #char-rows td:nth-child(4) {
-      color: rgba(26, 18, 9, 0.65);
+      color: var(--color-ink-muted);
       font-size: 0.9rem;
     }
 
@@ -268,11 +266,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     .editable-empty {
-      color: rgba(26, 18, 9, 0.3);
+      color: var(--color-ink-ghost);
       font-style: italic;
     }
 
-    .inline-input {
+    .inline-input,
+    .inline-select {
       font-family: var(--font-main);
       font-size: inherit;
       color: var(--color-gold);
@@ -281,18 +280,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       border-bottom: 2px solid var(--color-gold);
       padding: 0.1rem 0.2rem;
       outline: none;
+    }
+
+    .inline-input {
       width: 100%;
       min-width: 4rem;
     }
 
     .inline-select {
-      font-family: var(--font-main);
-      font-size: 0.9rem;
-      color: var(--color-gold);
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid var(--color-gold);
-      outline: none;
       cursor: pointer;
     }
 
@@ -305,8 +300,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     /* ── Roll & delete buttons ────────────────────────────────────
-       Same icon-button shape; only the resting opacity differs to nudge
-       attention toward roll (more frequent action) over delete. */
+       Same icon-button shape and resting opacity. */
     .roll-btn,
     .del-btn {
       background: none;
@@ -316,8 +310,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-size: 0.85rem;
       line-height: 1;
     }
-    .del-btn  { opacity: 0.3; }
-    .roll-btn { opacity: 0.45; }
+    .del-btn, .roll-btn { opacity: 0.3; }
 
     /* ── Add-character button ────────────────────────────────── */
     .add-btn {
