@@ -18,7 +18,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* ── Palette ──────────────────────────────────────────────── */
+    /* ── Design tokens ────────────────────────────────────────── */
     :root {
       --color-bg:      #f5f0e8;   /* creamy marble white           */
       --color-offset:  #8f8b87;   /* light warm grey               */
@@ -26,6 +26,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       --color-gold:    #b8860b;   /* antique gold, ~4:1 on bg      */
       --color-row-alt: #f0ede8;   /* barely-there warm grey        */
       --font-main:     'Cinzel', Georgia, serif;
+      --tap-target:    2.75rem;   /* WCAG ≥44px finger-friendly hit area */
     }
 
     /* ── Reset / base ─────────────────────────────────────────── */
@@ -205,17 +206,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-size: 0.9rem;
     }
 
-    /* Action columns (roll, delete) — narrow, centred. */
+    /* Action cells (roll, delete) — centred, tight horizontal padding.
+       Column width is set by thead th above (table-layout: fixed). */
     #char-rows td:nth-child(5),
-    #char-rows td:nth-child(6) {
-      width: 2rem;
-      text-align: center;
-      padding: 0.6rem 0.25rem;
-    }
-
-    /* Create row action column */
+    #char-rows td:nth-child(6),
     #create-row td:nth-child(6) {
-      width: 2rem;
       text-align: center;
       padding: 0.6rem 0.25rem;
     }
@@ -309,34 +304,20 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-family: var(--font-main);
     }
 
-    /* ── Delete button ────────────────────────────────────────── */
+    /* ── Roll & delete buttons ────────────────────────────────────
+       Same icon-button shape; only the resting opacity differs to nudge
+       attention toward roll (more frequent action) over delete. */
+    .roll-btn,
     .del-btn {
       background: none;
       border: none;
       padding: 0 0.25rem;
-      opacity: 0.3;
       cursor: pointer;
       font-size: 0.85rem;
       line-height: 1;
     }
-
-    /* Last column (delete) — narrow, centred */
-    tbody td:last-child,
-    thead th:last-child {
-      width: 2.5rem;
-      text-align: center;
-    }
-
-    /* ── Roll button ──────────────────────────────────────────── */
-    .roll-btn {
-      background: none;
-      border: none;
-      padding: 0 0.25rem;
-      opacity: 0.45;
-      cursor: pointer;
-      font-size: 0.85rem;
-      line-height: 1;
-    }
+    .del-btn  { opacity: 0.3; }
+    .roll-btn { opacity: 0.45; }
 
     /* ── Add-character button ────────────────────────────────── */
     .add-btn {
@@ -390,55 +371,59 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         opacity: 1;
       }
 
-      /* Cancel button only appears on touch (Escape/click-outside handle it on pointer). */
+      /* Every interactive control gets the same minimum tap height. */
+      .cancel-touch,
+      .roll-btn,
+      .del-btn,
+      .add-btn,
+      .editable,
+      .inline-input,
+      .inline-select,
+      #create-init-input,
+      #create-name-input {
+        min-height: var(--tap-target);
+      }
+
+      /* Cancel button is hidden on pointer devices (Escape/click-outside dismiss the create row there). */
       .cancel-touch {
         display: inline;
         padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
-        min-height: 2.75rem;
       }
 
-      /* Roll & delete buttons: ≥44px tap target. */
       .roll-btn,
       .del-btn {
         font-size: 1.1rem;
         padding: 0.5rem;
-        min-width: 2.75rem;
-        min-height: 2.75rem;
+        min-width: var(--tap-target);
         display: inline-flex;
         align-items: center;
         justify-content: center;
       }
 
-      /* Add-character button: ≥44px tap target. */
       .add-btn {
         font-size: 1.5rem;
         padding: 0.4rem 0.5rem;
-        min-height: 2.75rem;
         display: inline-flex;
         align-items: center;
       }
 
-      /* Editable spans: enlarge the tap target so the whole cell row is
-         tappable, not just the text glyphs. */
+      /* Editable spans become the whole-row tap target — not just the text glyphs. */
       .editable {
-        min-height: 2.75rem;
         display: flex;
         align-items: center;
       }
 
-      /* Inline inputs: ≥16px prevents iOS auto-zoom; min-height for tap comfort. */
+      /* font-size: 1rem (≥16px) prevents iOS Safari from auto-zooming on focus. */
       .inline-input,
+      .inline-select,
       #create-init-input,
       #create-name-input {
         font-size: 1rem;
-        min-height: 2.75rem;
         padding: 0.4rem 0.5rem;
       }
 
       .inline-select {
-        font-size: 1rem;
-        min-height: 2.75rem;
         padding: 0.4rem 0.25rem;
       }
     }
