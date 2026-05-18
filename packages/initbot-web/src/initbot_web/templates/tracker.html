@@ -18,14 +18,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* ── Palette ──────────────────────────────────────────────── */
+    /* ── Design tokens ────────────────────────────────────────── */
     :root {
       --color-bg:      #f5f0e8;   /* creamy marble white           */
       --color-offset:  #8f8b87;   /* light warm grey               */
       --color-ink:     #1a1209;   /* warm near-black               */
       --color-gold:    #b8860b;   /* antique gold, ~4:1 on bg      */
-      --color-row-alt: #f0ede8;   /* barely-there warm grey        */
-      --font-main:     'Cinzel', Georgia, serif;
+      --color-row-alt:   #f0ede8;              /* barely-there warm grey        */
+      --color-ink-muted: rgba(26, 18, 9, 0.65); /* secondary text (player, dice) */
+      --color-ink-faint: rgba(26, 18, 9, 0.55); /* tertiary text (player bar)    */
+      --color-ink-ghost: rgba(26, 18, 9, 0.3);  /* placeholder / empty state     */
+      --font-main:       'Cinzel', Georgia, serif;
+      --tap-target:    2.75rem;   /* WCAG ≥44px finger-friendly hit area */
     }
 
     /* ── Reset / base ─────────────────────────────────────────── */
@@ -49,7 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     #player-bar {
       text-align: right;
       font-size: 0.8rem;
-      color: rgba(26, 18, 9, 0.55);
+      color: var(--color-ink-faint);
       padding: 0.4rem 1.5rem 0;
       letter-spacing: 0.04em;
     }
@@ -78,6 +82,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       max-width: 680px;
       margin: 0 auto;
       padding: 0 1.5rem 3rem;
+      /* Establish a containment context so the table can respond to the
+         wrapper's actual inline-size rather than the viewport. */
+      container-type: inline-size;
     }
 
     /* ── Heading ──────────────────────────────────────────────── */
@@ -95,10 +102,44 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       padding-bottom: 0.4rem;
     }
 
-    /* ── Table ────────────────────────────────────────────────── */
+    /* ── Table layout — rules & invariants ────────────────────────
+       Bounds:
+         Wrapper max-width 680px → table content area caps at 632px.
+
+       Column widths (table-layout: fixed below):
+         Init 3.5em · Dice 5em · Roll 3em · Delete 3em — explicit on thead th.
+         Character (col 2) and Player (col 3) are auto: they share whatever
+         is left, equally. Either name truncates with an ellipsis when its
+         share is too narrow for the content.
+
+       Progressive disclosure (@container queries on wrapper width, em-based,
+       so breakpoints scale with the user's font-size and zoom):
+         ≥ 32em      → all six columns
+         28–31.99em  → hide Player
+         22–27.99em  → also hide Dice
+         <  22em     → also hide Delete
+         Init, Character, and Roll are always visible.
+         Drop order: Player → Dice → Delete.
+
+       Touch vs viewport — separate concerns:
+         @media (hover: none): touch sizing (≥44px tap targets, ≥16px input
+           font, cancel button shown). Applies on touch at any viewport.
+         @media (max-width: 480px): narrow-viewport padding tuning only.
+           Body font stays 16px so the @container em breakpoints don't shift
+           discontinuously across this boundary.
+
+       Invariants:
+         1. No horizontal page scroll at any viewport.
+         2. Roll & Delete buttons (when shown) are always fully visible.
+         3. Character and Player are always equal width when both are visible.
+         4. Column drop thresholds scale with the user's font-size and zoom.
+         5. table-layout:fixed is required for invariant 3: without it,
+            browsers allocate width by content, giving Character ~3× more
+            space than Player despite both columns being auto-width. */
     table {
       width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
     }
 
     thead tr {
@@ -127,10 +168,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     tbody td {
       padding: 0.6rem 1rem;
       vertical-align: middle;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 0;
     }
 
     /* ── Column styles ──────────────────────────────────────────── */
@@ -141,39 +179,41 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       color: var(--color-gold);
     }
 
-    /* Character name column: absorb remaining width, bold */
-    thead th:nth-child(2),
-    #char-rows td:nth-child(2) {
-      width: 100%;
+    /* Explicit widths on the narrow columns. With table-layout:fixed above,
+       these determine the final column widths. Char (col 2) and Player
+       (col 3) are intentionally left auto so they share the remaining
+       horizontal space equally.
+       NOTE: thead th has font-size: 0.8rem, so em values here are relative
+       to 12.8px — not 16px. E.g. 3.5em ≈ 45px, not 56px. Changing the
+       header font-size will silently shift all em-based column widths. */
+    thead th:nth-child(1) { width: 3.5em; }   /* Init */
+    thead th:nth-child(4) { width: 5em; }     /* Dice */
+    thead th:nth-child(5) { width: 3em; }     /* Roll */
+    thead th:nth-child(6) { width: 3em; }     /* Delete */
+
+    /* Character & Player name columns share the remainder equally and
+       truncate with an ellipsis when a name is too long to fit. */
+    #char-rows td:nth-child(2),
+    #char-rows td:nth-child(3) {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     #char-rows td:nth-child(2) {
       font-weight: 700;
     }
 
-    /* Player name — muted */
-    #char-rows td:nth-child(3) {
-      color: rgba(26, 18, 9, 0.65);
-      font-size: 0.9rem;
-    }
-
-    /* Dice expression — muted */
+    #char-rows td:nth-child(3),
     #char-rows td:nth-child(4) {
-      color: rgba(26, 18, 9, 0.65);
+      color: var(--color-ink-muted);
       font-size: 0.9rem;
     }
 
-    /* Action columns (roll, delete) — narrow, centred */
+    /* Action cells (roll, delete) — centred, tight horizontal padding.
+       Column width is set by thead th above (table-layout: fixed). */
     #char-rows td:nth-child(5),
-    #char-rows td:nth-child(6) {
-      width: 2rem;
-      text-align: center;
-      padding: 0.6rem 0.25rem;
-    }
-
-    /* Create row action column */
+    #char-rows td:nth-child(6),
     #create-row td:nth-child(6) {
-      width: 2rem;
       text-align: center;
       padding: 0.6rem 0.25rem;
     }
@@ -231,11 +271,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     .editable-empty {
-      color: rgba(26, 18, 9, 0.3);
+      color: var(--color-ink-ghost);
       font-style: italic;
     }
 
-    .inline-input {
+    .inline-input,
+    .inline-select {
       font-family: var(--font-main);
       font-size: inherit;
       color: var(--color-gold);
@@ -244,18 +285,26 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       border-bottom: 2px solid var(--color-gold);
       padding: 0.1rem 0.2rem;
       outline: none;
+    }
+
+    .inline-input {
       width: 100%;
       min-width: 4rem;
     }
 
+    /* The init column is 3.5em wide at 0.8rem font (≈45px). Tighten horizontal
+       padding so the input gets ~37px rather than the default 13px content area. */
+    #create-row td:first-child {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+
+    /* min-width: 4rem would still overflow the 45px column even with tight padding. */
+    #create-init-input {
+      min-width: 0;
+    }
+
     .inline-select {
-      font-family: var(--font-main);
-      font-size: 0.9rem;
-      color: var(--color-gold);
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid var(--color-gold);
-      outline: none;
       cursor: pointer;
     }
 
@@ -267,42 +316,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-family: var(--font-main);
     }
 
-    /* ── Delete button ────────────────────────────────────────── */
+    /* ── Roll & delete buttons ────────────────────────────────────
+       Same icon-button shape and resting opacity. */
+    .roll-btn,
     .del-btn {
       background: none;
       border: none;
       padding: 0 0.25rem;
-      opacity: 0.3;
       cursor: pointer;
       font-size: 0.85rem;
       line-height: 1;
     }
-
-    .del-btn:hover {
-      opacity: 1;
-    }
-
-    /* Last column (delete) — narrow, centred */
-    tbody td:last-child,
-    thead th:last-child {
-      width: 2.5rem;
-      text-align: center;
-    }
-
-    /* ── Roll button ──────────────────────────────────────────── */
-    .roll-btn {
-      background: none;
-      border: none;
-      padding: 0 0.25rem;
-      opacity: 0.45;
-      cursor: pointer;
-      font-size: 0.85rem;
-      line-height: 1;
-    }
-
-    .roll-btn:hover {
-      opacity: 1;
-    }
+    .del-btn, .roll-btn { opacity: 0.3; }
 
     /* ── Add-character button ────────────────────────────────── */
     .add-btn {
@@ -317,8 +342,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       padding: 0.1rem 0.2rem;
     }
 
-    .add-btn:hover {
-      opacity: 1;
+    /* ── Idle-action affordance (shared by .roll-btn, .del-btn, .add-btn) ──
+       Each button is dimmed at rest (per-element opacity above). On hover-
+       capable devices, :hover brightens the targeted button to show which
+       row the pointer is on. On touch, :hover would stick to the last-
+       tapped button and make its siblings look greyed by contrast, so we
+       force full opacity there. */
+    @media (hover: hover) {
+      .roll-btn:hover,
+      .del-btn:hover,
+      .add-btn:hover {
+        opacity: 1;
+      }
     }
 
     /* ── Touch cancel button (hidden on pointer devices) ─────── */
@@ -333,9 +368,98 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       font-family: var(--font-main);
     }
 
+    /* ── Touch sizing ──────────────────────────────────────────────
+       Every adjustment in this block adapts the UI for finger input.
+       It is intentionally keyed on `hover: none` (actual touch capability),
+       not on viewport width — a tablet in landscape still needs tap-sized
+       controls, and a desktop user shrinking their window does not. */
     @media (hover: none) {
+      /* See "Idle-action affordance" above for why these stay opaque on touch. */
+      .roll-btn,
+      .del-btn,
+      .add-btn {
+        opacity: 1;
+      }
+
+      /* Every interactive control gets the same minimum tap height. */
+      .cancel-touch,
+      .roll-btn,
+      .del-btn,
+      .add-btn,
+      .editable,
+      .inline-input,
+      .inline-select,
+      #create-init-input,
+      #create-name-input {
+        min-height: var(--tap-target);
+      }
+
+      /* Cancel button is hidden on pointer devices (Escape/click-outside dismiss the create row there). */
       .cancel-touch {
         display: inline;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+      }
+
+      .roll-btn,
+      .del-btn {
+        font-size: 1.1rem;
+        padding: 0.5rem;
+        min-width: var(--tap-target);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .add-btn {
+        font-size: 1.5rem;
+        padding: 0.4rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      /* Editable spans become the whole-row tap target — not just the text glyphs. */
+      .editable {
+        display: flex;
+        align-items: center;
+      }
+
+      /* font-size: 1rem (≥16px) prevents iOS Safari from auto-zooming on focus. */
+      .inline-input,
+      .inline-select,
+      #create-init-input,
+      #create-name-input {
+        font-size: 1rem;
+        padding: 0.4rem 0.5rem;
+      }
+
+      .inline-select {
+        padding: 0.4rem 0.25rem;
+      }
+    }
+
+    /* ── Progressive column disclosure ─────────────────────────
+       Hide columns one at a time as the wrapper narrows. Drop order
+       (least essential first): Player → Dice → Delete. Breakpoints
+       are in em so they scale with the user's font-size and zoom. */
+    @container (max-width: 32em) {
+      thead th:nth-child(3),
+      tbody td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    @container (max-width: 28em) {
+      thead th:nth-child(4),
+      tbody td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @container (max-width: 22em) {
+      thead th:nth-child(6),
+      tbody td:nth-child(6) {
+        display: none;
       }
     }
 
@@ -349,14 +473,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
       opacity: 0.5;
     }
 
+    /* Reset even-row stripe on idle rows: without this, the alternating
+       background shows through opacity at different intensities on odd vs
+       even rows, making some idle rows appear more faded than others. */
     tbody tr.idle:nth-child(even) {
       background-color: var(--color-bg);
     }
 
-    /* ── Responsive ───────────────────────────────────────────── */
+    /* ── Narrow-viewport tuning ────────────────────────────────────
+       Pure layout tweaks for narrow viewports (independent of touch).
+       Body font stays at 16px throughout so the @container `em` units
+       have a constant scale — otherwise crossing this breakpoint would
+       discontinuously shift the column-disclosure thresholds. */
     @media (max-width: 480px) {
-      body {
-        font-size: 0.875rem;
+      body > div[data-init] {
+        padding: 0 1rem 2rem;
       }
 
       thead th,
@@ -398,12 +529,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
           </td>
           <td></td>
           <td></td>
-          <td></td>
+          <!-- Cancel button is in the Roll slot (td5), NOT the Delete slot (td6).
+               td6 is hidden at <22em container width, so placing cancel there
+               would remove the only way to dismiss the create row on narrow
+               touch screens. td5 (Roll) is always visible. -->
           <td>
             <button type="button" class="cancel-touch"
                     title="Cancel and return to the tracker"
                     data-on:click="$creating=false,$newcharname='',$initval='',$editerror='',$nameerror=''">&#x2717;</button>
           </td>
+          <td></td>
         </tr>
       </tbody>
     </table>
