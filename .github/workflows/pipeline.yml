@@ -95,11 +95,11 @@ jobs:
         with:
           version: "0.11.13"
           checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
-          python-version: "3.13"
+          python-version: "3.14"
           cache-python: true
           prune-cache: false
       - name: Install dependencies
-        run: uv sync --python 3.13
+        run: uv sync --python 3.14
       - name: Install Playwright browser
         run: uv run playwright install chromium --with-deps
       - name: layout tests
