@@ -26,6 +26,7 @@ dev = [
     "cyclonedx-bom>=7.3.0",
     "detect-secrets>=1.5",
     "vulture>=2.16",
+    "pytest-playwright>=0.8.0",
 ]
 
 [tool.uv]
@@ -101,4 +102,7 @@ filterwarnings = [
     "error::DeprecationWarning",
     "error::PendingDeprecationWarning",
     "ignore::DeprecationWarning:discord",
+]
+markers = [
+    "layout: UI layout tests requiring a Playwright browser (run with --browser chromium)",
 ]

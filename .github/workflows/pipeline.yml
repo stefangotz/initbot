@@ -81,8 +81,31 @@ jobs:
         run: git ls-files -z | xargs -0 .venv/bin/detect-secrets-hook --baseline .secrets.baseline
       - name: test
         run: |
-          api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src,packages/initbot-web/src pytest tests
+          api_key=x .venv/bin/coverage run -m --source=packages/initbot-core/src,packages/initbot-chat/src,packages/initbot-web/src pytest tests --ignore=tests/layout
           .venv/bin/coverage report
+
+  layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.13"
+          checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
+          python-version: "3.14"
+          cache-python: true
+          prune-cache: false
+      - name: Install dependencies
+        run: uv sync --python 3.14
+      - name: Install Playwright browser
+        run: uv run playwright install chromium --with-deps
+      - name: layout tests
+        run: uv run pytest tests/layout/ --browser chromium -v
+        env:
+          WEB_HOSTNAME: ""
 
   scripts:
     runs-on: ubuntu-latest
