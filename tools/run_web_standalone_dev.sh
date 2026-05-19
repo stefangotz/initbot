@@ -9,7 +9,7 @@ set -ue
 # Dev server with synthetic sample data. Not for production use.
 cd "$(dirname "$(realpath "${0}")")"/..
 
-sh tools/vendor-web-assets.sh
+tools/vendor-web-assets.sh
 
 mkdir -p dev-state
 rm -f dev-state/dev.sqlite
