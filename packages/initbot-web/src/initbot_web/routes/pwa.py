@@ -48,4 +48,5 @@ def make_pwa_routes(url_path_prefix: str) -> list[Route | Mount]:
         Route("/manifest.json", _manifest),
         Route("/sw.js", _sw),
         Mount("/icons", StaticFiles(directory=_ICONS)),
+        Mount("/static", StaticFiles(directory=_STATIC)),
     ]

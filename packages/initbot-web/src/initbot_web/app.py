@@ -22,8 +22,9 @@ import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import Response
 from starlette.templating import Jinja2Templates
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from initbot_core.config import CORE_CFG
 from initbot_core.notify import send_notification
@@ -39,6 +40,31 @@ from initbot_web.routes.pwa import make_pwa_routes
 from initbot_web.routes.tracker import make_routes
 
 _log = logging.getLogger(__name__)
+
+
+class _BodySizeLimitMiddleware:
+    """Reject HTTP requests whose Content-Length exceeds the limit."""
+
+    _MAX_BYTES = 2_500
+
+    def __init__(self, app: ASGIApp) -> None:
+        self._app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            cl = next(
+                (v for k, v in scope.get("headers", []) if k == b"content-length"), None
+            )
+            if cl is not None:
+                try:
+                    if int(cl) > self._MAX_BYTES:
+                        await Response("Request body too large", status_code=413)(
+                            scope, receive, send
+                        )
+                        return
+                except ValueError:
+                    pass
+        await self._app(scope, receive, send)
 
 
 class _Notifier:
@@ -127,12 +153,13 @@ def create_app(
         routes=make_pwa_routes(url_path_prefix)
         + make_routes(state, templates, url_path_prefix, vuln_state),
         middleware=[
+            Middleware(_BodySizeLimitMiddleware),
             Middleware(
                 SessionMiddleware,  # type: ignore[invalid-argument-type]  # SessionMiddleware satisfies _MiddlewareFactory
                 secret_key=session_secret,
                 https_only=https_only,
                 same_site="lax",
-            )
+            ),
         ],
         lifespan=lifespan,
     )

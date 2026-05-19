@@ -2,11 +2,52 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+{
+	admin off
+
+	log {
+		output stderr
+		format json
+		level INFO
+	}
+
+	servers {
+		trusted_proxies static 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.1/8 ::1/128 fd00::/8 fe80::/10
+		0rtt off
+	}
+}
+
 {$WEB_HOSTNAME} {
-	@app path /{$web_url_path_prefix}/* /manifest.json /sw.js /icons/*
+	tls {
+		protocols tls1.2 tls1.3
+	}
+
+	request_body {
+		max_size 2500b
+	}
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Strict-Transport-Security "max-age=31536000"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+		Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'"
+		-Server
+	}
+
+	@app path /{$web_url_path_prefix}/* /manifest.json /sw.js /icons/* /static/*
 	handle @app {
 		reverse_proxy web:8080 {
 			flush_interval -1
+
+			header_up -X-Forwarded-For
+			header_up X-Real-IP {http.request.remote.host}
+
+			transport http {
+				read_timeout 10s
+				write_timeout 0s
+			}
 		}
 	}
 	handle {
