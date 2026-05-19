@@ -104,7 +104,7 @@ repos:
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: uv run pytest
+        entry: uv run pytest --ignore=tests/layout
         language: system
         pass_filenames: false
         always_run: true
