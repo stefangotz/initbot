@@ -42,14 +42,11 @@
 			flush_interval -1
 
 			header_up -X-Forwarded-For
-			header_up X-Forwarded-For {http.request.remote.host}
 			header_up X-Real-IP {http.request.remote.host}
-			header_up X-Forwarded-Proto {http.request.scheme}
 
 			transport http {
 				read_timeout 10s
 				write_timeout 0s
-				idle_timeout 120s
 			}
 		}
 	}
