@@ -100,6 +100,8 @@ jobs:
           prune-cache: false
       - name: Install dependencies
         run: uv sync --python 3.14
+      - name: Vendor web assets
+        run: tools/vendor-web-assets.sh
       - name: Install Playwright browser
         run: uv run playwright install chromium --with-deps
       - name: layout tests
