@@ -31,6 +31,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache-python: true
           prune-cache: false
+          enable-cache: false
       - name: Check uv lock file is up to date
         run: |
           if uv lock --check; then
@@ -98,6 +99,7 @@ jobs:
           python-version: "3.14"
           cache-python: true
           prune-cache: false
+          enable-cache: false
       - name: Install dependencies
         run: uv sync --python 3.14
       - name: Vendor web assets
@@ -123,6 +125,7 @@ jobs:
           python-version: "3.14"
           cache-python: true
           prune-cache: false
+          enable-cache: false
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
       - name: shellcheck
@@ -146,6 +149,7 @@ jobs:
           python-version: "3.14"
           cache-python: true
           prune-cache: false
+          enable-cache: false
       - name: Install dependencies
         run: uv sync --python 3.14
       - name: Generate SBOM
