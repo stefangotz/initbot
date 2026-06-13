@@ -14,7 +14,7 @@ updates:
     # Ignore all regular version upgrades, but allow security fixes
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
 
   - package-ecosystem: pre-commit
     directory: "/"
@@ -25,7 +25,7 @@ updates:
       default-days: 7
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -36,7 +36,7 @@ updates:
       default-days: 7
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
 
   - package-ecosystem: docker
     directory: "/"
@@ -47,4 +47,4 @@ updates:
       default-days: 7
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
