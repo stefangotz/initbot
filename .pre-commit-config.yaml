@@ -19,7 +19,7 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 3b3f7c3f57fe9925356faf5fe6230835138be230  # v0.15.17  # pragma: allowlist secret
+    rev: 77039ccbba72c8aede339c5f8ae29b42aced0a2e  # v0.15.18  # pragma: allowlist secret
     hooks:
       - id: ruff
       - id: ruff-format
