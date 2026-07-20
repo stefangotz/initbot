@@ -163,3 +163,9 @@ The standard workflow has the following steps:
 - rebase the feature branch onto the latest version of the main branch
 - create a pull request
 - once the pull request is merged, delete the local feature branch and switch back to the main branch
+
+
+## Python Style
+
+- Structure files with multiple functions top down. Keep callers above callees (e.g., in a file with a main function, the main function shall be the first function in that file, not the last). Increases readability by front-loading high-level functionality.
+- Prefix module and class-internal functions and methods with an underscore character.
