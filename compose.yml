@@ -51,6 +51,26 @@ services:
     cap_drop:
       - ALL
 
+  remediator:
+    profiles: ["remediator"]
+    build:
+      context: .
+      target: remediator
+    working_dir: /home/appuser
+    user: "5678:5678"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    volumes:
+      # Container writes (never reads) this file to provide updated lock file to host system.
+      # Consumed on host system by tools/run.sh.
+      - ./uv.lock-auto-remediated:/home/appuser/uv.lock-auto-remediated
+    command: ["--loop-until-update", "--sleep-seconds", "86400"]
+
   # caddy profile: HTTPS via Caddy reverse proxy. Requires WEB_HOSTNAME in .env.
   caddy:
     profiles: ["caddy"]
