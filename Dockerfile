@@ -48,3 +48,31 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
 USER appuser
 WORKDIR /home/appuser
 ENTRYPOINT ["/app/bin/initbot-web"]
+
+# Stage 3c: remediation job image
+# Behavior: runs auto_remediate.py in loop mode, so it runs until dependencies require security updates.
+#   It then updates those dependency in the lock file, tests the result, and exits with an error, which causes the compose stack to exit.
+#   When the compose stack exits, systemd restarts it via run.sh, which rebuilds the containers with updated dependencies and restarts the stack.
+# Goals:
+# - overall minimal image
+# - principle of least privilege
+# - minimal file set for remediation job (note bind mounts in compose.yml)
+# - minimum required file permissions
+FROM runtime-base AS remediator
+COPY uv.lock /home/appuser/uv.lock
+COPY pyproject.toml /home/appuser/pyproject.toml
+COPY packages/initbot-core/pyproject.toml /home/appuser/packages/initbot-core/pyproject.toml
+COPY packages/initbot-core/src /home/appuser/packages/initbot-core/src
+COPY packages/initbot-chat/pyproject.toml /home/appuser/packages/initbot-chat/pyproject.toml
+COPY packages/initbot-chat/src /home/appuser/packages/initbot-chat/src
+COPY packages/initbot-web/pyproject.toml /home/appuser/packages/initbot-web/pyproject.toml
+COPY packages/initbot-web/src /home/appuser/packages/initbot-web/src
+COPY tools/auto_remediate.py /home/appuser/tools/auto_remediate.py
+WORKDIR /home/appuser
+USER appuser
+RUN --mount=type=cache,target=/home/appuser/.cache/uv,sharing=locked \
+    mkdir -p /home/appuser/.cache/uv \
+    && uv venv /home/appuser/.venv \
+    && VIRTUAL_ENV=/home/appuser/.venv uv sync \
+    && VIRTUAL_ENV=/home/appuser/.venv uv run python3 -m compileall -j 4 packages
+ENTRYPOINT ["/home/appuser/.venv/bin/python", "/home/appuser/tools/auto_remediate.py"]
