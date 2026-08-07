@@ -47,7 +47,7 @@ repos:
       - id: shellcheck
         args: ["-x"]
   - repo: https://github.com/hadolint/hadolint
-    rev: f177f71e7bf435eacc344754b8acde98a6186df7  # v2.15.0  # pragma: allowlist secret
+    rev: 2eece55955ced00200be9729e9728cb7dacca505  # v2.15.1  # pragma: allowlist secret
     hooks:
       - id: hadolint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
