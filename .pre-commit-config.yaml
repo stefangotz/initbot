@@ -51,7 +51,7 @@ repos:
     hooks:
       - id: hadolint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: 067260dc5fe6ea86b7551bfd6f8b3ba4e6c93129  # v1.28.0  # pragma: allowlist secret
+    rev: 451b56af716f9f0d0c2b816503a3fd0cf8b036fa  # v1.29.0  # pragma: allowlist secret
     hooks:
       - id: zizmor
   - repo: https://github.com/fsfe/reuse-tool
