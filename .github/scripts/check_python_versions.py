@@ -23,7 +23,7 @@ def main() -> None:
             supported.add(f"{parts[0]}.{parts[1]}")
 
     url = "https://endoflife.date/api/python.json"
-    with urllib.request.urlopen(url) as resp:  # noqa: S310
+    with urllib.request.urlopen(url) as resp:
         data = json.loads(resp.read())
 
     issues: list[str] = []

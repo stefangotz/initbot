@@ -60,9 +60,9 @@ class Settings(BaseSettings):
 
 
 CFG = Settings(
-    _env_file=[".env", ".env.chat"],  # type: ignore  # pydantic-settings runtime kwargs not in stubs
-    _env_file_encoding="utf-8",  # type: ignore  # pydantic-settings runtime kwargs not in stubs
-    _cli_parse_args=True,  # type: ignore  # pydantic-settings runtime kwargs not in stubs
+    _env_file=[".env", ".env.chat"],
+    _env_file_encoding="utf-8",
+    _cli_parse_args=True,
 )
 if not CFG.token:
     CFG.token = getpass(

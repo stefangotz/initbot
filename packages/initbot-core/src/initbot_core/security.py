@@ -44,7 +44,7 @@ def _get_vulnerabilities_sync() -> list[tuple[str, str, str, str]]:
         for name, version in installed
     ]
     payload = json.dumps({"queries": queries}).encode()
-    req = urllib.request.Request(  # noqa: S310
+    req = urllib.request.Request(
         _OSV_QUERYBATCH_URL,
         data=payload,
         headers={"Content-Type": "application/json"},
