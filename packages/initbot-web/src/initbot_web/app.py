@@ -169,7 +169,7 @@ def create_app(
 
 
 def run() -> None:
-    cfg = WebSettings(_cli_parse_args=True)  # type: ignore
+    cfg = WebSettings(_cli_parse_args=True)
     app = create_app(cfg)
     prefix = app.state.url_path_prefix
     print(f"Join link: http://localhost:{cfg.web_port}/{prefix}/join/")

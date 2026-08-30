@@ -205,7 +205,11 @@ def _is_initiative_eligible(char: CharacterData, now: int) -> bool:
 
 def _compute_desired_ranked(all_chars: Sequence[CharacterData], now: int) -> list[str]:
     eligible = [c for c in all_chars if _is_initiative_eligible(c, now)]
-    eligible.sort(key=lambda c: c.initiative, reverse=True)
+    # the c.initiative is not None check is functionally redundant, but conveys to the type
+    # checker that the comparison is guaranteed to only encounter ints, not None values.
+    eligible.sort(
+        key=lambda c: c.initiative if c.initiative is not None else 0, reverse=True
+    )
     return [c.name for c in eligible]
 
 
@@ -393,7 +397,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     async def tracker_sse(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:
             return err
-        return await _tracker_sse(request)
+        return await _tracker_sse(request)  # type: ignore
 
     @datastar_response
     async def _add_character(
@@ -467,7 +471,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     async def add_character(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:
             return err
-        return await _add_character(request)
+        return await _add_character(request)  # type: ignore - @datastar_response is unsavoury to ty
 
     @datastar_response
     async def _delete_character(
@@ -485,7 +489,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     async def delete_character(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:
             return err
-        return await _delete_character(request)
+        return await _delete_character(request)  # type: ignore - @datastar_response is unsavoury to ty
 
     @datastar_response
     async def _roll_initiative(
@@ -509,7 +513,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     async def roll_initiative(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:
             return err
-        return await _roll_initiative(request)
+        return await _roll_initiative(request)  # type: ignore - @datastar_response is unsavoury to ty
 
     @datastar_response
     async def _resort_initiative(
@@ -522,7 +526,7 @@ def make_routes(  # pylint: disable=too-many-locals,too-many-statements
     async def resort_initiative(request: Request) -> Response:
         if (err := _require_auth(request)) is not None:
             return err
-        return await _resort_initiative(request)
+        return await _resort_initiative(request)  # type: ignore - @datastar_response is unsavoury to ty
 
     async def logout(request: Request) -> Response:
         request.session.clear()
