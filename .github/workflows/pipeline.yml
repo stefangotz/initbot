@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15']
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -96,12 +96,12 @@ jobs:
         with:
           version: "0.11.13"
           checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
-          python-version: "3.14"
+          python-version: "3.15"
           cache-python: true
           prune-cache: false
           enable-cache: false
       - name: Install dependencies
-        run: uv sync --python 3.14
+        run: uv sync --python 3.15
       - name: Vendor web assets
         run: tools/vendor-web-assets.sh
       - name: Install Playwright browser
@@ -122,7 +122,7 @@ jobs:
         with:
           version: "0.11.13"
           checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
-          python-version: "3.14"
+          python-version: "3.15"
           cache-python: true
           prune-cache: false
           enable-cache: false
@@ -146,12 +146,12 @@ jobs:
         with:
           version: "0.11.13"
           checksum: "f830ea3d38ae1492acf53cb7f2cd0f81d6ae22b42d2d7310a6c7d42c451e1a43"  # pragma: allowlist secret
-          python-version: "3.14"
+          python-version: "3.15"
           cache-python: true
           prune-cache: false
           enable-cache: false
       - name: Install dependencies
-        run: uv sync --python 3.14
+        run: uv sync --python 3.15
       - name: Generate SBOM
         run: uv run cyclonedx-py environment --of JSON -o bom.json
       - name: Upload SBOM
