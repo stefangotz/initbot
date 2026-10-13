@@ -8,13 +8,15 @@ set -ue
 
 cd "$(dirname "$(realpath "${0}")")"/../..
 
-tools/run_web_standalone_dev.sh &
+./tools/prep_web_standalone_dev.sh
+./tools/run_web_standalone_dev.sh &
 WEB_PID=$!
 trap 'kill "$WEB_PID" 2>/dev/null || true; wait "$WEB_PID" 2>/dev/null || true' EXIT
 
-for i in $(seq 1 30); do
+for I in $(seq 1 30); do
+    echo "Waited ${I}s for server startup..."
     if curl -s -o /dev/null http://localhost:8080/; then
-        echo "Web server started successfully after ${i}s"
+        echo "Web server started successfully after ${I}s"
         exit 0
     fi
     sleep 1
