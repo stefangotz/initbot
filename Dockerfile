@@ -2,8 +2,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+# Stage 0: pin base images
+FROM ghcr.io/astral-sh/uv:0.13.0-alpine@sha256:20d3fe1308ffa40b51c5c20e002bab5fece40585edcee8ec99357309e8363424 AS uv
+FROM python:3.15.0-alpine3.24@sha256:9ab1d4f3e45b370553a5b665766c5fd3c595d279fed7fc867d7ed18d62595fd4 AS python-uv
+COPY --from=uv /usr/local/bin/uv* /usr/local/bin/
+
 # Stage 1: build all three wheels
-FROM ghcr.io/astral-sh/uv:python3.14-alpine@sha256:706cd9faf6d3fa7476fc470463bfca625d4b3ea5e46d6dc166ec1fb8ad3976e6 AS builder
+FROM python-uv AS builder
 COPY . /root/
 WORKDIR /root
 RUN tools/vendor-web-assets.sh
@@ -19,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # call starts, failing with a "failed to get lease" error. Use
 # `docker buildx bake -f docker-bake.hcl` to build both targets in a single
 # BuildKit session, which eliminates the contention.
-FROM ghcr.io/astral-sh/uv:python3.14-alpine@sha256:706cd9faf6d3fa7476fc470463bfca625d4b3ea5e46d6dc166ec1fb8ad3976e6 AS runtime-base
+FROM python-uv AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN --mount=type=cache,target=/var/cache/apk \

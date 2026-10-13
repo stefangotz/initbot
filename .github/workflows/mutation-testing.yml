@@ -24,9 +24,9 @@ jobs:
         with:
           version: "0.11.7"
           checksum: "6681d691eb7f9c00ac6a3af54252f7ab29ae72f0c8f95bdc7f9d1401c23ea868"  # pragma: allowlist secret
-          python-version: "3.14"
+          python-version: "3.15"
       - name: Install dependencies
-        run: uv sync --python 3.14
+        run: uv sync --python 3.15
       - name: Run mutation testing
         env:
           api_key: x
