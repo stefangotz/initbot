@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-FileCopyrightText: 2026 Stefan Götz <github.nooneelse@spamgourmet.com>
 #
