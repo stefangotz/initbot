@@ -19,7 +19,7 @@ dependencies = [
     "grapheme>=0.6.0",
     "pydantic-settings~=2.14",
     "pydantic~=2.13",
-    "typing-extensions>=4.12.2 ; python_full_version < '3.11'",
+    "typing-extensions>=4.12.2 ; python_full_version < '3.13'",
 ]
 
 [build-system]
