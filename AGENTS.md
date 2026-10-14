@@ -14,6 +14,10 @@ Both applications access the same central data and storage model.
 - precommit hooks cover code formatting and code quality
 - CI/CD jobs cover additional code quality and maintenance aspects
 
+## Project Requirements
+
+Requirements that govern the implementation are documented in the [requirements](./requirements/) directory.
+
 ## Instructions
 
 - do not add Co-Authored-By lines or similar attributions to commit messages
