@@ -13,7 +13,7 @@ FROM python-uv AS builder
 COPY . /root/
 WORKDIR /root
 RUN tools/vendor-web-assets.sh
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv build --package initbot-core --wheel \
     && uv build --package initbot-chat --wheel \
     && uv build --package initbot-web --wheel
@@ -65,7 +65,22 @@ ENTRYPOINT ["/app/bin/initbot-web"]
 # - minimal file set for remediation job (note bind mounts in compose.yml)
 # - minimum required file permissions
 FROM runtime-base AS remediator
-COPY uv.lock /home/appuser/uv.lock
+
+# Make auto_remediate.py executable with a pinned runtime environment.
+COPY tools/auto_remediate.py /home/appuser/tools/auto_remediate.py
+# Set location of virtual environment to run script from; only required during build time, so ARG instead ENV is sufficient.
+ARG VIRTUAL_ENV=/home/appuser/.venv
+# Create virtual environment with script dependencies.
+# Intentionally created as root user, so that it is read-only to the non-root user that runs the script.
+# The "--active" option is required to make "uv sync" install the dependencies into $VIRTUAL_ENV instead of some default location.
+# The "--compile-bytecode" option ensures better execution performance, given that the bytecode files can't be persisted by the non-root user running the script.
+# The "uv sync --script" approach relies on auto_remediate.py to specify its own dependencies in a PEP 722 header.
+# This approach is currently chosen over making auto_remediate.py a package or project as it is easier to maintain.
+RUN uv sync --script /home/appuser/tools/auto_remediate.py --active --compile-bytecode
+
+# Copy project files that auto_remediate.py operates on.
+# Do not copy uv.lock because auto_remediate.py needs to operate on the up-to-date host copy, not something we bake in at build.
+# Copy them as the root user, so that they are all read-only to auto_remediate.py.
 COPY pyproject.toml /home/appuser/pyproject.toml
 COPY packages/initbot-core/pyproject.toml /home/appuser/packages/initbot-core/pyproject.toml
 COPY packages/initbot-core/src /home/appuser/packages/initbot-core/src
@@ -73,12 +88,11 @@ COPY packages/initbot-chat/pyproject.toml /home/appuser/packages/initbot-chat/py
 COPY packages/initbot-chat/src /home/appuser/packages/initbot-chat/src
 COPY packages/initbot-web/pyproject.toml /home/appuser/packages/initbot-web/pyproject.toml
 COPY packages/initbot-web/src /home/appuser/packages/initbot-web/src
-COPY tools/auto_remediate.py /home/appuser/tools/auto_remediate.py
+
+# auto_remediate.py expects to be run from the directory that contains the project files from above.
 WORKDIR /home/appuser
+# Run auto_remediate.py as non-root user to curtail its privileges.
 USER appuser
-RUN --mount=type=cache,target=/home/appuser/.cache/uv,sharing=locked \
-    mkdir -p /home/appuser/.cache/uv \
-    && uv venv /home/appuser/.venv \
-    && VIRTUAL_ENV=/home/appuser/.venv uv sync \
-    && VIRTUAL_ENV=/home/appuser/.venv uv run python3 -m compileall -j 4 packages
+# Ensure that auto_remediate.py is run from the pinned-down virtual environment via the environment's python executable.
+# Invoking it directly or via uv does not guarantee this and would lead to ad-hoc dependency resolution.
 ENTRYPOINT ["/home/appuser/.venv/bin/python", "/home/appuser/tools/auto_remediate.py"]

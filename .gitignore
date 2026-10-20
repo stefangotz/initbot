@@ -23,3 +23,4 @@ dev-state/
 packages/initbot-web/src/initbot_web/static/datastar.js
 packages/initbot-web/src/initbot_web/static/fonts.css
 packages/initbot-web/src/initbot_web/static/fonts/
+uv.lock.out
