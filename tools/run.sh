@@ -8,16 +8,20 @@ set -ue
 
 REPO_DIR="$(cd "$(dirname "$(realpath "${0}")")"/.. && pwd)"
 HOST_LOCK_FILE="${REPO_DIR}/uv.lock"
-AUTO_REMEDIATED_LOCK_FILE="${REPO_DIR}/uv.lock-auto-remediated"
+# This path needs to align with the path set in compose.yml
+OUTPUT_LOCK_FILE="${REPO_DIR}/uv.lock.out"
 
 cd "${REPO_DIR}"
 
-if [ -s "${AUTO_REMEDIATED_LOCK_FILE}" ] && [ -f "${HOST_LOCK_FILE}" ]; then
-    if [ "$(stat -f '%m' "${AUTO_REMEDIATED_LOCK_FILE}" 2>/dev/null || echo 0)" -gt "$(stat -f '%m' "${HOST_LOCK_FILE}" 2>/dev/null || echo 0)" ]; then
-        cp "${AUTO_REMEDIATED_LOCK_FILE}" "${HOST_LOCK_FILE}"
-        rm "${AUTO_REMEDIATED_LOCK_FILE}"
-        touch -d 1970-01-01T00:00:00Z "${AUTO_REMEDIATED_LOCK_FILE}"
+if [ -s "${OUTPUT_LOCK_FILE}" ] && [ -f "${HOST_LOCK_FILE}" ]; then
+    if [ "$(stat -f '%m' "${OUTPUT_LOCK_FILE}" 2>/dev/null || echo 0)" -gt "$(stat -f '%m' "${HOST_LOCK_FILE}" 2>/dev/null || echo 0)" ]; then
+        cp "${OUTPUT_LOCK_FILE}" "${HOST_LOCK_FILE}"
+        rm "${OUTPUT_LOCK_FILE}"
     fi
 fi
+
+# Ensure that this file exists.
+# Otherwise, docker compose up fails because it is not able to bind-mount the file into the auto-remediation container (see compose.yml)
+touch -d 1970-01-01T00:00:00Z "${OUTPUT_LOCK_FILE}"
 
 exec docker compose up --build "$@"

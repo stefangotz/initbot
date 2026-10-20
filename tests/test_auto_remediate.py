@@ -60,12 +60,11 @@ def test_persist_internal_lockfile_copies_updated_lockfile(
     monkeypatch.chdir(repo_dir)
 
     auto_remediate._ROOT = repo_dir  # pylint: disable=protected-access
-    auto_remediate._INTERNAL_LOCK_FILE = repo_dir / "uv.lock"  # pylint: disable=protected-access
-    auto_remediate._EXTERNAL_LOCK_FILE = repo_dir / "uv.lock-auto-remediated"  # pylint: disable=protected-access
+    auto_remediate._PROJECT_LOCK_FILE = repo_dir / "uv.lock"  # pylint: disable=protected-access
 
-    auto_remediate._externalise_lock_file()  # pylint: disable=protected-access
+    auto_remediate._write_output_lock_file(repo_dir / "uv.lock.out")  # pylint: disable=protected-access
 
-    assert (repo_dir / "uv.lock-auto-remediated").read_text() == "host-lock\n"
+    assert (repo_dir / "uv.lock.out").read_text() == "host-lock\n"
 
 
 def test_main_defaults_to_single_run_without_sleeping(monkeypatch) -> None:

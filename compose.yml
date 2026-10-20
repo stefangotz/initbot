@@ -60,16 +60,21 @@ services:
     user: "5678:5678"
     security_opt:
       - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
+    # auto_remediate.py needs some file system access
+    # The current complexity/security trade-off is to run the container as writeable and permit writes to commonly writable filesystem locations instead of complicating the container setup and application code, given that writes are confined to the ephemeral container.
+    read_only: false
     cap_drop:
       - ALL
     volumes:
-      # Container writes (never reads) this file to provide updated lock file to host system.
+      # auto_remediate.py reads the up-to-date host uv.lock file from this path
+      - ./uv.lock:/home/appuser/uv.lock.in:ro
+      # auto_remediate.py writes (never reads) this file to provide updated lock file to host system.
       # Consumed on host system by tools/run.sh.
-      - ./uv.lock-auto-remediated:/home/appuser/uv.lock-auto-remediated
-    command: ["--loop-until-update", "--sleep-seconds", "86400"]
+      # This path (also mentioned below in "command:") must match the path in tools/run.sh for this container setup to interact correctly with run.sh
+      - ./uv.lock.out:/home/appuser/uv.lock.out
+      # Persist the uv cache across container restarts to avoid re-downloading dependencies.
+      - remediator-uv-cache:/home/appuser/.cache/uv
+    command: ["--loop-until-update", "--sleep-seconds", "86400", "--input-lock-file", "uv.lock.in", "--output-lock-file", "uv.lock.out"]
 
   # caddy profile: HTTPS via Caddy reverse proxy. Requires WEB_HOSTNAME in .env.
   caddy:
@@ -123,3 +128,4 @@ volumes:
   data:
   caddy_data:
   caddy_config:
+  remediator-uv-cache:
