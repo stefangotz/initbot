@@ -5,11 +5,13 @@
 # pylint: disable=redefined-outer-name  # standard pytest fixture injection pattern
 
 import socket
+import subprocess
 import threading
 import time
 import urllib.request
 from collections.abc import Generator
 from pathlib import Path
+from typing import Final
 
 import pytest
 import uvicorn
@@ -20,6 +22,12 @@ from initbot_core.data.character import NewCharacterData
 from initbot_core.state.factory import create_state_from_source
 from initbot_web.app import create_app
 from initbot_web.config import WebSettings
+
+_PROJECT_ROOT: Final = Path(__file__).resolve().parents[2]
+_DATASTAR_BUNDLE: Final = (
+    _PROJECT_ROOT / "packages/initbot-web/src/initbot_web/static/datastar.js"
+)
+_VENDOR_WEB_ASSETS: Final = _PROJECT_ROOT / "tools/vendor-web-assets.sh"
 
 
 def _free_tcp_port() -> int:
@@ -73,7 +81,40 @@ def _seed_state(db_path: Path) -> None:
 
 
 @pytest.fixture(scope="session")
-def live_server_url(tmp_path_factory: pytest.TempPathFactory) -> Generator[str]:
+def vendored_web_assets(request: pytest.FixtureRequest) -> None:
+    """Vendor ignored frontend assets when running layout tests from a fresh checkout."""
+    if _DATASTAR_BUNDLE.is_file():
+        return
+
+    terminal_reporter = request.config.pluginmanager.get_plugin("terminalreporter")
+    if terminal_reporter is not None:
+        terminal_reporter.write_line(
+            "Datastar bundle is missing; running tools/vendor-web-assets.sh."
+        )
+
+    # The command is fixed to this repository's checked-in helper.
+    result = subprocess.run(  # noqa: S603
+        [str(_VENDOR_WEB_ASSETS)],
+        cwd=_PROJECT_ROOT,
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if result.returncode != 0 or not _DATASTAR_BUNDLE.is_file():
+        output = "\n".join(part for part in (result.stdout, result.stderr) if part)
+        pytest.fail(
+            "Could not prepare the Datastar bundle required by the layout tests. "
+            "Run `tools/vendor-web-assets.sh` manually and retry."
+            + (f"\nVendoring output:\n{output}" if output else ""),
+            pytrace=False,
+        )
+
+
+@pytest.fixture(scope="session")
+def live_server_url(
+    vendored_web_assets: None,  # pylint: disable=unused-argument
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Generator[str]:
     db_path = tmp_path_factory.mktemp("layout") / "layout.db"
     _seed_state(db_path)
 
