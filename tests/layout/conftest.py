@@ -9,13 +9,14 @@ import subprocess
 import threading
 import time
 import urllib.request
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 from typing import Final
 
 import pytest
+import pytest_asyncio
 import uvicorn
-from playwright.sync_api import Browser, BrowserContext, Page
+from playwright.async_api import Browser, Page, async_playwright
 
 from initbot_core.config import CORE_CFG
 from initbot_core.data.character import NewCharacterData
@@ -152,42 +153,63 @@ def live_server_url(
     thread.join(timeout=5)
 
 
-@pytest.fixture(scope="session")
-def auth_cookies(live_server_url: str, browser: Browser) -> list:
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def browser(
+    browser_name: str, browser_type_launch_args: dict[str, object]
+) -> AsyncGenerator[Browser]:
+    async with async_playwright() as playwright:
+        browser_type = getattr(playwright, browser_name)
+        browser_instance = await browser_type.launch(**browser_type_launch_args)
+        yield browser_instance
+        await browser_instance.close()
+
+
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def auth_cookies(live_server_url: str, browser: Browser) -> list:
     """Join once and capture session cookies for reuse across all layout tests."""
-    ctx: BrowserContext = browser.new_context()
-    page = ctx.new_page()
-    page.goto(f"{live_server_url}/join/")
-    page.fill("input[type=text]", "LayoutTestUser")
-    page.click("button[type=submit]")
-    page.wait_for_url("**/tracker/")
-    cookies = ctx.cookies()
-    ctx.close()
-    return cookies
+    context = await browser.new_context()
+    try:
+        page = await context.new_page()
+        await page.goto(f"{live_server_url}/join/")
+        await page.fill("input[type=text]", "LayoutTestUser")
+        await page.click("button[type=submit]")
+        await page.wait_for_url("**/tracker/")
+        return await context.cookies()
+    finally:
+        await context.close()
 
 
-@pytest.fixture
-def tracker_page(live_server_url: str, page: Page, auth_cookies: list) -> Page:
-    """Authenticated page at the tracker, with SSE rows loaded."""
-    page.context.add_cookies(auth_cookies)
-    page.goto(f"{live_server_url}/tracker/")
-    page.wait_for_selector("#char-rows tr")
-    return page
-
-
-@pytest.fixture
-def mobile_tracker_page(
+@pytest_asyncio.fixture(loop_scope="session")
+async def tracker_page(
     live_server_url: str, browser: Browser, auth_cookies: list
-) -> Generator[Page]:
+) -> AsyncGenerator[Page]:
+    """Authenticated page at the tracker, with SSE rows loaded."""
+    context = await browser.new_context()
+    try:
+        await context.add_cookies(auth_cookies)
+        page = await context.new_page()
+        await page.goto(f"{live_server_url}/tracker/")
+        await page.wait_for_selector("#char-rows tr")
+        yield page
+    finally:
+        await context.close()
+
+
+@pytest_asyncio.fixture(loop_scope="session")
+async def mobile_tracker_page(
+    live_server_url: str, browser: Browser, auth_cookies: list
+) -> AsyncGenerator[Page]:
     """Authenticated page in a touch-emulating context (triggers @media hover:none)."""
-    ctx = browser.new_context(
+    context = await browser.new_context(
         has_touch=True,
         is_mobile=True,
         viewport={"width": 390, "height": 844},
     )
-    ctx.add_cookies(auth_cookies)
-    page = ctx.new_page()
-    page.goto(f"{live_server_url}/tracker/")
-    page.wait_for_selector("#char-rows tr")
-    yield page
-    ctx.close()
+    try:
+        await context.add_cookies(auth_cookies)
+        page = await context.new_page()
+        await page.goto(f"{live_server_url}/tracker/")
+        await page.wait_for_selector("#char-rows tr")
+        yield page
+    finally:
+        await context.close()
