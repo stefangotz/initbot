@@ -8,27 +8,60 @@
 import json
 import sys
 import urllib.request
+from collections.abc import Collection, Mapping, Set
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 
 def main() -> None:
-    today = date.today()
+    supported = _get_python_versions_supported_by_project()
 
+    url = "https://endoflife.date/api/python.json"
+    with urllib.request.urlopen(url) as resp:
+        data = json.loads(resp.read())
+        if not isinstance(data, dict):
+            raise ValueError(
+                "https://endoflife.date/api/python.json returned unparseable data"
+            )
+        python_releases: dict[str, Any] = data
+
+    issues: list[str] = []
+
+    issues.extend(_get_end_of_life_issues(supported, python_releases))
+    issues.extend(_get_new_releases_issues(supported, python_releases))
+
+    if issues:
+        print("Python version lifecycle issues detected:")
+        for issue in issues:
+            print(f"  - {issue}")
+        sys.exit(1)
+
+    print(f"Python version check passed. Supported: {sorted(supported)}")
+
+
+def _get_python_versions_supported_by_project() -> Set[str]:
     supported = set()
-    for line in Path(".python-version").read_text().splitlines():
+    for line in Path(".python-version").read_text(encoding="UTF8").splitlines():
         line = line.strip()
         if line:
             parts = line.split(".")
             supported.add(f"{parts[0]}.{parts[1]}")
 
-    url = "https://endoflife.date/api/python.json"
-    with urllib.request.urlopen(url) as resp:
-        data = json.loads(resp.read())
+    if len(supported) < 4:
+        raise ValueError(
+            "The project configuration is expected to support all released Python versions that aren't at end of life. However, .python-version seems to specify less than four which seems too few."
+        )
 
-    issues: list[str] = []
+    return supported
 
-    for entry in data:
+
+def _get_end_of_life_issues(
+    supported: Set[str], python_releases: Mapping[str, Any]
+) -> Collection[str]:
+    today = date.today()
+    issues = list[str]()
+    for entry in python_releases:
         cycle: str = entry["cycle"]
         if cycle not in supported:
             continue
@@ -41,10 +74,18 @@ def main() -> None:
                 " — remove from .python-version and CI matrix"
             )
 
+    return issues
+
+
+def _get_new_releases_issues(
+    supported: Set[str], python_releases: Mapping[str, Any]
+) -> Collection[str]:
+    today = date.today()
+    issues = list[str]()
     max_supported = max(supported, key=lambda v: tuple(int(x) for x in v.split(".")))
     max_minor = tuple(int(x) for x in max_supported.split("."))
 
-    for entry in data:
+    for entry in python_releases:
         cycle = entry["cycle"]
         if cycle in supported:
             continue
@@ -63,13 +104,7 @@ def main() -> None:
                 " — add to .python-version and CI matrix"
             )
 
-    if issues:
-        print("Python version lifecycle issues detected:")
-        for issue in issues:
-            print(f"  - {issue}")
-        sys.exit(1)
-
-    print(f"Python version check passed. Supported: {sorted(supported)}")
+    return issues
 
 
 if __name__ == "__main__":

@@ -63,8 +63,10 @@ jobs:
         run: |
           .venv/bin/zizmor .github/workflows/
       - name: Pylint
+        # keep aligned with commit hooks (.pre-commit-config.yaml)
         run: |
-          uv run pylint initbot_core initbot_chat initbot_web tests
+          uv run pylint --version
+          uv run pylint --ignore .venv .
       - name: ty
         run: |
           .venv/bin/ty check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
