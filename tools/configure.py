@@ -212,7 +212,7 @@ def _configure_ngrok(current_hostname: str) -> tuple[str, str]:
     ngrok = shutil.which("ngrok")
     if not ngrok:
         raise RuntimeError("ngrok not found; _choose_web_mode should have caught this")
-    check = subprocess.run([ngrok, "config", "check"], capture_output=True)  # noqa: S603
+    check = subprocess.run([ngrok, "config", "check"], capture_output=True, check=False)  # noqa: S603
     current_authtoken = read_env(_ENV_FILE).get("NGROK_AUTHTOKEN", "")
 
     print("\n  ngrok auth token")
@@ -293,22 +293,7 @@ def _configure_web() -> _WebConfig:
 
 def _write_config(token: str | None, web: _WebConfig) -> None:
     """Show a plain-language summary, confirm, and write configuration files."""
-    print("\n=== Summary ===\n")
-    print(f"  Chat bot:    {'enabled' if token is not None else 'off'}")
-    if web.enabled:
-        mode_label = {1: "local mode", 2: "ngrok mode", 3: "webserver mode"}[web.mode]
-        print(f"  Web tracker: {mode_label}")
-        if web.mode == 1:
-            print("               address: http://localhost:8080")
-        elif web.mode == 2:
-            if web.web_hostname:
-                print(f"               address: https://{web.web_hostname}")
-            else:
-                print("               address: random (changes each restart)")
-        else:
-            print(f"               address: https://{web.web_hostname}")
-    else:
-        print("  Web tracker: off")
+    _summarise_config(token, web)
 
     if _prompt("\n  Save configuration?", default="Y").lower() not in ("y", "yes"):
         print("Aborted. No files written.")
@@ -338,6 +323,26 @@ def _write_config(token: str | None, web: _WebConfig) -> None:
     if token is not None:
         update_env(_ENV_CHAT_FILE, {"token": token})  # pragma: allowlist secret
     print("  Configuration saved.")
+
+
+def _summarise_config(token: str | None, web: _WebConfig) -> None:
+    """Show a plain-language summary."""
+    print("\n=== Summary ===\n")
+    print(f"  Chat bot:    {'enabled' if token is not None else 'off'}")
+    if web.enabled:
+        mode_label = {1: "local mode", 2: "ngrok mode", 3: "webserver mode"}[web.mode]
+        print(f"  Web tracker: {mode_label}")
+        if web.mode == 1:
+            print("               address: http://localhost:8080")
+        elif web.mode == 2:
+            if web.web_hostname:
+                print(f"               address: https://{web.web_hostname}")
+            else:
+                print("               address: random (changes each restart)")
+        else:
+            print(f"               address: https://{web.web_hostname}")
+    else:
+        print("  Web tracker: off")
 
 
 def _print_next_steps() -> None:

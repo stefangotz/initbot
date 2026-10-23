@@ -100,7 +100,8 @@ repos:
         entry: uv run pylint
         language: system
         types: [python]
-        args: [initbot_core, initbot_chat, initbot_web, tests]
+        # keep aligned with CI (.github/workflows/pipeline.yaml)
+        args: [--ignore, .venv, .]
         pass_filenames: false
       - id: pytest
         name: pytest

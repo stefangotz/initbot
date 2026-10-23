@@ -56,7 +56,7 @@ def _main(argv: list[str] | None = None) -> int:
     while True:
         try:
             remediated = _check_and_remediate(args.test_command)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             print(f"Unexpected error occurred: {exc}", file=sys.stderr)
             # Approach is to keep trying instead of exiting on failures.
             # Pro: avoids spurious, unjustified application restarts
