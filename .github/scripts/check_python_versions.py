@@ -6,12 +6,14 @@
 """Check that the project's supported Python versions are current."""
 
 import json
+import re
 import sys
+import tomllib
 import urllib.request
 from collections.abc import Collection, Mapping, Set
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 
 def main() -> None:
@@ -20,11 +22,11 @@ def main() -> None:
     url = "https://endoflife.date/api/python.json"
     with urllib.request.urlopen(url) as resp:
         data = json.loads(resp.read())
-        if not isinstance(data, dict):
+        if not isinstance(data, Collection):
             raise ValueError(
-                "https://endoflife.date/api/python.json returned unparseable data"
+                f"https://endoflife.date/api/python.json returned unparseable data ({type(data)}, {data})"
             )
-        python_releases: dict[str, Any] = data
+        python_releases: Collection[Mapping[str, Any]] = data
 
     issues: list[str] = []
 
@@ -42,11 +44,25 @@ def main() -> None:
 
 def _get_python_versions_supported_by_project() -> Set[str]:
     supported = set()
-    for line in Path(".python-version").read_text(encoding="UTF8").splitlines():
-        line = line.strip()
-        if line:
-            parts = line.split(".")
-            supported.add(f"{parts[0]}.{parts[1]}")
+
+    project_file_path: Final[Path] = Path("./packages/initbot-web/pyproject.toml")
+    with project_file_path.open("rb") as file_obj:
+        pyproject_toml_dict = tomllib.load(file_obj)
+
+    for classifier in pyproject_toml_dict.get("project", {}).get("classifiers", []):
+        nouns: Final[Collection[str]] = tuple(
+            part.strip() for part in classifier.split("::")
+        )
+        if (
+            len(nouns) == 3
+            and nouns[0] == "Programming Language"
+            and nouns[1] == "Python"
+        ):
+            if not re.fullmatch(r"3\.[0-9]+", nouns[2]):
+                raise ValueError(
+                    f"The Python version specifier {nouns[2]} in {project_file_path} does not have the expected minor-version format"
+                )
+            supported.add(nouns[2])
 
     if len(supported) < 4:
         raise ValueError(
@@ -57,9 +73,9 @@ def _get_python_versions_supported_by_project() -> Set[str]:
 
 
 def _get_end_of_life_issues(
-    supported: Set[str], python_releases: Mapping[str, Any]
+    supported: Set[str], python_releases: Collection[Mapping[str, Any]]
 ) -> Collection[str]:
-    today = date.today()
+    today: Final[date] = date.today()
     issues = list[str]()
     for entry in python_releases:
         cycle: str = entry["cycle"]
@@ -78,12 +94,14 @@ def _get_end_of_life_issues(
 
 
 def _get_new_releases_issues(
-    supported: Set[str], python_releases: Mapping[str, Any]
+    supported: Set[str], python_releases: Collection[Mapping[str, Any]]
 ) -> Collection[str]:
-    today = date.today()
+    today: Final[date] = date.today()
     issues = list[str]()
-    max_supported = max(supported, key=lambda v: tuple(int(x) for x in v.split(".")))
-    max_minor = tuple(int(x) for x in max_supported.split("."))
+    max_supported: Final[str] = max(
+        supported, key=lambda v: tuple(int(x) for x in v.split("."))
+    )
+    max_minor: Final[tuple[int, ...]] = tuple(int(x) for x in max_supported.split("."))
 
     for entry in python_releases:
         cycle = entry["cycle"]
