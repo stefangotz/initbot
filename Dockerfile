@@ -17,10 +17,13 @@ RUN tools/vendor-web-assets.sh
 # populate uv cache with dependencies for later stages; must be in a user-independent location to be able to access it as a non-root user in later stages
 ARG UV_CACHE_DIR=/tmp/uvcache
 RUN --mount=type=cache,target=$UV_CACHE_DIR,sharing=locked \
-    uv sync --frozen --no-dev \
-    && uv build --package initbot-core --wheel \
-    && uv build --package initbot-chat --wheel \
-    && uv build --package initbot-web --wheel
+    uv sync --verbose --frozen --no-dev
+RUN --mount=type=cache,target=$UV_CACHE_DIR,sharing=locked \
+    uv build --verbose --package initbot-core --wheel
+RUN --mount=type=cache,target=$UV_CACHE_DIR,sharing=locked \
+    uv build --verbose --package initbot-chat --wheel
+RUN --mount=type=cache,target=$UV_CACHE_DIR,sharing=locked \
+    uv build --verbose --package initbot-web --wheel
 
 # Stage 2: shared OS configuration (no packages)
 # builder and runtime-base are shared layers. Building chat and web in two
