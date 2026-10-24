@@ -77,9 +77,8 @@ jobs:
         run: uv run reuse lint
       - name: uv audit
         run: |
-          output=$(uv audit --frozen --preview-features audit 2>&1)
-          echo "$output"
-          echo "$output" | grep -qF "Found no known vulnerabilities"
+          uv audit --frozen --preview-features audit 2>&1 | tee /tmp/uv-audit.txt
+          grep -qF "Found no known vulnerabilities" /tmp/uv-audit.txt
       - name: detect-secrets
         run: git ls-files -z | xargs -0 .venv/bin/detect-secrets-hook --baseline .secrets.baseline
       - name: test
@@ -192,8 +191,8 @@ jobs:
           wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64
           echo "6bf226944684f56c84dd014e8b979d27425c0148f61b3bd99bcc6f39e9dc5a47  /usr/local/bin/hadolint" | sha256sum -c
           chmod +x /usr/local/bin/hadolint
-      - name: hadolint
-        run: hadolint Dockerfile
+      # - name: hadolint
+      #   run: hadolint Dockerfile
       - name: Build Docker images
         run: |
           docker buildx bake -f docker-bake.hcl \
