@@ -13,9 +13,11 @@ COPY . /root/
 WORKDIR /root
 RUN tools/vendor-web-assets.sh
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv build --package initbot-core --wheel \
-    && uv build --package initbot-chat --wheel \
-    && uv build --package initbot-web --wheel
+    uv build --package initbot-core --wheel
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv build --package initbot-chat --wheel
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv build --package initbot-web --wheel
 
 # Stage 2: shared OS configuration (no packages)
 # builder and runtime-base are shared layers. Building chat and web in two
