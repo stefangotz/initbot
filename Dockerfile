@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Stage 0: pin base images
+# The hashes are platform-independent manifest hashes instead of image hashes. Obtain manifest hashes via `docker buildx imagetools inspect IMG_NAME:LABEL`.
 FROM ghcr.io/astral-sh/uv:0.13.0-alpine@sha256:20d3fe1308ffa40b51c5c20e002bab5fece40585edcee8ec99357309e8363424 AS uv
-FROM python:3.15.0-alpine3.24@sha256:9ab1d4f3e45b370553a5b665766c5fd3c595d279fed7fc867d7ed18d62595fd4 AS python-uv
+FROM python:3.15.0-alpine3.24@sha256:2699b90f4d562a22e2dd076c82f964032f64814204bff36d271a54ba4cc2c7e2 AS python-uv
 COPY --from=uv /usr/local/bin/uv* /usr/local/bin/
 
 # Stage 1: build all three wheels
