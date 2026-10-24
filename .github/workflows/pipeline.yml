@@ -236,3 +236,14 @@ jobs:
         run: sh tools/test/docker_chat.sh
       - name: "Verify web: unknown state type raises error"
         run: sh tools/test/docker_web.sh
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Check Python version lifecycle
+        run: python3 .github/scripts/check_python_versions.py
+      - name: Check Python version consistency
+        run: pipx run check-python-versions packages/initbot-core packages/initbot-chat packages/initbot-web
