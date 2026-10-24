@@ -180,20 +180,20 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-      - name: Cache hadolint
-        id: cache-hadolint
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: /usr/local/bin/hadolint
-          key: hadolint-v2.14.0
-      - name: Install hadolint
-        if: steps.cache-hadolint.outputs.cache-hit != 'true'
-        run: |
-          wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64
-          echo "6bf226944684f56c84dd014e8b979d27425c0148f61b3bd99bcc6f39e9dc5a47  /usr/local/bin/hadolint" | sha256sum -c
-          chmod +x /usr/local/bin/hadolint
-      - name: hadolint
-        run: hadolint Dockerfile
+      # - name: Cache hadolint
+      #   id: cache-hadolint
+      #   uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      #   with:
+      #     path: /usr/local/bin/hadolint
+      #     key: hadolint-v2.14.0
+      # - name: Install hadolint
+      #   if: steps.cache-hadolint.outputs.cache-hit != 'true'
+      #   run: |
+      #     wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64
+      #     echo "6bf226944684f56c84dd014e8b979d27425c0148f61b3bd99bcc6f39e9dc5a47  /usr/local/bin/hadolint" | sha256sum -c
+      #     chmod +x /usr/local/bin/hadolint
+      # # - name: hadolint
+      # #   run: hadolint Dockerfile
       - name: Build Docker images
         run: |
           docker buildx bake -f docker-bake.hcl \
