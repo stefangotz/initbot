@@ -4,8 +4,8 @@
 
 # Stage 0: pin base images
 # The hashes are platform-independent manifest hashes instead of image hashes. Obtain manifest hashes via `docker buildx imagetools inspect IMG_NAME:LABEL`.
-FROM ghcr.io/astral-sh/uv:0.13.0-alpine@sha256:20d3fe1308ffa40b51c5c20e002bab5fece40585edcee8ec99357309e8363424 AS uv
-FROM python:3.15.0-alpine3.24@sha256:2699b90f4d562a22e2dd076c82f964032f64814204bff36d271a54ba4cc2c7e2 AS python-uv
+FROM ghcr.io/astral-sh/uv:0.13.5-alpine@sha256:6ba9c830aa848d21e1e9d8028ae01ed02b08980b25aeabef9a6683c5743c6d0f AS uv
+FROM python:3.15.1-alpine3.24@sha256:54448f67d7c31c39e5cdd3ea2d6382395ce142806c284425f8e897d78a0465b3 AS python-uv
 COPY --from=uv /usr/local/bin/uv* /usr/local/bin/
 
 # Stage 1: build all three wheels
@@ -40,6 +40,7 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv venv /app \
     && VIRTUAL_ENV=/app uv pip install --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
+# hadolint ignore=DL3066
 USER appuser
 WORKDIR /home/appuser
 ENTRYPOINT ["/app/bin/initbot"]
@@ -51,6 +52,7 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv venv /app \
     && VIRTUAL_ENV=/app uv pip install --compile-bytecode /tmp/*.whl \
     && rm /tmp/*.whl
+# hadolint ignore=DL3066
 USER appuser
 WORKDIR /home/appuser
 ENTRYPOINT ["/app/bin/initbot-web"]
@@ -92,6 +94,7 @@ COPY packages/initbot-web/src /home/appuser/packages/initbot-web/src
 # auto_remediate.py expects to be run from the directory that contains the project files from above.
 WORKDIR /home/appuser
 # Run auto_remediate.py as non-root user to curtail its privileges.
+# hadolint ignore=DL3066
 USER appuser
 # Ensure that auto_remediate.py is run from the pinned-down virtual environment via the environment's python executable.
 # Invoking it directly or via uv does not guarantee this and would lead to ad-hoc dependency resolution.
