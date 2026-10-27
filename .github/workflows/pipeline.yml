@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+env:
+  UV_VERSION: 0.13.6
+  UV_SHA256_LINUX_X86_64: f29c3e94ffabd7e6f3ba521dba169a9b7ec12100bf3257087f0f24f6123f3645  # pragma: allowlist secret
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -26,8 +30,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.5"
-          checksum: "f68d291c75783122dad58ab77def0e13f3233f358731db5d6d7e8715603b928f"  # pragma: allowlist secret
+          version: ${{ env.UV_VERSION }}
+          checksum: ${{ env.UV_SHA256_LINUX_X86_64 }}
           python-version: ${{ matrix.python-version }}
           cache-python: true
           prune-cache: false
@@ -95,14 +99,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.5"
-          checksum: "f68d291c75783122dad58ab77def0e13f3233f358731db5d6d7e8715603b928f"  # pragma: allowlist secret
+          version: ${{ env.UV_VERSION }}
+          checksum: ${{ env.UV_SHA256_LINUX_X86_64 }}
           python-version: "3.15"
           cache-python: true
           prune-cache: false
           enable-cache: false
       - name: Install dependencies
-        run: uv sync --python 3.15
+        run: uv sync --python $(cat .python-version)
       - name: Vendor web assets
         run: tools/vendor-web-assets.sh
       - name: Install Playwright browser
@@ -121,8 +125,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.5"
-          checksum: "f68d291c75783122dad58ab77def0e13f3233f358731db5d6d7e8715603b928f"  # pragma: allowlist secret
+          version: ${{ env.UV_VERSION }}
+          checksum: ${{ env.UV_SHA256_LINUX_X86_64 }}
           python-version: "3.15"
           cache-python: true
           prune-cache: false
@@ -145,14 +149,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.13.5"
-          checksum: "f68d291c75783122dad58ab77def0e13f3233f358731db5d6d7e8715603b928f"  # pragma: allowlist secret
+          version: ${{ env.UV_VERSION }}
+          checksum: ${{ env.UV_SHA256_LINUX_X86_64 }}
           python-version: "3.15"
           cache-python: true
           prune-cache: false
           enable-cache: false
       - name: Install dependencies
-        run: uv sync --python 3.15
+        run: uv sync --python $(cat .python-version)
       - name: Generate SBOM
         run: uv run cyclonedx-py environment --of JSON -o bom.json
       - name: Upload SBOM
