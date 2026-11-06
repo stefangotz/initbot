@@ -55,7 +55,7 @@ repos:
     hooks:
       - id: zizmor
   - repo: https://github.com/fsfe/reuse-tool
-    rev: a1bb792acda6fd0724936b4ebbdbc8eceb9c0459  # v6.2.0  # pragma: allowlist secret
+    rev: ea739bff9c6daa1c4c8a5c5dfd069f3fb0374728  # v6.3.0  # pragma: allowlist secret
     hooks:
       - id: reuse
         # --no-multiprocessing: reuse uses ProcessPoolExecutor by default,
