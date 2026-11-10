@@ -56,6 +56,13 @@ repos:
       - id: zizmor
   - repo: local
     hooks:
+      - id: check-venv
+        name: check if venv is synced
+        description: Check if the project's virtual environment is in sync with the lock file. This ensures that the remaining pre-commit hooks run the same tool versions as in CI and as what is specified in the lock file. If this check fails, run `uv sync` to update the virtual environment.
+        entry: uv sync --check
+        language: unsupported
+        pass_filenames: false
+        always_run: true
       # Prevent tag-based pre-commit pins slipping in via manual edits or
       # automated updates. Local repo blocks never have a rev: field, so every
       # rev: line in this file belongs to an external repo and must be a
