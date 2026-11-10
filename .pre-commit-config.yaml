@@ -8,7 +8,7 @@ repos:
       - id: uv-lock-check
         name: uv lock check
         entry: uv lock --check
-        language: system
+        language: unsupported
         pass_filenames: false
         always_run: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -29,7 +29,7 @@ repos:
       - id: ty
         name: ty
         entry: uv run ty check
-        language: system
+        language: unsupported
         types: [python]
         args:
           - packages/initbot-core/src
@@ -76,13 +76,13 @@ repos:
       - id: check-precommit-pins
         name: check pre-commit SHA pins
         entry: sh -c 'if grep -E "^\s+rev:" .pre-commit-config.yaml | grep -qvE "[0-9a-f]{40}"; then echo "pre-commit pins must use 40-char commit SHAs, not tags -- fix with pre-commit autoupdate --freeze"; exit 1; fi'
-        language: system
+        language: unsupported
         pass_filenames: false
         always_run: true
       - id: check-python-versions
         name: check-python-versions
         entry: uv run check-python-versions
-        language: system
+        language: unsupported
         args:
           - packages/initbot-core
           - packages/initbot-chat
@@ -92,14 +92,14 @@ repos:
       - id: vulture
         name: vulture
         entry: uv run vulture
-        language: system
+        language: unsupported
         types: [python]
         pass_filenames: false
         always_run: true
       - id: pylint
         name: pylint
         entry: uv run pylint
-        language: system
+        language: unsupported
         types: [python]
         # keep aligned with CI (.github/workflows/pipeline.yaml)
         args: [--ignore, .venv, .]
@@ -107,6 +107,6 @@ repos:
       - id: pytest
         name: pytest
         entry: uv run pytest --ignore=tests/layout
-        language: system
+        language: unsupported
         pass_filenames: false
         always_run: true
