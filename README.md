@@ -1,6 +1,13 @@
 # Initbot
 
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/12602/baseline)](https://www.bestpractices.dev/projects/12602)
+![Python Versions](https://img.shields.io/badge/dynamic/yaml?label=Python&url=https%3A%2F%2Fraw.githubusercontent.com%2Fstefangotz%2Finitbot%2Frefs%2Fheads%2Fmain%2F.github%2Fworkflows%2Fpipeline.yml&query=jobs.test.strategy.matrix.python-version&logo=python)
+![Dependabot](https://img.shields.io/badge/dependabot-enabled-brightgreen?logo=dependabot)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![uv](https://img.shields.io/badge/uv-gray?logo=uv)](https://github.com/astral-sh/uv)
+[![ruff](https://img.shields.io/badge/ruff-gray?logo=ruff)](https://github.com/astral-sh/ruff)
+[![ty](https://img.shields.io/badge/ty-gray?logo=ty)](https://github.com/astral-sh/ty)
+
 
 An RPG initiative tracker: a Discord chat bot and a companion web app that help with some chores during RPG sessions.
 
