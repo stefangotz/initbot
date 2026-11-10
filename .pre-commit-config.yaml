@@ -54,15 +54,6 @@ repos:
     rev: c92afdf2c6ca336aaa8f39e2bd8d48f62dbd8e1f  # v1.31.1  # pragma: allowlist secret
     hooks:
       - id: zizmor
-  - repo: https://github.com/fsfe/reuse-tool
-    # Keep consistent with uv-managed version of reuse-tool (pyproject.toml, uv.lock)
-    rev: ea739bff9c6daa1c4c8a5c5dfd069f3fb0374728  # v6.3.0  # pragma: allowlist secret
-    hooks:
-      - id: reuse
-        # --no-multiprocessing: reuse uses ProcessPoolExecutor by default,
-        # which requires semaphore creation. This fails in sandboxed
-        # environments (e.g. nono) that block the sem_open syscall.
-        args: [--no-multiprocessing, lint]
   - repo: local
     hooks:
       # Prevent tag-based pre-commit pins slipping in via manual edits or
@@ -94,6 +85,15 @@ repos:
         entry: uv run vulture
         language: unsupported
         types: [python]
+        pass_filenames: false
+        always_run: true
+      - id: reuse-tool
+        name: reuse-tool
+        # --no-multiprocessing: reuse uses ProcessPoolExecutor by default,
+        # which requires semaphore creation. This fails in sandboxed
+        # environments (e.g. nono) that block the sem_open syscall.
+        entry: uv run reuse --no-multiprocessing lint
+        language: unsupported
         pass_filenames: false
         always_run: true
       - id: pylint
