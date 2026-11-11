@@ -65,7 +65,7 @@ jobs:
           .venv/bin/ruff format --check .
       - name: zizmor
         run: |
-          .venv/bin/zizmor .github/workflows/
+          .venv/bin/zizmor --no-progress .github/workflows/
       - name: Pylint
         # keep aligned with commit hooks (.pre-commit-config.yaml)
         run: |

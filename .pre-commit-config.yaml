@@ -50,10 +50,6 @@ repos:
     rev: 2eece55955ced00200be9729e9728cb7dacca505  # v2.15.1  # pragma: allowlist secret
     hooks:
       - id: hadolint
-  - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: c92afdf2c6ca336aaa8f39e2bd8d48f62dbd8e1f  # v1.31.1  # pragma: allowlist secret
-    hooks:
-      - id: zizmor
   - repo: local
     hooks:
       - id: check-venv
@@ -103,6 +99,13 @@ repos:
         language: unsupported
         pass_filenames: false
         always_run: true
+      - id: zizmor
+        name: zizmor
+        # keep aligned with CI (.github/workflows/pipeline.yaml)
+        entry: uv run zizmor --no-progress --fix=safe .github/workflows/
+        language: unsupported
+        pass_filenames: false
+        files: ^\.github/workflows/.*\.yml$
       - id: pylint
         name: pylint
         entry: uv run pylint
