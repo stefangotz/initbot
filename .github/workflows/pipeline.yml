@@ -57,28 +57,32 @@ jobs:
           exit 1
       - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }}
+        # the remaining steps invoke tools via ./venv/bin/CMD instead of `uv run CMD` to ensure that `CMD` is run with Python verssion ${{ matrix.python-version }}.
+        # `uv run --python ${{ matrix.python-version }} CMD` should work, too, but is just more verbose.
       - name: ruff
         run: |
-          .venv/bin/ruff check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src tests
+          # keep aligned with commit hooks (.pre-commit-config.yaml)
+          ./.venv/bin/ruff check
       - name: ruff format
         run: |
-          .venv/bin/ruff format --check .
+          # keep aligned with commit hooks (.pre-commit-config.yaml)
+          ./.venv/bin/ruff format --check
       - name: zizmor
         run: |
-          .venv/bin/zizmor --no-progress .github/workflows/
+          ./.venv/bin/zizmor --no-progress .github/workflows/
       - name: Pylint
         # keep aligned with commit hooks (.pre-commit-config.yaml)
         run: |
-          uv run pylint --version
-          uv run pylint --ignore .venv .
+          ./.venv/bin/pylint --version
+          ./.venv/bin/pylint --ignore .venv .
       - name: ty
         run: |
-          .venv/bin/ty check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
+          ./.venv/bin/ty check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
       - name: vulture
         run: |
-          .venv/bin/vulture
+          ./.venv/bin/vulture
       - name: reuse
-        run: uv run reuse lint
+        run: ./.venv/bin/reuse lint
       - name: uv audit
         run: |
           uv audit --frozen --preview-features audit 2>&1 | tee /tmp/uv-audit.txt

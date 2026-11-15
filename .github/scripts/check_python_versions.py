@@ -8,12 +8,13 @@
 import json
 import re
 import sys
-import tomllib
 import urllib.request
 from collections.abc import Collection, Mapping, Set
 from datetime import date
 from pathlib import Path
 from typing import Any, Final
+
+import tomllib
 
 
 def main() -> None:
