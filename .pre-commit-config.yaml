@@ -18,12 +18,6 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 44b5042edab9382aba712eed4f9c7bab7a3d6a3e  # v0.17.0  # pragma: allowlist secret
-    hooks:
-      - id: ruff
-      - id: ruff-format
-        types_or: [python, pyi, jupyter, markdown]
   - repo: local
     hooks:
       - id: ty
@@ -99,6 +93,25 @@ repos:
         language: unsupported
         pass_filenames: false
         always_run: true
+      - id: ruff-check
+        name: ruff-check
+        # keep aligned with CI (.github/workflows/pipeline.yaml)
+        # not specifying paths to cover all supported files
+        # --fix for convenience in a pre-commit setting
+        entry: uv run ruff check --fix
+        language: unsupported
+        # not passing files as some ruff checks span multiple files
+        pass_filenames: false
+        types_or: [python, pyi, jupyter, markdown]
+      - id: ruff-format
+        name: ruff-format
+        # keep aligned with CI (.github/workflows/pipeline.yaml)
+        # not specifying paths to cover all supported files
+        entry: uv run ruff format
+        language: unsupported
+        # pass files to skip unmodified files
+        pass_filenames: true
+        types_or: [python, pyi, jupyter, markdown]
       - id: zizmor
         name: zizmor
         # keep aligned with CI (.github/workflows/pipeline.yaml)
