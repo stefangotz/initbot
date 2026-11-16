@@ -67,6 +67,9 @@ jobs:
         run: |
           # keep aligned with commit hooks (.pre-commit-config.yaml)
           ./.venv/bin/ruff format --check
+      - name: ty
+        run: |
+          ./.venv/bin/ty check
       - name: zizmor
         run: |
           ./.venv/bin/zizmor --no-progress .github/workflows/
@@ -75,9 +78,6 @@ jobs:
         run: |
           ./.venv/bin/pylint --version
           ./.venv/bin/pylint --ignore .venv .
-      - name: ty
-        run: |
-          ./.venv/bin/ty check packages/initbot-core/src packages/initbot-chat/src packages/initbot-web/src
       - name: vulture
         run: |
           ./.venv/bin/vulture

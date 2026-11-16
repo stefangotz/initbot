@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from initbot_chat.commands.roll import roll
+from tests.helpers import _invoke_command
 
 
 @pytest.fixture(name="roll_ctx")
@@ -19,14 +20,14 @@ def _roll_ctx():
 
 
 async def test_roll_single_die(roll_ctx):
-    await roll.callback(roll_ctx, "d6")
+    await _invoke_command(roll, roll_ctx, "d6")
     roll_ctx.send.assert_called_once()
     msg = roll_ctx.send.call_args[0][0]
     assert re.search(r"testuser rolled (\*\*\d+\*\* .|\d+)", msg)
 
 
 async def test_roll_multiple_words(roll_ctx):
-    await roll.callback(roll_ctx, "d20+5", "to", "attack")
+    await _invoke_command(roll, roll_ctx, "d20+5", "to", "attack")
     roll_ctx.send.assert_called_once()
     msg = roll_ctx.send.call_args[0][0]
     assert "to" in msg

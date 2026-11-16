@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from initbot_chat.commands.character import prune, touch, unused
 from initbot_core.data.character import NewCharacterData
+from tests.helpers import _invoke_command
 
 # Shift "now" 200 days into the future so every recently-added character
 # looks old enough to be eligible for pruning.
@@ -36,7 +37,7 @@ async def test_unused_own(mock_ctx):
     _add_old(mock_ctx.bot.initbot_state, "OldBob", "testuser")
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
-        await unused.callback(mock_ctx)
+        await _invoke_command(unused, mock_ctx)
     all_msgs = " ".join(str(c) for c in mock_ctx.send.call_args_list)
     assert "OldMel" in all_msgs
     assert "OldBob" in all_msgs
@@ -46,7 +47,7 @@ async def test_unused_excludes_other_player(mock_ctx):
     _add_old(mock_ctx.bot.initbot_state, "OtherChar", "otheruser")
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
-        await unused.callback(mock_ctx)
+        await _invoke_command(unused, mock_ctx)
     msg = mock_ctx.send.call_args[0][0]
     assert "OtherChar" not in msg
 
@@ -56,7 +57,7 @@ async def test_unused_all_players_flag(mock_ctx):
     _add_old(mock_ctx.bot.initbot_state, "TheirChar", "otheruser")
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
-        await unused.callback(mock_ctx, "all_players")
+        await _invoke_command(unused, mock_ctx, "all_players")
     all_msgs = " ".join(str(c) for c in mock_ctx.send.call_args_list)
     assert "MyChar" in all_msgs
     assert "TheirChar" in all_msgs
@@ -66,7 +67,7 @@ async def test_unused_empty(mock_ctx):
     # No characters added — state is empty
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
-        await unused.callback(mock_ctx)
+        await _invoke_command(unused, mock_ctx)
     msg = mock_ctx.send.call_args[0][0]
     assert "unused" in msg
 
@@ -75,7 +76,7 @@ async def test_prune_removes(mock_ctx):
     _add_old(mock_ctx.bot.initbot_state, "OldMel", "testuser")
     with patch("initbot_core.data.character.time") as mock_t:
         mock_t.time.return_value = _FUTURE
-        await prune.callback(mock_ctx)
+        await _invoke_command(prune, mock_ctx)
     remaining = [
         c for c in mock_ctx.bot.initbot_state.characters.get_all() if c.name == "OldMel"
     ]
@@ -89,7 +90,7 @@ async def test_prune_spares_recent(mock_ctx):
         NewCharacterData(name="RecentMel", player_id=mock_ctx.author.player_id)
     )
     # No time patch — character was just created so last_used ≈ now → not eligible
-    await prune.callback(mock_ctx)
+    await _invoke_command(prune, mock_ctx)
     remaining = [
         c
         for c in mock_ctx.bot.initbot_state.characters.get_all()
@@ -103,7 +104,7 @@ async def test_prune_spares_recent(mock_ctx):
 async def test_touch_single(mock_ctx):
     _add_old(mock_ctx.bot.initbot_state, "Mel", "testuser")
     before = int(time.time())
-    await touch.callback(mock_ctx, "Mel")
+    await _invoke_command(touch, mock_ctx, "Mel")
     after = int(time.time())
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
     assert mel.last_used is not None
@@ -116,7 +117,7 @@ async def test_touch_multiple(mock_ctx):
     _add_old(mock_ctx.bot.initbot_state, "Mel", "testuser")
     _add_old(mock_ctx.bot.initbot_state, "Bob", "testuser")
     before = int(time.time())
-    await touch.callback(mock_ctx, "Mel", "Bob")
+    await _invoke_command(touch, mock_ctx, "Mel", "Bob")
     after = int(time.time())
     for name in ("Mel", "Bob"):
         char = mock_ctx.bot.initbot_state.characters.get_from_name(name)
@@ -132,7 +133,7 @@ async def test_touch_no_args(mock_ctx):
         NewCharacterData(name="OnlyChar", player_id=mock_ctx.author.player_id)
     )
     before = int(time.time())
-    await touch.callback(mock_ctx)
+    await _invoke_command(touch, mock_ctx)
     after = int(time.time())
     char = mock_ctx.bot.initbot_state.characters.get_from_name("OnlyChar")
     assert char.last_used is not None

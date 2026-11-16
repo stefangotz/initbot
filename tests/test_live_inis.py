@@ -20,6 +20,7 @@ from initbot_chat.commands.utils import (
     refresh_all_live_inis,
     refresh_live_inis,
 )
+from tests.helpers import _invoke_command
 
 
 def _make_msg_mock() -> MagicMock:
@@ -34,7 +35,7 @@ def _live_ref(msg_mock: MagicMock, offset: int = 0) -> LiveInisRef:
 
 
 async def test_inis_stores_message_ref(mock_ctx):
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     guild_id = mock_ctx.guild.id
     assert guild_id in mock_ctx.bot.last_inis_message
     ref = mock_ctx.bot.last_inis_message[guild_id]
@@ -43,9 +44,9 @@ async def test_inis_stores_message_ref(mock_ctx):
 
 
 async def test_inis_overwrites_previous_ref(mock_ctx):
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     first_ref = mock_ctx.bot.last_inis_message[mock_ctx.guild.id]
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     second_ref = mock_ctx.bot.last_inis_message[mock_ctx.guild.id]
     assert second_ref is not first_ref
 
@@ -64,7 +65,7 @@ async def test_init_refreshes_live_embed(mock_ctx, initbot_state):
     msg_mock = _make_msg_mock()
     mock_ctx.bot.last_inis_message[mock_ctx.guild.id] = _live_ref(msg_mock)
 
-    await init.callback(mock_ctx)
+    await _invoke_command(init, mock_ctx)
     msg_mock.edit.assert_awaited_once()
     embed_arg = msg_mock.edit.call_args.kwargs["embed"]
     assert embed_arg.title == "Initiative Order"
@@ -80,7 +81,7 @@ async def test_remove_refreshes_live_embed(mock_ctx, initbot_state):
     msg_mock = _make_msg_mock()
     mock_ctx.bot.last_inis_message[mock_ctx.guild.id] = _live_ref(msg_mock)
 
-    await remove.callback(mock_ctx, "Hero")
+    await _invoke_command(remove, mock_ctx, "Hero")
     msg_mock.edit.assert_awaited_once()
 
 
@@ -94,7 +95,7 @@ async def test_rename_refreshes_live_embed(mock_ctx, initbot_state):
     msg_mock = _make_msg_mock()
     mock_ctx.bot.last_inis_message[mock_ctx.guild.id] = _live_ref(msg_mock)
 
-    await rename.callback(mock_ctx, "Hero", "Champion")
+    await _invoke_command(rename, mock_ctx, "Hero", "Champion")
     msg_mock.edit.assert_awaited_once()
 
 
@@ -112,7 +113,7 @@ async def test_prune_refreshes_live_embed(mock_ctx, initbot_state):
     msg_mock = _make_msg_mock()
     mock_ctx.bot.last_inis_message[mock_ctx.guild.id] = _live_ref(msg_mock)
 
-    await prune.callback(mock_ctx)
+    await _invoke_command(prune, mock_ctx)
     msg_mock.edit.assert_awaited_once()
 
 
@@ -125,7 +126,7 @@ async def test_prune_no_refresh_when_nothing_pruned(mock_ctx, initbot_state):
     msg_mock = _make_msg_mock()
     mock_ctx.bot.last_inis_message[mock_ctx.guild.id] = _live_ref(msg_mock)
 
-    await prune.callback(mock_ctx)
+    await _invoke_command(prune, mock_ctx)
     msg_mock.edit.assert_not_awaited()
 
 
@@ -139,7 +140,7 @@ async def test_touch_refreshes_live_embed(mock_ctx, initbot_state):
     msg_mock = _make_msg_mock()
     mock_ctx.bot.last_inis_message[mock_ctx.guild.id] = _live_ref(msg_mock)
 
-    await touch.callback(mock_ctx)
+    await _invoke_command(touch, mock_ctx)
     msg_mock.edit.assert_awaited_once()
 
 
@@ -196,7 +197,7 @@ async def test_refresh_works_in_dm(mock_ctx, initbot_state):
 async def test_inis_stores_ref_in_dm(mock_ctx):
     """$inis in a DM stores the ref keyed on channel ID, not guild ID."""
     mock_ctx.guild = None
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     assert mock_ctx.channel.id in mock_ctx.bot.last_inis_message
 
 

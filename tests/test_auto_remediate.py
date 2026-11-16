@@ -13,6 +13,8 @@ _SPEC = spec_from_file_location(
     "auto_remediate",
     _PACKAGE_ROOT / "tools" / "auto_remediate.py",
 )
+if _SPEC is None:
+    raise ImportError("Could not load tools/auto_remediate.py")
 _UV_AUDIT_NO_VULN: Final[str] = '{"summary":{"vulnerabilities":0,"adverse_statuses":0}}'
 _UV_AUDIT_ONE_VULN: Final[str] = (
     '{"summary":{"vulnerabilities":1,"adverse_statuses":0}, "vulnerabilities":[ { "dependency": { "name": "click", "version": "8.3.2" }, "id": "PYSEC-2026-2132", "display_id": "PYSEC-2026-2132", "aliases": [ "CVE-2026-7246", "GHSA-47fr-3ffg-hgmw" ], "summary": null, "description": "Pallets Click, versions 8.3.2 and below, contain a command injection vulnerability in the click.edit() function, allowing attackers to pass arbitrary OS commands from an unprivileged account.", "link": "https://access.redhat.com/errata/RHSA-2026:24761", "fix_versions": [ "8.3.3" ], "published": "2026-04-30T14:16:36.433Z", "modified": "2026-07-13T07:15:21.899333658Z" } ]}'
@@ -59,8 +61,8 @@ def test_persist_internal_lockfile_copies_updated_lockfile(
 
     monkeypatch.chdir(repo_dir)
 
-    auto_remediate._ROOT = repo_dir  # pylint: disable=protected-access
-    auto_remediate._PROJECT_LOCK_FILE = repo_dir / "uv.lock"  # pylint: disable=protected-access
+    vars(auto_remediate)["_ROOT"] = repo_dir
+    vars(auto_remediate)["_PROJECT_LOCK_FILE"] = repo_dir / "uv.lock"
 
     auto_remediate._write_output_lock_file(repo_dir / "uv.lock.out")  # pylint: disable=protected-access
 
