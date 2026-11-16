@@ -26,7 +26,7 @@ def _make_message(content):
 def _make_bot_module(cfg):
     """Import initbot_chat.bot with a pre-injected mock config."""
     fake_config_mod = types.ModuleType("initbot_chat.config")
-    fake_config_mod.CFG = cfg  # type: ignore[attr-defined]
+    vars(fake_config_mod)["CFG"] = cfg
 
     saved = sys.modules.pop("initbot_chat.bot", None)
     sys.modules["initbot_chat.config"] = fake_config_mod

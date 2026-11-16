@@ -8,13 +8,14 @@ from discord.ext import commands
 
 from initbot_chat.commands.init import inis, init, init_error
 from initbot_core.data.character import NewCharacterData
+from tests.helpers import _invoke_command, _invoke_handler
 
 
 async def test_init_explicit_value(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
-    await init.callback(mock_ctx, "Mel", "10")
+    await _invoke_command(init, mock_ctx, "Mel", "10")
     mock_ctx.send.assert_called_once()
     msg = mock_ctx.send.call_args[0][0]
     assert "10" in msg
@@ -26,7 +27,7 @@ async def test_init_value_first(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
-    await init.callback(mock_ctx, "10", "Mel")
+    await _invoke_command(init, mock_ctx, "10", "Mel")
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
     assert mel.initiative == 10
 
@@ -39,7 +40,7 @@ async def test_init_auto_roll(mock_ctx):
             initiative_dice="d20+3",
         )
     )
-    await init.callback(mock_ctx)
+    await _invoke_command(init, mock_ctx)
     mel = mock_ctx.bot.initbot_state.characters.get_from_name("Mel")
     assert isinstance(mel.initiative, int)
     assert 4 <= mel.initiative <= 23
@@ -50,9 +51,9 @@ async def test_init_auto_roll_no_dice(mock_ctx):
         NewCharacterData(name="Mel", player_id=mock_ctx.author.player_id)
     )
     try:
-        await init.callback(mock_ctx)
+        await _invoke_command(init, mock_ctx)
     except ValueError as exc:
-        await init_error(mock_ctx, commands.CommandError(str(exc)))  # type: ignore[missing-argument]  # discord.py stubs type error handlers as (self, ctx, error) | (ctx, error)
+        await _invoke_handler(init_error, mock_ctx, commands.CommandError(str(exc)))
     mock_ctx.send.assert_called()
 
 
@@ -61,7 +62,7 @@ async def test_init_ci_name_finds_existing_character(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(
         NewCharacterData(name="Foo", player_id=mock_ctx.author.player_id)
     )
-    await init.callback(mock_ctx, "foo", "7")
+    await _invoke_command(init, mock_ctx, "foo", "7")
     char = mock_ctx.bot.initbot_state.characters.get_from_name("Foo")
     assert char.initiative == 7
     assert len(mock_ctx.bot.initbot_state.characters.get_all()) == 1
@@ -75,7 +76,7 @@ async def test_inis_shows_initiative_order(mock_ctx):
     mock_ctx.bot.initbot_state.characters.add_store_and_get(alpha)
     mock_ctx.bot.initbot_state.characters.add_store_and_get(beta)
 
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     mock_ctx.send.assert_called_once()
 
     embed = mock_ctx.send.call_args.kwargs["embed"]
@@ -96,7 +97,7 @@ async def test_inis_filters_old_initiative(mock_ctx):
     )
     mock_ctx.bot.initbot_state.characters.add_store_and_get(old)
 
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     mock_ctx.send.assert_called_once()
 
     embed = mock_ctx.send.call_args.kwargs["embed"]
@@ -112,7 +113,7 @@ async def test_inis_excludes_characters_without_initiative(mock_ctx):
     )
     mock_ctx.bot.initbot_state.characters.add_store_and_get(no_init)
 
-    await inis.callback(mock_ctx)
+    await _invoke_command(inis, mock_ctx)
     mock_ctx.send.assert_called_once()
 
     embed = mock_ctx.send.call_args.kwargs["embed"]
