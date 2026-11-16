@@ -47,6 +47,7 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
 
 # common properties of chat and web execution images
 FROM python AS runtime-base
+ENV PYTHONOPTIMIZE=1
 ARG USER_NAME=appuser
 ARG USER_ID=5678
 ARG USER_HOME=/home/$USER_NAME
