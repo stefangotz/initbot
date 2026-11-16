@@ -23,6 +23,7 @@ Requirements that govern the implementation are documented in the [requirements]
 - do not add Co-Authored-By lines or similar attributions to commit messages
 - ensure presence of type hints for function signatures where possible
 - mark constants with the type hint `Final`
+- place all Python test files in the top-level `tests/` directory
 
 ## Planning Workflow
 

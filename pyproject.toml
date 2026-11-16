@@ -92,7 +92,7 @@ pytest_add_cli_args = ["--tb=no", "-q"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests", "packages/initbot-core/tests"]
+testpaths = ["tests"]
 pythonpath = [
     "packages/initbot-core/src",
     "packages/initbot-chat/src",
