@@ -5,7 +5,7 @@
 import json
 from pathlib import Path
 
-from tools.report_mutmut_results import _create_report
+from tools.ci.report_mutmut_results import _create_report
 
 
 def _write_stats(results_dir: Path, package: str, stats: dict[str, int]) -> None:
