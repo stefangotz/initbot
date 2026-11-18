@@ -81,15 +81,6 @@ paths = [
 [tool.coverage.report]
 fail_under = 80
 
-[tool.mutmut]
-paths_to_mutate = [
-    "packages/initbot-core/src/",
-    "packages/initbot-chat/src/",
-    "packages/initbot-web/src/",
-]
-tests_dir = ["tests/"]
-pytest_add_cli_args = ["--tb=no", "-q"]
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

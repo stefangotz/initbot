@@ -5,6 +5,7 @@
 name: Mutation Testing
 
 on:
+  pull_request:
   schedule:
     - cron: '0 3 * * 0'  # Weekly on Sunday at 03:00 UTC
   workflow_dispatch:
@@ -14,6 +15,10 @@ permissions:
 
 jobs:
   mutation-testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [initbot-core, initbot-chat, initbot-web]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -30,6 +35,46 @@ jobs:
       - name: Run mutation testing
         env:
           api_key: x
-        run: uv run mutmut run || true
-      - name: Report results
-        run: uv run mutmut results || true
+        run: |
+          set -euo pipefail
+
+          package_path="packages/${{ matrix.package }}"
+          cd "$package_path"
+          ln -s ../../tests mutmut-tests
+          ln -s ../../tools tools
+          ln -s ../../uv.lock uv.lock
+          cleanup_links() {
+            for link in mutmut-tests tools uv.lock; do
+              if [[ -L "$link" ]]; then
+                rm "$link"
+              fi
+            done
+          }
+          trap cleanup_links EXIT
+
+          case "${{ matrix.package }}" in
+            initbot-core)
+              export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/packages/initbot-chat/src:$GITHUB_WORKSPACE/packages/initbot-web/src"
+              ;;
+            initbot-chat)
+              export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/packages/initbot-core/src:$GITHUB_WORKSPACE/packages/initbot-web/src"
+              ;;
+            initbot-web)
+              export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/packages/initbot-core/src:$GITHUB_WORKSPACE/packages/initbot-chat/src"
+              ;;
+          esac
+
+          uv run --project ../.. mutmut run
+          uv run --project ../.. mutmut results
+          uv run --project ../.. mutmut export-cicd-stats
+          jq -e '
+            .total > 0 and
+            (.killed + .survived + .no_tests + .skipped + .suspicious +
+             .timeout + .check_was_interrupted_by_user + .segfault) == .total
+          ' mutants/mutmut-cicd-stats.json
+      - name: Upload mutation results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-results-${{ matrix.package }}
+          path: packages/${{ matrix.package }}/mutants/mutmut-cicd-stats.json
+          if-no-files-found: error

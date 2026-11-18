@@ -22,6 +22,25 @@ dependencies = [
     "typing-extensions>=4.12.2 ; python_full_version < '3.13'",
 ]
 
+[tool.mutmut]
+source_paths = ["src/"]
+also_copy = ["mutmut-tests/", "tools/"]
+mutate_only_covered_lines = true
+pytest_add_cli_args = ["--tb=no", "-q"]
+on_dependency_change = "rerun"
+pytest_add_cli_args_test_selection = [
+    "mutmut-tests/",
+    "--ignore=mutmut-tests/layout",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error::PendingDeprecationWarning",
+    "ignore::DeprecationWarning:discord",
+]
+
 [build-system]
 requires = ["uv_build"]
 build-backend = "uv_build"
