@@ -43,14 +43,6 @@ jobs:
           ln -s ../../tests mutmut-tests
           ln -s ../../tools tools
           ln -s ../../uv.lock uv.lock
-          cleanup_links() {
-            for link in mutmut-tests tools uv.lock; do
-              if [[ -L "$link" ]]; then
-                rm "$link"
-              fi
-            done
-          }
-          trap cleanup_links EXIT
 
           case "${{ matrix.package }}" in
             initbot-core)
