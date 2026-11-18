@@ -78,3 +78,23 @@ jobs:
           name: mutation-results-${{ matrix.package }}
           path: packages/${{ matrix.package }}/mutants/mutmut-cicd-stats.json
           if-no-files-found: error
+
+  mutation-summary:
+    name: mutation-summary
+    if: always()
+    needs: mutation-testing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Download mutation results
+        if: needs.mutation-testing.result == 'success'
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          pattern: mutation-results-*
+          path: mutation-results
+      - name: Summarize results and enforce score gates
+        env:
+          MUTATION_TESTING_RESULT: ${{ needs.mutation-testing.result }}
+        run: python3 tools/report_mutmut_results.py mutation-results
