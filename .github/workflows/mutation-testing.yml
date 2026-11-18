@@ -97,4 +97,4 @@ jobs:
       - name: Summarize results and enforce score gates
         env:
           MUTATION_TESTING_RESULT: ${{ needs.mutation-testing.result }}
-        run: python3 tools/report_mutmut_results.py mutation-results
+        run: python3 tools/ci/report_mutmut_results.py mutation-results
