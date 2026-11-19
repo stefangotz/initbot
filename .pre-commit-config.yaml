@@ -114,6 +114,13 @@ repos:
         language: unsupported
         pass_filenames: false
         files: ^\.github/workflows/.*\.yml$
+      - id: python-deps-vuln-scan
+        name: Scan Python dependencies for known vulnerabilities
+        # keep aligned with CI (.github/workflows/pipeline.yaml)
+        entry: sh -c 'uv audit --frozen --preview-features audit 2>&1 | grep -F "Found no known vulnerabilities"'
+        language: unsupported
+        pass_filenames: false
+        always_run: true
       - id: pylint
         name: pylint
         entry: uv run pylint
