@@ -7,7 +7,7 @@
 # Use the exact same version as in uv-version.sh; it needs to support the Python version below.
 FROM ghcr.io/astral-sh/uv:0.13.6-alpine@sha256:95f501aef734a5aaf167ff0640e02f215dcc7043ff48685de70328e5c55a57b0 AS uv
 # Use the exact same Python version as in .python-version
-FROM python:3.15.2-alpine3.24@sha256:1656b7eaf309cadf99069ea9de335c7f67a8355789cfc6f1835a05818996f081 AS python
+FROM python:3.15.2-alpine3.24@sha256:0f9552bb28711333da16915ec146f5e6bb44a7fdac9ced15dc17c2e0206346dd AS python
 
 FROM python AS python-uv
 # The upstream uv-python images can sometimes lag uv and Python releases quite significantly.
