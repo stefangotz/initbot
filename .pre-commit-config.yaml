@@ -23,15 +23,6 @@ repos:
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: 745eface02aef23e168a8afb6b5737818efbea95  # v0.11.0.1  # pragma: allowlist secret
-    hooks:
-      - id: shellcheck
-        args: ["-x"]
-  - repo: https://github.com/hadolint/hadolint
-    rev: 2eece55955ced00200be9729e9728cb7dacca505  # v2.15.1  # pragma: allowlist secret
-    hooks:
-      - id: hadolint
   - repo: local
     hooks:
       - id: check-venv
@@ -55,6 +46,16 @@ repos:
         language: unsupported
         pass_filenames: false
         always_run: true
+      - id: shellcheck
+        name: Check shell scripts
+        entry: uv run shellcheck -x
+        language: unsupported
+        files: ^(?!\.venv/).*\.(sh|bash)$
+      - id: hadolint
+        name: Check Dockerfiles
+        entry: uv run hadolint
+        language: unsupported
+        files: ^.*Dockerfile$
       - id: check-python-versions
         name: check-python-versions
         entry: uv run check-python-versions
@@ -119,11 +120,5 @@ repos:
         language: unsupported
         types: [python]
         # keep aligned with CI (.github/workflows/pipeline.yaml)
-        args: [--ignore, .venv, .]
+        args: [--ignore, '.venv,mutants', .]
         pass_filenames: false
-      - id: pytest
-        name: pytest
-        entry: uv run pytest --ignore=tests/layout
-        language: unsupported
-        pass_filenames: false
-        always_run: true
