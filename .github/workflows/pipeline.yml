@@ -77,7 +77,7 @@ jobs:
         # keep aligned with commit hooks (.pre-commit-config.yaml)
         run: |
           ./.venv/bin/pylint --version
-          ./.venv/bin/pylint --ignore .venv .
+          ./.venv/bin/pylint --ignore .venv,mutants .
       - name: vulture
         run: |
           ./.venv/bin/vulture
@@ -135,10 +135,10 @@ jobs:
           cache-python: true
           prune-cache: false
           enable-cache: false
-      - name: Install shellcheck
-        run: sudo apt-get install -y shellcheck
+      - name: Install dependencies
+        run: uv sync
       - name: shellcheck
-        run: shellcheck -x tools/*.sh tools/test/*.sh
+        run: find . -type d -name .venv -prune -o -type f -name "*.sh" -exec uv run shellcheck -x {} +
       - name: run_web_standalone_dev.sh smoke test
         run: ./tools/test/run_web_standalone_dev.sh
       - name: set_up_systemd.sh dry-run
@@ -187,20 +187,18 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-      - name: Cache hadolint
-        id: cache-hadolint
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          path: /usr/local/bin/hadolint
-          key: hadolint-v2.14.0
-      - name: Install hadolint
-        if: steps.cache-hadolint.outputs.cache-hit != 'true'
-        run: |
-          wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64
-          echo "6bf226944684f56c84dd014e8b979d27425c0148f61b3bd99bcc6f39e9dc5a47  /usr/local/bin/hadolint" | sha256sum -c
-          chmod +x /usr/local/bin/hadolint
+          version: ${{ env.UV_VERSION }}
+          checksum: ${{ env.UV_SHA256_LINUX_X86_64 }}
+          cache-python: true
+          prune-cache: false
+          enable-cache: false
+      - name: Install dependencies
+        run: uv sync
       - name: hadolint
-        run: hadolint Dockerfile
+        run: find . -type f -name "*Dockerfile*" -exec uv run hadolint {} +
       - name: Build Docker images
         run: |
           docker buildx bake -f docker-bake.hcl \

@@ -27,6 +27,7 @@ dev = [
     { name = "coverage", specifier = ">=7.14.0" },
     { name = "cyclonedx-bom", specifier = ">=7.3.0" },
     { name = "detect-secrets", specifier = ">=1.5" },
+    { name = "hadolint-py", specifier = ">=2.15.1.3" },
     { name = "httpx2", specifier = ">=2.7.0" },
     { name = "mutmut", specifier = ">=3.5.0" },
     { name = "pre-commit", specifier = ">=4.6.0" },
@@ -36,6 +37,7 @@ dev = [
     { name = "pytest-playwright", specifier = ">=0.8.0" },
     { name = "reuse", specifier = "==6.3.0" },
     { name = "ruff", specifier = ">=0.15.15" },
+    { name = "shellcheck-py", specifier = ">=0.11.0.1" },
     { name = "ty", specifier = ">=0.0.40" },
     { name = "vulture", specifier = ">=2.16" },
     { name = "zizmor", specifier = ">=1.24.1" },
@@ -974,6 +976,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6fb3c75474d40b3052059d95df7e73351460c8588d963/h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1", size = 101250, upload-time = "2025-04-24T03:35:25.427Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload-time = "2025-04-24T03:35:24.344Z" },
+]
+
+[[package]]
+name = "hadolint-py"
+version = "2.15.1.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/50/7247e68fefc7a183d71ec6dd71ee6c6be5d3ec3be4685f0ccb4ba07b9349/hadolint_py-2.15.1.3.tar.gz", hash = "sha256:9f9a0aa6d5e31a5e39e67202f3e57e6826afac21cf5404edc82bc7e44db6b06c", size = 13333, upload-time = "2026-10-29T13:54:16.304Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3e/60/09c5f8c56574632750404dd300263cb231a4fcc986307771cb57785a23bd/hadolint_py-2.15.1.3-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:87f75071c33990f20e14feb6a601faa7eba3f5040822c1241f747907edeb5e20", size = 4901336, upload-time = "2026-10-29T13:54:02.49Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/86/c49e1fad523a8cf49245b2ec80f4b4796db578075e8b2895448832fd62aa/hadolint_py-2.15.1.3-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1887a9793d4fc7e4ca8398dd3d02070bd8ef54303c424d79d6c02ff53059cfc7", size = 21352754, upload-time = "2026-10-29T13:54:05.04Z" },
+    { url = "https://files.pythonhosted.org/packages/96/db/0f1aae15f42038d9208d30ceeb235d35123cb3fd17e955f1bf8a28c72819/hadolint_py-2.15.1.3-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:87408ef7c95c9d989ec5939e540304f5a56516f04733cd01587d11cb0b77b6d8", size = 13065750, upload-time = "2026-10-29T13:54:08.242Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/db/f49006d8ab98b897dd6dcf70a3c4c8c2f3fa6a18c444bc7ca0a766028501/hadolint_py-2.15.1.3-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:d52cd0f22c3070087bdabd20500d2fa68bcc1ec670a5e660302eb7b19cea5196", size = 12157847, upload-time = "2026-10-29T13:54:11.184Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/a1/ffd8a1bb94691007925324a2f2e20058229169bfc37aa582593843054c2b/hadolint_py-2.15.1.3-py3-none-win_amd64.whl", hash = "sha256:828f049507aa14e75db4ce2ab87302e98cf9cea8ab2a691f9d2122a8f95a31f4", size = 15596745, upload-time = "2026-10-29T13:54:13.924Z" },
 ]
 
 [[package]]
@@ -2673,6 +2688,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c3/5b/5e1c117ac84e3cefcf8d7a7f6b2461795a87e20869da065a5c087149060b/setproctitle-1.3.7-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:b1cac6a4b0252b8811d60b6d8d0f157c0fdfed379ac89c25a914e6346cf355a1", size = 12587, upload-time = "2025-09-05T12:51:21.195Z" },
     { url = "https://files.pythonhosted.org/packages/73/02/b9eadc226195dcfa90eed37afe56b5dd6fa2f0e5220ab8b7867b8862b926/setproctitle-1.3.7-pp311-pypy311_pp73-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:f1704c9e041f2b1dc38f5be4552e141e1432fba3dd52c72eeffd5bc2db04dc65", size = 14286, upload-time = "2025-09-05T12:51:22.61Z" },
     { url = "https://files.pythonhosted.org/packages/28/26/1be1d2a53c2a91ec48fa2ff4a409b395f836798adf194d99de9c059419ea/setproctitle-1.3.7-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:b08b61976ffa548bd5349ce54404bf6b2d51bd74d4f1b241ed1b0f25bce09c3a", size = 13282, upload-time = "2025-09-05T12:51:24.094Z" },
+]
+
+[[package]]
+name = "shellcheck-py"
+version = "0.11.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/55/455b097417b3df3d330eff029c72c32f08b25739e3010acb30ad06d268ef/shellcheck_py-0.11.0.1.tar.gz", hash = "sha256:5c620c88901e8f1d3be5934b31ea99e3310065e1245253741eafd0a275c8c9cc", size = 3139, upload-time = "2025-08-09T17:53:42.492Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/27/d75b03e5458cefdb6d3b674566cd20476c3e4d3fe6cc9d68b7e3b854b296/shellcheck_py-0.11.0.1-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:b6a3fee28efda2e16e38d6e6d59faf7224300256456639727370d404730849e8", size = 6774472, upload-time = "2025-08-09T17:53:34.573Z" },
+    { url = "https://files.pythonhosted.org/packages/61/ac/2a84c37171c0cf5a10ea4b0a27d43eb0a1d29bd98b49c2c5ffe17ad24bbe/shellcheck_py-0.11.0.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:6b88d0a244c82ed07e06a53e444da841f69330ca59ae15d4a66c391655dae7a0", size = 11381835, upload-time = "2025-08-09T17:53:36.852Z" },
+    { url = "https://files.pythonhosted.org/packages/96/55/250e0e3367613a5c22bd82e33b16b889287d81ab0f7dda67e6514a4cccf4/shellcheck_py-0.11.0.1-py2.py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:1b274df81de5b000ff78db433e7328b87e52e3c38481c60f8e488c3095beef05", size = 3800600, upload-time = "2025-08-09T17:53:38.643Z" },
+    { url = "https://files.pythonhosted.org/packages/15/5b/bb14c0a7474463b1aa3c09e866cb172dffc66ed2993b7ea8f1db581e86ee/shellcheck_py-0.11.0.1-py2.py3-none-win_amd64.whl", hash = "sha256:784156289ecb17e91c692cd783ab5152333309588cabb10032a047331c63e759", size = 8027541, upload-time = "2025-08-09T17:53:40.889Z" },
 ]
 
 [[package]]
